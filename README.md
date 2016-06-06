@@ -1,2 +1,6 @@
-# pycl
-python3 library containing general utilities to manipulate files, strings and folders
+pycl
+=========
+
+**Generic collection of functions and classes for basic file manipulation**
+
+Test are available in the ipython/jupyter notebook
