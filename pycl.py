@@ -17,27 +17,50 @@ def bash(cmd):
     print (stderr.decode())
             
 # Emulate linux head cmd 
-def head (file, n=10):
-	
+def head (file, n=10, ignore_hashtag_line=False):
     with open(file, "r") as f:
-        for i in range(n):
+        line_num = 0
+        while (line_num < n):
             try:
-                print (next(f)[:-1])
+                line = next(f)[:-1]
+                if ignore_hashtag_line and line[0] == "#":
+                    continue
+                print (line)
+                line_num+=1
+            
             except StopIteration:
-                print ("Only {} lines in the file".format(i))
+                print ("Only {} lines in the file".format(line_num))
                 break         
   
 # Def to transform a dict into a markdown formated table
-def dict_to_md (d, key_label="", value_label="", transpose=False, sort_by_key=False, sort_by_val=False):
+def dict_to_md (
+    d,
+    key_label="",
+    value_label="",
+    transpose=False,
+    sort_by_key=False,
+    sort_by_val=True,
+    max_items=None):
     
     #Function imports
     from collections import OrderedDict
-
+    
     if sort_by_key:
-        d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+        d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[0])))
         
     if sort_by_val:
-        d= OrderedDict(sorted(d.items(), key=lambda t: t[1]))
+        d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
+        
+    if max_items and len(d)>max_items:
+        d2 = OrderedDict()
+        n = 0
+        for key, value in d.items():
+            d2[key]=value
+            n+=1
+            if n >= max_items:
+                break
+        d2["..."]="..."
+        d=d2
     
     if transpose:
         buffer = "|{}|".format(key_label)
@@ -74,59 +97,189 @@ def supersplit (string, separator=""):
 
 
 # Create a summary of selected columns of a file
-def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line=False):
-	#Function imports
-	from collections import OrderedDict
-	
-	res_dict = OrderedDict()
-	
-	with open(file, "r") as f:
-		# Manage the first line
-		first_line = False
-		header_found = False
-		while not first_line:
-			
-			line = next(f)
+def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10):
+    #Function imports
+    from collections import OrderedDict
+    
+    res_dict = OrderedDict()
+    
+    with open(file, "r") as f:
+        # Manage the first line
+        first_line = False
+        header_found = False
+        while not first_line:
+            
+            line = next(f)
 
-			if ignore_hashtag_line and line[0] == "#":
-				continue
-			
-			# Split the first line
-			ls = supersplit(line, separator)
+            if ignore_hashtag_line and line[0] == "#":
+                continue
+            
+            # Split the first line
+            ls = supersplit(line, separator)
 
-			if header and not header_found:
-				header_dict = {}
-				for colnum, val in enumerate(ls):
-					header_dict[colnum]= val
-				header_found = True
-				print("Header found")
-				continue
-				
-			# Get the number of col if not given and handle the first line			
-			if not colrange:
-				colrange = [i for i in range(len(ls))]
-				print("Found {} colums".format(len(ls)))
-				
-			# Manage the first valid line
-			print("First line found")
-			for colnum in colrange:
-				res_dict[colnum] = OrderedDict()
-				val = ls[colnum].strip()
-				res_dict[colnum][val]=1
-			first_line = True
-		
-		# Continue to read and parse the lines
-		for line in f:
-			ls = supersplit(line, separator)
-			for colnum in colrange:
-				val = ls[colnum].strip()
-				if val not in res_dict[colnum]:
-					res_dict[colnum][val] = 0
-				res_dict[colnum][val]+=1
-				
-	# Create a Markdown table output per colums
-	for colnum, col_dict in res_dict.items():
-		if header:
-			print (dict_to_md(col_dict, header_dict[colnum], "Count", transpose=True, sort_by_val=True))
-		else:
-			print (dict_to_md(col_dict, colnum, "Count", transpose=True, sort_by_val=True))
+            if header and not header_found:
+                header_dict = {}
+                for colnum, val in enumerate(ls):
+                    header_dict[colnum]= val
+                header_found = True
+                print("Header found")
+                continue
+                
+            # Get the number of col if not given and handle the first line            
+            if not colrange:
+                colrange = [i for i in range(len(ls))]
+                print("Found {} colums".format(len(ls)))
+                
+            # Manage the first valid line
+            print("First line found")
+            for colnum in colrange:
+                res_dict[colnum] = OrderedDict()
+                val = ls[colnum].strip()
+                res_dict[colnum][val]=1
+            first_line = True
+        
+        # Continue to read and parse the lines
+        for line in f:
+            ls = supersplit(line, separator)
+            for colnum in colrange:
+                val = ls[colnum].strip()
+                if val not in res_dict[colnum]:
+                    res_dict[colnum][val] = 0
+                res_dict[colnum][val]+=1
+                
+    # Create a Markdown table output per colums
+    for colnum, col_dict in res_dict.items():
+        if header:
+            print (dict_to_md(col_dict, header_dict[colnum], "Count", transpose=True, sort_by_val=True, max_items=max_items))
+        else:
+            print (dict_to_md(col_dict, colnum, "Count", transpose=True, sort_by_val=True, max_items=max_items))
+
+
+# Reformat a table given an intial and a final line templates indicated as a list where numbers
+# indicate the data column and strings the formating characters
+# Example initial line = "chr1    631539    631540    Squires|id1    0    +"
+# Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
+# Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
+# Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
+# A dictionnary of substitution per position can also be provided to replace
+# specific values by others :
+# subst_dict = {    
+#    0:{"chr1":"1","chr2":"2"},
+#    3:{"Squires":"5376774764","Li":"27664684"}
+#    }
+
+def reformat_table(
+    input_file,
+    output_file,
+    init_template,
+    final_template,
+    header = '',
+    keep_original_header = True,
+    replace_internal_space='_',
+    replace_null_val="*",
+    subst_dict={}):
+    
+    with open (input_file, "r") as infile, open (output_file, "w") as outfile:
+        
+        total = 0
+        
+        if header:
+            outfile.write(header)    
+        
+        for line in infile:
+            
+            # Original header lines
+            if line[0] == "#":
+                if keep_original_header:
+                    outfile.write(line)                 
+                continue
+            
+            total+=1
+            
+            # Reformat the original line
+            
+            raw_val = _decompose_line(
+                line = line,
+                template = init_template)
+            assert raw_val, "Error while decomposing line #{} : \n{}".format(total,line)
+              
+            clean_val = _clean_values(
+                val_list = raw_val,
+                replace_internal_space = replace_internal_space,
+                replace_null_val = replace_null_val,
+                subst_dict = subst_dict)
+            assert clean_val, "Error while cleaning: \n{}".format(total,line)
+                
+            formated_line = _reformat_line(
+                val_list = clean_val,
+                template = final_template)
+            assert formated_line, "Error while reformating: \n{}".format(total,line)
+                
+            outfile.write(formated_line)
+        
+    print ("{} Sites processed".format(total)) 
+    
+    
+# Helper function for reformat_table. Decompose a line and extract the values given a template list
+def _decompose_line(line, template):
+    
+    val_list = []
+    
+    # Remove the first element from the line if this is a str
+    if type(template[0]) == str:
+        val, sep, line = line.partition(template[0])
+        template = template[1:]
+    
+    # Decompose the line
+    for element in template:
+        if type(element) == str:
+            val, sep, line = line.partition(element)
+            val_list.append(val)
+    
+    # Manage last element of the template if it is a number
+    if type(template[-1]) == int:
+        val_list.append(line)
+    
+    return val_list
+
+
+# Helper function for reformat_table. Clean the extracted values
+def _clean_values (val_list, replace_internal_space=None, replace_null_val="*", subst_dict={}):
+    
+    for pos in range(len(val_list)):
+        val_list[pos] = val_list[pos].strip()
+        
+        # Replace the empty field by a given char
+        if replace_null_val and not val_list[pos]:
+            val_list[pos] = replace_null_val
+        
+        # Replace internal spaces by underscores
+        if replace_internal_space:
+            val_list[pos] = val_list[pos].replace(" ","_")
+        
+        if pos in subst_dict:
+            # Use the substitution dict exept if the value is not in the dict in this case use the default value 
+            try:
+                val_list[pos] = subst_dict[pos][val_list[pos]]
+            except KeyError:
+                pass
+    
+    return val_list
+
+# Helper function for reformat_table. Reassemble a line from a list of values and a template list
+def _reformat_line (val_list, template):
+    
+    line = ""
+    try:
+        for element in template:
+            if type(element) == str:
+                line+=element
+            if type(element) == int:
+                line+=val_list[element]
+    except IndexError as E:
+        print (E)
+        print (val_list)
+        print (template)
+        raise
+        
+    return line+"\n"
