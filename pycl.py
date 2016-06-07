@@ -31,7 +31,25 @@ def head (file, n=10, ignore_hashtag_line=False):
             except StopIteration:
                 print ("Only {} lines in the file".format(line_num))
                 break         
-  
+ 
+# Print a range of lines in a file 
+def linerange (file, start=0, end=9, ignore_hashtag_line=False):
+    with open(file, "r") as f:
+        line_num = 0
+        while (line_num <= end):
+            try:
+                line = next(f)[:-1]
+                if ignore_hashtag_line and line[0] == "#":
+                    continue
+                
+                if line_num >= start:
+                    print (line)
+                line_num+=1
+            
+            except StopIteration:
+                print ("Only {} lines in the file".format(line_num))
+                break          
+ 
 # Def to transform a dict into a markdown formated table
 def dict_to_md (
     d,
