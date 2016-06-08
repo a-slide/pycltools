@@ -236,7 +236,6 @@ def reformat_table(
                 assert raw_val, "Decomposing the line #{} resulted in an empty value list:\n{}".format(total,line)
             
             except AssertionError as E:
-                #print (E)
                 fail+=1
                 continue
             
@@ -251,7 +250,6 @@ def reformat_table(
                 assert clean_val, "The line #{} was filter according to the filter dictionnary:\n{}".format(total,line)
             
             except AssertionError as E:
-                #print (E)
                 filtered_out+=1
                 continue
             
@@ -262,8 +260,6 @@ def reformat_table(
                 
             outfile.write(formated_line)
             success+=1
-            
-    
             
     print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail\n".format(total, success, filtered_out, fail))
     
@@ -305,14 +301,15 @@ def _clean_values (val_list, replace_internal_space=None, replace_null_val="*", 
         if replace_internal_space:
             val_list[pos] = val_list[pos].replace(" ","_")
         
-        if pos in subst_dict:
-            # Use the substitution dict exept if the value is not in the dict in this case use the default value 
-            if val_list[pos] in subst_dict[pos]:
-                val_list[pos] = subst_dict[pos][val_list[pos]]
-        
+        # Filter line based on the filter_dict
         if pos in filter_dict:
             if val_list[pos] in filter_dict[pos]:
                 return None
+                
+        if pos in subst_dict:
+            # Use the substitution dict exept if the value is not in the dict in this case use the default value 
+            if val_list[pos] in subst_dict[pos]:
+                val_list[pos] = subst_dict[pos][val_list[pos]]    
     
     return val_list
 
