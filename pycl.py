@@ -32,24 +32,37 @@ def head (file, n=10, ignore_hashtag_line=False):
                 print ("Only {} lines in the file".format(line_num))
                 break         
  
-# Print a range of lines in a file 
-def linerange (file, start=0, end=9, ignore_hashtag_line=False):
-    with open(file, "r") as f:
-        line_num = 0
-        while (line_num <= end):
-            try:
-                line = next(f)[:-1]
-                if ignore_hashtag_line and line[0] == "#":
-                    continue
-                
-                if line_num >= start:
-                    print (line)
-                line_num+=1
-            
-            except StopIteration:
-                print ("Only {} lines in the file".format(line_num))
-                break          
- 
+# Print a range of lines in a file according to a list of start end lists 
+def linerange (file, range_list=[[0,10]]):
+    for start, end in (range_list):
+        found_first_line = found_last_line = False
+        with open(file, "r") as f:
+            for n, line in enumerate(f):
+                if n >= start:
+                    found_first_line = True
+                    print ("{}\t{}".format(n, line[0:-1]))
+                if n >= end:
+                    found_last_line = True
+                    break
+            if found_first_line == False:
+                print ("Start coordinate out of line range: {}".format(start))
+            if found_last_line == False:
+                print ("End coordinate out of line range: {}".format(end))
+            print()
+
+# Efficient way to count the number of lines in a file
+def linecount(file):
+    f = open(file)                  
+    lines = 0
+    buf_size = 1024 * 1024
+    read_f = f.read # loop optimization
+
+    buf = read_f(buf_size)
+    while buf:
+        lines += buf.count('\n')
+        buf = read_f(buf_size)
+    return lines    
+
 # Def to transform a dict into a markdown formated table
 def dict_to_md (
     d,
@@ -179,12 +192,12 @@ def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line
 # Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
 # Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
 # Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
-# A dictionnary of substitution per position can also be provided to replace
+# A nested dictionnary of substitution per position can also be provided to replace
 # specific values by others :
-# subst_dict = {    
-#    0:{"chr1":"1","chr2":"2"},
-#    3:{"Squires":"5376774764","Li":"27664684"}
-#    }
+# subst_dict = { 0:{"chr1":"1","chr2":"2"}, 3:{"Squires":"5376774764","Li":"27664684"}}
+# in addition a dictionnary of list per position can be provided to fiter out lines 
+# with specific values :
+# filter_dict =  { 0:["chr2", "chr4"], 1:["46767", "87765"], 5:["76559", "77543"]}
 
 def reformat_table(
     input_file,
@@ -195,11 +208,12 @@ def reformat_table(
     keep_original_header = True,
     replace_internal_space='_',
     replace_null_val="*",
-    subst_dict={}):
+    subst_dict={},
+    filter_dict=[]):
     
     with open (input_file, "r") as infile, open (output_file, "w") as outfile:
         
-        total = 0
+        total = fail = success = filtered_out = 0
         
         if header:
             outfile.write(header)    
@@ -214,28 +228,44 @@ def reformat_table(
             
             total+=1
             
-            # Reformat the original line
+            # Decompose the original line            
+            try:
+                raw_val = _decompose_line(
+                    line = line,
+                    template = init_template)
+                assert raw_val, "Decomposing the line #{} resulted in an empty value list:\n{}".format(total,line)
             
-            raw_val = _decompose_line(
-                line = line,
-                template = init_template)
-            assert raw_val, "Error while decomposing line #{} : \n{}".format(total,line)
-              
-            clean_val = _clean_values(
-                val_list = raw_val,
-                replace_internal_space = replace_internal_space,
-                replace_null_val = replace_null_val,
-                subst_dict = subst_dict)
-            assert clean_val, "Error while cleaning: \n{}".format(total,line)
-                
+            except AssertionError as E:
+                #print (E)
+                fail+=1
+                continue
+            
+            # Filter and clean the values 
+            try:
+                clean_val = _clean_values(
+                    val_list = raw_val,
+                    replace_internal_space = replace_internal_space,
+                    replace_null_val = replace_null_val,
+                    subst_dict = subst_dict,
+                    filter_dict = filter_dict)
+                assert clean_val, "The line #{} was filter according to the filter dictionnary:\n{}".format(total,line)
+            
+            except AssertionError as E:
+                #print (E)
+                filtered_out+=1
+                continue
+            
+            # Recompose the line
             formated_line = _reformat_line(
                 val_list = clean_val,
                 template = final_template)
-            assert formated_line, "Error while reformating: \n{}".format(total,line)
                 
             outfile.write(formated_line)
-        
-    print ("{} Sites processed".format(total)) 
+            success+=1
+            
+    
+            
+    print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail\n".format(total, success, filtered_out, fail))
     
     
 # Helper function for reformat_table. Decompose a line and extract the values given a template list
@@ -262,7 +292,7 @@ def _decompose_line(line, template):
 
 
 # Helper function for reformat_table. Clean the extracted values
-def _clean_values (val_list, replace_internal_space=None, replace_null_val="*", subst_dict={}):
+def _clean_values (val_list, replace_internal_space=None, replace_null_val="*", subst_dict={}, filter_dict={}):
     
     for pos in range(len(val_list)):
         val_list[pos] = val_list[pos].strip()
@@ -277,10 +307,12 @@ def _clean_values (val_list, replace_internal_space=None, replace_null_val="*", 
         
         if pos in subst_dict:
             # Use the substitution dict exept if the value is not in the dict in this case use the default value 
-            try:
+            if val_list[pos] in subst_dict[pos]:
                 val_list[pos] = subst_dict[pos][val_list[pos]]
-            except KeyError:
-                pass
+        
+        if pos in filter_dict:
+            if val_list[pos] in filter_dict[pos]:
+                return None
     
     return val_list
 
