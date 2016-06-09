@@ -51,7 +51,7 @@ def linerange (file, range_list=[[0,10]]):
             print()
 
 # Efficient way to count the number of lines in a file
-def linecount(file):
+def fastcount(file):
     f = open(file)                  
     lines = 0
     buf_size = 1024 * 1024
@@ -61,7 +61,16 @@ def linecount(file):
     while buf:
         lines += buf.count('\n')
         buf = read_f(buf_size)
-    return lines    
+    return lines
+
+# Simple way to count the number of lines in a file with more options
+def simplecount(filename, ignore_hashtag_line=False):
+    lines = 0
+    for line in open(filename):
+        if ignore_hashtag_line and line[0] == "#":
+            continue
+        lines += 1
+    return lines
 
 # Def to transform a dict into a markdown formated table
 def dict_to_md (
@@ -73,9 +82,10 @@ def dict_to_md (
     sort_by_val=True,
     max_items=None):
     
-    #Function imports
+    # Function imports
     from collections import OrderedDict
     
+    # Preprocess dict
     if sort_by_key:
         d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[0])))
         
@@ -93,6 +103,7 @@ def dict_to_md (
         d2["..."]="..."
         d=d2
     
+    # Prepare output
     if transpose:
         buffer = "|{}|".format(key_label)
         for key in d.keys():
@@ -112,6 +123,55 @@ def dict_to_md (
     
     return buffer
 
+# Recursive function to return a text report from nested dict or OrderedDict objects
+def dict_to_report (
+    d,
+    tab="\t",
+    ntab=0,
+    sep=":",
+    sort_dict=True,
+    max_items=None):
+    
+    # Function imports
+    from collections import OrderedDict
+    
+    # Preprocess dict
+    if sort_dict:
+        
+        # Verify that all value in the dict are numerical
+        all_num = True
+        for value in d.values():
+            if not type(value) in [int, float]:
+                all_num = False
+        
+        # Sort dict by val only if it contains numerical values       
+        if all_num:
+            d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
+            
+            if max_items and len(d)>max_items:
+                d2 = OrderedDict()
+                n=0
+                for key, value in d.items():
+                    d2[key]=value
+                    n+=1
+                    if n >= max_items:
+                        break
+                d2["..."]="..."
+                d=d2
+                    
+        # Else sort alphabeticaly by key
+        else:
+            d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+    
+    # Prepare output
+    report = ""
+    for name, value in d.items():
+        if type(value) == OrderedDict or type(value) == dict:
+            report += "{}{}\n".format(tab*ntab, name)
+            report += dict_to_report(value, tab=tab, ntab=ntab+1, sep=sep, sort_dict=sort_dict, max_items=max_items)
+        else:
+            report += "{}{}{}{}\n".format(tab*ntab, name, sep, value)
+    return report
 
 # like split but can take a list of separators instead of a simple separator 
 def supersplit (string, separator=""):
@@ -128,8 +188,10 @@ def supersplit (string, separator=""):
 
 
 # Create a summary of selected columns of a file
-def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10):
-    #Function imports
+def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
+    # Possible return types: md = markdown formated table, dict = raw parsing dict, report = Indented_text_report
+    
+    # Function imports
     from collections import OrderedDict
     
     res_dict = OrderedDict()
@@ -153,16 +215,16 @@ def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line
                 for colnum, val in enumerate(ls):
                     header_dict[colnum]= val
                 header_found = True
-                print("Header found")
+                #print("Header found")
                 continue
                 
             # Get the number of col if not given and handle the first line            
             if not colrange:
                 colrange = [i for i in range(len(ls))]
-                print("Found {} colums".format(len(ls)))
+                #print("Found {} colums".format(len(ls)))
                 
             # Manage the first valid line
-            print("First line found")
+            #print("First line found")
             for colnum in colrange:
                 res_dict[colnum] = OrderedDict()
                 val = ls[colnum].strip()
@@ -177,14 +239,28 @@ def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line
                 if val not in res_dict[colnum]:
                     res_dict[colnum][val] = 0
                 res_dict[colnum][val]+=1
-                
-    # Create a Markdown table output per colums
-    for colnum, col_dict in res_dict.items():
-        if header:
-            print (dict_to_md(col_dict, header_dict[colnum], "Count", transpose=True, sort_by_val=True, max_items=max_items))
-        else:
-            print (dict_to_md(col_dict, colnum, "Count", transpose=True, sort_by_val=True, max_items=max_items))
 
+    # Return directly the whole dict            
+    if ret_type == "dict":
+        return res_dict
+    
+    # Return an indented text report 
+    if ret_type == "report":
+        return dict_to_report(res_dict, tab="\t", sep="\t", sort_dict=True, max_items=max_items)
+
+    # Create a Markdown table output per colums
+    elif ret_type == "md":
+        buffer=""
+        for colnum, col_dict in res_dict.items():
+            if header:
+                buffer+= dict_to_md(col_dict, header_dict[colnum], "Count", transpose=True, sort_by_val=True, max_items=max_items)
+            else:
+                buffer+= dict_to_md(col_dict, colnum, "Count", transpose=True, sort_by_val=True, max_items=max_items)
+            buffer+='\n'
+        return buffer
+        
+    else:
+        print ("Invalid return type")
 
 # Reformat a table given an intial and a final line templates indicated as a list where numbers
 # indicate the data column and strings the formating characters
