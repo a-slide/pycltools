@@ -8,16 +8,146 @@
 * [Github](https://github.com/a-slide)
 """
 
-# Sent basic bash command
-def bash(cmd):
-    from subprocess import Popen, PIPE
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-    stdout, stderr = process.communicate()
-    print(stdout.decode())
-    print (stderr.decode())
+# Strandard library imports
+from os import access, R_OK, remove, path, mkdir
+from os import mkdir as osmkdir
+from gzip import open as gopen
+from shutil import copy as shutilCopy
+from shutil import Error as shutilError
+from sys import stdout
+from collections import OrderedDict
+from subprocess import Popen, PIPE
+import gzip
+
+#~~~~~~~ PREDICATES ~~~~~~~#
+
+def is_readable_file (fp):
+    """ Verify the readability of a file or list of file """
+    if not access(fp, R_OK):
+        raise IOError ("{} is not a valid file".format(fp))
+
+def is_gziped (fp):
+    """ Return True if the file is Gziped else False """
+    return fp[-2:].lower() == "gz"
+
+#~~~~~~~ PATH MANIPULATION ~~~~~~~#
+
+def file_basename (path):
+    """Return the basename of a file without folder location and extension """
+    return path.rpartition('/')[2].partition('.')[0]
+
+def file_extension (path):
+    """ Return The extension of a file in lowercase """
+    return path.rpartition(".")[2].lower()
+
+def file_name (path):
+    """ Return The complete name of a file with the extension but without folder location """
+    return path.rpartition("/")[2]    
+
+def dir_name (path):
+    """ Return the complete path where is located the file without the file name """
+    return path.rpartition("/")[0].rpartition("/")[2]
+
+##~~~~~~~ STRING FORMATTING ~~~~~~~#
+
+def supersplit (string, separator=""):
+    """like split but can take a list of separators instead of a simple separator """    
+    if not separator:
+        return string.split()
+    
+    if type(separator) == str:
+        return string.split(separator)
+    
+    for sep in separator:
+        string = string.replace(sep, "#")
+    return string.split("#")
+    
+def rm_blank (name, replace=""):
+    """ Replace blank spaces in a name by a given character (default = remove)
+    Blanks at extremities are always removed and nor replaced """
+    return replace.join(name.split())
+
+#~~~~~~~ FILE MANIPULATION ~~~~~~~#
+
+def copyFile(src, dest):
+    """
+    Copy a single file to a destination file or folder (with error handling/reporting)
+    @param src Source file path
+    @param dest Path of the folder where to copy the source file
+    """
+    try:
+        shutilCopy(src, dest)
+    # eg. src and dest are the same file
+    except shutilError as E:
+        print('Error: %s' % E)
+    # eg. source or destination doesn't exist
+    except IOError as E:
+        print('Error: %s' % E.strerror)
+
+def gzip_file (in_path, out_path=None):
+    """
+    @param in_path Path of the input uncompressed file
+    @param out_path Path of the output compressed file (facultative)
+    @exception  OSError Can be raise by open
+    """
+    # Generate a automatic name if none is given
+    if not out_path:
+        out_path = in_path +".gz"
+
+    # Try to initialize handle for
+    try:
+        in_handle = open(in_path, "rb")
+        out_handle = gopen(out_path, "wb")
+        # Write input file in output file
+        print ("Compressing {}".format(in_path))
+        out_handle.write (in_handle.read())
+        # Close both files
+        in_handle.close()
+        out_handle.close()
+        return path.abspath(out_path)
+
+    except IOError as E:
+        print(E)
+        if path.isfile (out_path):
+            try:
+                remove (out_path)
+            except OSError:
+                print ("Can't remove {}".format(out_path))
+
+def gunzip_file (in_path, out_path=None):
+    """
+    @param in_path Path of the input compressed file
+    @param out_path Path of the output uncompressed file (facultative)
+    @exception  OSError Can be raise by open
+    """
+    # Generate a automatic name without .gz extension if none is given
+    if not out_path:
+        out_path = in_path[0:-3]
+
+    try:
+        # Try to initialize handle for
+        in_handle = gzip.GzipFile(in_path, 'rb')
+        out_handle = open(out_path, "wb")
+        # Write input file in output file
+        print ("Uncompressing {}".format(in_path))
+        out_handle.write (in_handle.read())
+        # Close both files
+        out_handle.close()
+        in_handle.close()
+        return path.abspath(out_path)
+
+    except IOError as E:
+        print(E)
+        if path.isfile (out_path):
+            try:
+                remove (out_path)
+            except OSError:
+                print ("Can't remove {}".format(out_path))
+
+#~~~~~~~ FILE INFORMATION ~~~~~~~#
             
-# Emulate linux head cmd 
 def head (file, n=10, ignore_hashtag_line=False):
+    """Emulate linux head cmd """
     with open(file, "r") as f:
         line_num = 0
         while (line_num < n):
@@ -32,8 +162,8 @@ def head (file, n=10, ignore_hashtag_line=False):
                 print ("Only {} lines in the file".format(line_num))
                 break         
  
-# Print a range of lines in a file according to a list of start end lists 
 def linerange (file, range_list=[[0,10]]):
+    """Print a range of lines in a file according to a list of start end lists"""
     for start, end in (range_list):
         found_first_line = found_last_line = False
         with open(file, "r") as f:
@@ -50,150 +180,12 @@ def linerange (file, range_list=[[0,10]]):
                 print ("End coordinate out of line range: {}".format(end))
             print()
 
-# Efficient way to count the number of lines in a file
-def fastcount(file):
-    f = open(file)                  
-    lines = 0
-    buf_size = 1024 * 1024
-    read_f = f.read # loop optimization
-
-    buf = read_f(buf_size)
-    while buf:
-        lines += buf.count('\n')
-        buf = read_f(buf_size)
-    return lines
-
-# Simple way to count the number of lines in a file with more options
-def simplecount(filename, ignore_hashtag_line=False):
-    lines = 0
-    for line in open(filename):
-        if ignore_hashtag_line and line[0] == "#":
-            continue
-        lines += 1
-    return lines
-
-# Def to transform a dict into a markdown formated table
-def dict_to_md (
-    d,
-    key_label="",
-    value_label="",
-    transpose=False,
-    sort_by_key=False,
-    sort_by_val=True,
-    max_items=None):
-    
-    # Function imports
-    from collections import OrderedDict
-    
-    # Preprocess dict
-    if sort_by_key:
-        d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[0])))
-        
-    if sort_by_val:
-        d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
-        
-    if max_items and len(d)>max_items:
-        d2 = OrderedDict()
-        n = 0
-        for key, value in d.items():
-            d2[key]=value
-            n+=1
-            if n >= max_items:
-                break
-        d2["..."]="..."
-        d=d2
-    
-    # Prepare output
-    if transpose:
-        buffer = "|{}|".format(key_label)
-        for key in d.keys():
-            buffer += "{}|".format(key)
-        buffer += "\n|:---|"
-        for _ in range(len(d)):
-            buffer += ":---|"
-        buffer += "\n|{}|".format(value_label)
-        for value in d.values():
-            buffer += "{}|".format(value)
-        buffer += "\n"
-        
-    else:
-        buffer = "|{}|{}|\n|:---|:---|\n".format(key_label, value_label)
-        for key, value in d.items():
-            buffer += "|{}|{}|\n".format(key, value)
-    
-    return buffer
-
-# Recursive function to return a text report from nested dict or OrderedDict objects
-def dict_to_report (
-    d,
-    tab="\t",
-    ntab=0,
-    sep=":",
-    sort_dict=True,
-    max_items=None):
-    
-    # Function imports
-    from collections import OrderedDict
-    
-    # Preprocess dict
-    if sort_dict:
-        
-        # Verify that all value in the dict are numerical
-        all_num = True
-        for value in d.values():
-            if not type(value) in [int, float]:
-                all_num = False
-        
-        # Sort dict by val only if it contains numerical values       
-        if all_num:
-            d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
-            
-            if max_items and len(d)>max_items:
-                d2 = OrderedDict()
-                n=0
-                for key, value in d.items():
-                    d2[key]=value
-                    n+=1
-                    if n >= max_items:
-                        break
-                d2["..."]="..."
-                d=d2
-                    
-        # Else sort alphabeticaly by key
-        else:
-            d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
-    
-    # Prepare output
-    report = ""
-    for name, value in d.items():
-        if type(value) == OrderedDict or type(value) == dict:
-            report += "{}{}\n".format(tab*ntab, name)
-            report += dict_to_report(value, tab=tab, ntab=ntab+1, sep=sep, sort_dict=sort_dict, max_items=max_items)
-        else:
-            report += "{}{}{}{}\n".format(tab*ntab, name, sep, value)
-    return report
-
-# like split but can take a list of separators instead of a simple separator 
-def supersplit (string, separator=""):
-    
-    if not separator:
-        return string.split()
-    
-    if type(separator) == str:
-        return string.split(separator)
-    
-    for sep in separator:
-        string = string.replace(sep, "#")
-    return string.split("#")
-
-
-# Create a summary of selected columns of a file
 def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
-    # Possible return types: md = markdown formated table, dict = raw parsing dict, report = Indented_text_report
-    
-    # Function imports
-    from collections import OrderedDict
-    
+    """
+    Create a summary of selected columns of a file
+    Possible return types: md = markdown formated table, dict = raw parsing dict, report = Indented_text_report
+    """ 
+        
     res_dict = OrderedDict()
     
     with open(file, "r") as f:
@@ -262,18 +254,154 @@ def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line
     else:
         print ("Invalid return type")
 
-# Reformat a table given an intial and a final line templates indicated as a list where numbers
-# indicate the data column and strings the formating characters
-# Example initial line = "chr1    631539    631540    Squires|id1    0    +"
-# Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
-# Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
-# Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
-# A nested dictionnary of substitution per position can also be provided to replace
-# specific values by others :
-# subst_dict = { 0:{"chr1":"1","chr2":"2"}, 3:{"Squires":"5376774764","Li":"27664684"}}
-# in addition a dictionnary of list per position can be provided to fiter out lines 
-# with specific values :
-# filter_dict =  { 0:["chr2", "chr4"], 1:["46767", "87765"], 5:["76559", "77543"]}
+def fastcount(file):
+    """Efficient way to count the number of lines in a file"""
+    f = open(file)                  
+    lines = 0
+    buf_size = 1024 * 1024
+    read_f = f.read # loop optimization
+
+    buf = read_f(buf_size)
+    while buf:
+        lines += buf.count('\n')
+        buf = read_f(buf_size)
+    return lines
+
+def simplecount(filename, ignore_hashtag_line=False):
+    """Simple way to count the number of lines in a file with more options"""
+    lines = 0
+    for line in open(filename):
+        if ignore_hashtag_line and line[0] == "#":
+            continue
+        lines += 1
+    return lines
+
+
+#~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
+
+def mkdir(fp):
+    """
+    Create a directory at the indicated path\n
+    Reproduce the ability of UNIX "mkdir -p" command
+    (ie if the path already exits no exception will be raised).
+    @param  fp path name where the folder should be created
+    @exception  OSError Can be raise by os.mkdir
+    """
+    if path.exists(fp) and path.isdir(fp):
+        #print ("'{}' already exist in the current directory".format(fp))
+        return fp
+    else:
+        #print ("Creating '{}' in the current directory".format(fp))
+        osmkdir(fp)
+        return fp
+
+#~~~~~~~ SHELL MANIPULATION ~~~~~~~#
+
+def bash(cmd):
+    """Sent basic bash command"""
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+    stdout, stderr = process.communicate()
+    print(stdout.decode())
+    print (stderr.decode())
+
+##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
+
+def dict_to_md (
+    d,
+    key_label="",
+    value_label="",
+    transpose=False,
+    sort_by_key=False,
+    sort_by_val=True,
+    max_items=None):
+    """Def to transform a dict into a markdown formated table"""
+    
+    # Preprocess dict
+    if sort_by_key:
+        d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[0])))
+        
+    if sort_by_val:
+        d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
+        
+    if max_items and len(d)>max_items:
+        d2 = OrderedDict()
+        n = 0
+        for key, value in d.items():
+            d2[key]=value
+            n+=1
+            if n >= max_items:
+                break
+        d2["..."]="..."
+        d=d2
+    
+    # Prepare output
+    if transpose:
+        buffer = "|{}|".format(key_label)
+        for key in d.keys():
+            buffer += "{}|".format(key)
+        buffer += "\n|:---|"
+        for _ in range(len(d)):
+            buffer += ":---|"
+        buffer += "\n|{}|".format(value_label)
+        for value in d.values():
+            buffer += "{}|".format(value)
+        buffer += "\n"
+        
+    else:
+        buffer = "|{}|{}|\n|:---|:---|\n".format(key_label, value_label)
+        for key, value in d.items():
+            buffer += "|{}|{}|\n".format(key, value)
+    
+    return buffer
+
+def dict_to_report (
+    d,
+    tab="\t",
+    ntab=0,
+    sep=":",
+    sort_dict=True,
+    max_items=None):
+    """Recursive function to return a text report from nested dict or OrderedDict objects"""
+    
+    # Preprocess dict
+    if sort_dict:
+        
+        # Verify that all value in the dict are numerical
+        all_num = True
+        for value in d.values():
+            if not type(value) in [int, float]:
+                all_num = False
+        
+        # Sort dict by val only if it contains numerical values       
+        if all_num:
+            d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
+            
+            if max_items and len(d)>max_items:
+                d2 = OrderedDict()
+                n=0
+                for key, value in d.items():
+                    d2[key]=value
+                    n+=1
+                    if n >= max_items:
+                        break
+                d2["..."]="..."
+                d=d2
+                    
+        # Else sort alphabeticaly by key
+        else:
+            d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+    
+    # Prepare output
+    report = ""
+    for name, value in d.items():
+        if type(value) == OrderedDict or type(value) == dict:
+            report += "{}{}\n".format(tab*ntab, name)
+            report += dict_to_report(value, tab=tab, ntab=ntab+1, sep=sep, sort_dict=sort_dict, max_items=max_items)
+        else:
+            report += "{}{}{}{}\n".format(tab*ntab, name, sep, value)
+    return report        
+
+##~~~~~~~ TABLE FORMATTING ~~~~~~~#
 
 def reformat_table(
     input_file,
@@ -286,6 +414,20 @@ def reformat_table(
     replace_null_val="*",
     subst_dict={},
     filter_dict=[]):
+    """
+    Reformat a table given an intial and a final line templates indicated as a list where numbers
+    indicate the data column and strings the formating characters
+    Example initial line = "chr1    631539    631540    Squires|id1    0    +"
+    Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
+    Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
+    Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
+    A nested dictionnary of substitution per position can also be provided to replace
+    specific values by others :
+    subst_dict = { 0:{"chr1":"1","chr2":"2"}, 3:{"Squires":"5376774764","Li":"27664684"}}
+    in addition a dictionnary of list per position can be provided to fiter out lines 
+    with specific values :
+    filter_dict =  { 0:["chr2", "chr4"], 1:["46767", "87765"], 5:["76559", "77543"]}
+    """
     
     with open (input_file, "r") as infile, open (output_file, "w") as outfile:
         
@@ -339,9 +481,8 @@ def reformat_table(
             
     print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail\n".format(total, success, filtered_out, fail))
     
-    
-# Helper function for reformat_table. Decompose a line and extract the values given a template list
 def _decompose_line(line, template):
+    """Helper function for reformat_table. Decompose a line and extract the values given a template list"""
     
     val_list = []
     
@@ -362,9 +503,8 @@ def _decompose_line(line, template):
     
     return val_list
 
-
-# Helper function for reformat_table. Clean the extracted values
 def _clean_values (val_list, replace_internal_space=None, replace_null_val="*", subst_dict={}, filter_dict={}):
+    """Helper function for reformat_table. Clean the extracted values"""
     
     for pos in range(len(val_list)):
         val_list[pos] = val_list[pos].strip()
@@ -389,8 +529,8 @@ def _clean_values (val_list, replace_internal_space=None, replace_null_val="*", 
     
     return val_list
 
-# Helper function for reformat_table. Reassemble a line from a list of values and a template list
 def _reformat_line (val_list, template):
+    """Helper function for reformat_table. Reassemble a line from a list of values and a template list"""
     
     line = ""
     try:
@@ -406,3 +546,4 @@ def _reformat_line (val_list, template):
         raise
         
     return line+"\n"
+
