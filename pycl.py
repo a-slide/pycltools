@@ -178,7 +178,7 @@ def linerange (file, range_list=[[0,10]]):
                 print ("Start coordinate out of line range: {}".format(start))
             if found_last_line == False:
                 print ("End coordinate out of line range: {}".format(end))
-            print()
+            print("")
 
 def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
     """
@@ -413,7 +413,8 @@ def reformat_table(
     replace_internal_space='_',
     replace_null_val="*",
     subst_dict={},
-    filter_dict=[]):
+    filter_dict=[],
+    predicate=None):
     """
     Reformat a table given an intial and a final line templates indicated as a list where numbers
     indicate the data column and strings the formating characters
@@ -421,12 +422,18 @@ def reformat_table(
     Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
     Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
     Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
+    *
     A nested dictionnary of substitution per position can also be provided to replace
     specific values by others :
     subst_dict = { 0:{"chr1":"1","chr2":"2"}, 3:{"Squires":"5376774764","Li":"27664684"}}
-    in addition a dictionnary of list per position can be provided to fiter out lines 
+    *
+    In addition a dictionnary of list per position can be provided to fiter out lines 
     with specific values :
     filter_dict =  { 0:["chr2", "chr4"], 1:["46767", "87765"], 5:["76559", "77543"]}
+    *
+    Finally values can also be filtered based on a lambda function predicate
+    Example of filtering base on the difference of value between 2 positions of the line.    
+    predicate = lambda val_list: abs(int(val_list[1])-int(val_list[2])) <= 2000
     """
     
     with open (input_file, "r") as infile, open (output_file, "w") as outfile:
@@ -464,7 +471,8 @@ def reformat_table(
                     replace_internal_space = replace_internal_space,
                     replace_null_val = replace_null_val,
                     subst_dict = subst_dict,
-                    filter_dict = filter_dict)
+                    filter_dict = filter_dict,
+                    predicate=predicate)
                 assert clean_val, "The line #{} was filter according to the filter dictionnary:\n{}".format(total,line)
             
             except AssertionError as E:
@@ -479,7 +487,7 @@ def reformat_table(
             outfile.write(formated_line)
             success+=1
             
-    print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail\n".format(total, success, filtered_out, fail))
+    print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail".format(total, success, filtered_out, fail))
     
 def _decompose_line(line, template):
     """Helper function for reformat_table. Decompose a line and extract the values given a template list"""
@@ -503,12 +511,18 @@ def _decompose_line(line, template):
     
     return val_list
 
-def _clean_values (val_list, replace_internal_space=None, replace_null_val="*", subst_dict={}, filter_dict={}):
+def _clean_values (
+    val_list,
+    replace_internal_space=None,
+    replace_null_val="*",
+    subst_dict={},
+    filter_dict={},
+    predicate=None):
     """Helper function for reformat_table. Clean the extracted values"""
     
     for pos in range(len(val_list)):
         val_list[pos] = val_list[pos].strip()
-        
+                
         # Replace the empty field by a given char
         if replace_null_val and not val_list[pos]:
             val_list[pos] = replace_null_val
@@ -518,14 +532,16 @@ def _clean_values (val_list, replace_internal_space=None, replace_null_val="*", 
             val_list[pos] = val_list[pos].replace(" ","_")
         
         # Filter line based on the filter_dict
-        if pos in filter_dict:
-            if val_list[pos] in filter_dict[pos]:
-                return None
-                
-        if pos in subst_dict:
-            # Use the substitution dict exept if the value is not in the dict in this case use the default value 
-            if val_list[pos] in subst_dict[pos]:
-                val_list[pos] = subst_dict[pos][val_list[pos]]    
+        if pos in filter_dict and val_list[pos] in filter_dict[pos]:
+            return None
+        
+        # Filter line base on predicate function
+        if predicate and not predicate(val_list):
+            return None
+        
+        # Use the substitution dict exept if the value is not in the dict in this case use the default value
+        if pos in subst_dict and val_list[pos] in subst_dict[pos]:
+            val_list[pos] = subst_dict[pos][val_list[pos]]    
     
     return val_list
 
