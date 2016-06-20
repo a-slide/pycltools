@@ -563,3 +563,29 @@ def _reformat_line (val_list, template):
         
     return line+"\n"
 
+##~~~~~~~ URL FORMATTING ~~~~~~~#
+
+def url_exist (url):
+    """ Predicate verifying if an url exist without downloading all the link"""
+    
+    # third party import
+    import httplib2
+    
+    # Chek the url
+    h = httplib2.Http()
+    
+    try:
+        resp = h.request(url, 'HEAD')
+        return int(resp[0]['status']) < 400
+    except:
+        return False
+
+
+
+
+
+
+
+
+
+
