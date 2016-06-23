@@ -644,7 +644,7 @@ def _reformat_line (val_list, template):
         
     return line+"\n"
 
-##~~~~~~~ URL FORMATTING ~~~~~~~#
+##~~~~~~~ WEB TOOLS ~~~~~~~#
 
 def url_exist (url):
     """ Predicate verifying if an url exist without downloading all the link"""
@@ -662,11 +662,86 @@ def url_exist (url):
         return False
 
 
+def wget(url, out_name="", progress_block=100000000):
+    """
+    Download a file from an URL to a local storage.
+    @param  url             A internet URL pointing to the file to download
+    @param  outname         Name of the outfile where (facultative)
+    @param  progress_block  size of the byte block for the progression of the download
+    """
+    
+    def size_to_status (size):
+        if size >= 1000000000:
+            status = "{} GB".format(round(size/1000000000, 1))
+        elif size >= 1000000:
+            status = "{} MB".format(round(size/1000000, 1))
+        elif size >= 1000:
+            status = "{} kB".format(round(size/1000, 1))
+        else :
+            status = "{} B".format(size)
+        return status
+    
+    # function specific imports 
+    from urllib.request import urlopen
+    from urllib.parse import urlsplit
+    from urllib.error import HTTPError, URLError
+    
+    # Open the url and retrieve info
+    try:
+        u = urlopen(url)
+        scheme, netloc, path, query, fragment = urlsplit(url)
+    except (HTTPError, URLError, ValueError) as E:
+        print (E)
+        return None
+        
+    
+    # Attribute a file name if not given
+    if not out_name:
+        out_name = file_name(path)
+        if not out_name:
+            out_name = 'output.file'
 
+    # Create the output file and 
+    with open(out_name, 'wb') as fp:
+        
+        # Retrieve file meta information 
+        meta = u.info()
+        meta_func = meta.getheaders if hasattr(meta, 'getheaders') else meta.get_all
+        meta_size = meta_func("Content-Length")
+        if meta_size:
+            file_size = int(meta_func("Content-Length")[0])
+            print("Downloading: {}\tBytes: {}".format(url, file_size))
+        else:
+            file_size=None
+            print("Downloading: {}\tSize unknown".format(url))
+        
+        # Buffered reading of the file to download
+        file_size_dl = 0
+        block_sz = 8192
+        
+        last_pblock = progress_block
+        while True:
+            buffer = u.read(block_sz)
+            if not buffer:
+                break
+            fp.write(buffer)
+            
+            # Progress bar
+            file_size_dl += len(buffer)
+            
+            if file_size_dl >= last_pblock:
+                status = "{} Downloaded".format(size_to_status(file_size_dl))
+                if file_size: 
+                    status += "\t[{} %]".format (round(file_size_dl*100/file_size, 2))
+                print(status)
+                last_pblock += progress_block
+        
+        # Final step of the progress bar
+        status = "{} Downloaded".format(size_to_status(file_size_dl))
+        if file_size: 
+            status += "\t[100 %]"
+        print(status)
+        
+    return out_name
 
-
-
-
-
-
-
+# HTTPError
