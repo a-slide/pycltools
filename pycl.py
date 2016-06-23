@@ -694,7 +694,6 @@ def wget(url, out_name="", progress_block=100000000):
         print (E)
         return None
         
-    
     # Attribute a file name if not given
     if not out_name:
         out_name = file_name(path)
