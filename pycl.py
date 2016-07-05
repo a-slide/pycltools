@@ -716,7 +716,7 @@ def wget(url, out_name="", progress_block=100000000):
         
         # Buffered reading of the file to download
         file_size_dl = 0
-        block_sz = 8192
+        block_sz = 1000000
         
         last_pblock = progress_block
         while True:
@@ -742,5 +742,3 @@ def wget(url, out_name="", progress_block=100000000):
         print(status)
         
     return out_name
-
-# HTTPError
