@@ -9,7 +9,7 @@
 """
 
 # Strandard library imports
-from os import access, R_OK, remove, path, mkdir
+from os import access, R_OK, remove, path
 from os import mkdir as osmkdir
 from gzip import open as gopen
 from shutil import copy as shutilCopy
@@ -282,22 +282,37 @@ def simplecount(filename, ignore_hashtag_line=False):
 
 
 #~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
-
-def mkdir(fp):
+  
+def mkdir(fp, level=1):
     """
-    Create a directory at the indicated path\n
     Reproduce the ability of UNIX "mkdir -p" command
     (ie if the path already exits no exception will be raised).
+    Can create nested directories by recursivity
     @param  fp path name where the folder should be created
-    @exception  OSError Can be raise by os.mkdir
+    @level  level   level in the path where to start to create the directories.
+                    Used by the program for the recursive creation of directories
+    @exception  OSError or PermissionError can be raise by os.mkdir
     """
+        
+    # Extract the path corresponding to the current level of subdirectory and create it if needed
+    fp = path.abspath(fp)
+    split_path = fp.split("/")
+    cur_level = split_path[level-1]
+    cur_path = "/".join(split_path[0:level])
+    if cur_path:
+        _mkdir(cur_path)
+    
+    # If the path is longer than the current level cpntinue to call mkdir recursively
+    if len(fp.split("/")) > level:
+        mkdir(fp, level=level+1)
+
+def _mkdir (fp):
     if path.exists(fp) and path.isdir(fp):
-        #print ("'{}' already exist in the current directory".format(fp))
-        return fp
+        #print ("Entering {}".format(fp))
+        pass
     else:
-        #print ("Creating '{}' in the current directory".format(fp))
+        print ("Creating {}".format(fp))
         osmkdir(fp)
-        return fp
 
 #~~~~~~~ SHELL MANIPULATION ~~~~~~~#
 
