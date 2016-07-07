@@ -147,20 +147,24 @@ def gunzip_file (in_path, out_path=None):
 #~~~~~~~ FILE INFORMATION ~~~~~~~#
             
 def head (file, n=10, ignore_hashtag_line=False):
-    """Emulate linux head cmd """
-    with open(file, "r") as f:
-        line_num = 0
-        while (line_num < n):
-            try:
-                line = next(f)[:-1]
-                if ignore_hashtag_line and line[0] == "#":
-                    continue
-                print (line)
-                line_num+=1
-            
-            except StopIteration:
-                print ("Only {} lines in the file".format(line_num))
-                break         
+    """Emulate linux head cmd. Also works for gzip files"""
+    
+    f = gopen(file, "rt") if is_gziped(file) else open (file, "r")
+    
+    line_num = 0
+    while (line_num < n):
+        try:
+            line = next(f)[:-1]
+            if ignore_hashtag_line and line[0] == "#":
+                continue
+            print (line)
+            line_num+=1
+        
+        except StopIteration:
+            print ("Only {} lines in the file".format(line_num))
+            break
+    print()
+    f.close()
  
 def linerange (file, range_list=[[0,10]]):
     """Print a range of lines in a file according to a list of start end lists"""
