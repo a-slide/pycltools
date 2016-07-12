@@ -399,7 +399,7 @@ def bash(cmd, stdin=None, ret_stderr=False, ret_stdout=True, str_output=True):
         elif ret_stdout:
             return stdout
         elif ret_stderr:
-            return stderr
+            return stderrOrderedDict
    
     # Last possibility
     return None
@@ -500,6 +500,43 @@ def dict_to_report (
         else:
             report += "{}{}{}{}\n".format(tab*ntab, name, sep, value)
     return report        
+
+class dict_to_html(OrderedDict):
+    """
+    Overridden dict class which takes a 2 level dict and renders an HTML Table in IPython Notebook
+    Using the magic repr_html_
+    {'a':{'val1':2,'val2':3},'b':{'val1':4,'val2':5},'c':{'val1':7,'val2':8}}
+    """
+
+    def __init__ (self, d):
+        for key in sorted(d.keys()):
+            self[key] = d[key]
+            
+    def _repr_html_(self):
+        html = ["<table width=100%>"]
+        
+        first_col = False
+        for key, val in self.items():
+
+            # Add Columns header for the first line
+            if not first_col:
+                html.append("<tr><td> </td>")
+                subkeys = sorted(val.keys())
+                for subkey in subkeys:
+                    html.append("<td><b>{}</b></td>".format(subkey))
+                first_col = True
+                html.append("</tr>")
+                
+            # Add row header and values
+            html.append("<tr><td><b>{}</b></td>".format(key))
+            for subkey in subkeys:
+                html.append("<td>{}</td>".format(self[key][subkey]))
+            html.append("</tr>")
+
+        # End the table
+        html.append("</table>")   
+        
+        return ''.join(html)
 
 ##~~~~~~~ TABLE FORMATTING ~~~~~~~#
 
