@@ -166,8 +166,12 @@ def head (file, n=10, ignore_hashtag_line=False):
     print()
     f.close()
  
-def linerange (file, range_list=[[0,10]]):
+def linerange (file, range_list=[]):
     """Print a range of lines in a file according to a list of start end lists"""
+    if not range_list:
+        n_line = fastcount(file)
+        range_list=[[0,2],[n_line-3, n_line-1]]
+    
     for start, end in (range_list):
         found_first_line = found_last_line = False
         with open(file, "r") as f:
