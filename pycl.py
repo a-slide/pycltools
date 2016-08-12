@@ -37,7 +37,7 @@ def file_basename (path):
     return path.rpartition('/')[2].partition('.')[0]
 
 def file_extension (path):
-    """ Return The extension of a file in lowercase """
+    """ Return The extension of a file in lower-case """
     return path.rpartition(".")[2].lower()
 
 def file_name (path):
@@ -191,7 +191,7 @@ def linerange (file, range_list=[]):
 def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
     """
     Create a summary of selected columns of a file
-    Possible return types: md = markdown formated table, dict = raw parsing dict, report = Indented_text_report
+    Possible return types: md = markdown formatted table, dict = raw parsing dict, report = Indented_text_report
     """ 
         
     res_dict = OrderedDict()
@@ -323,10 +323,10 @@ def _mkdir (fp):
 def make_cmd_str(prog_name, opt_dict={}, opt_list=[]):
     """
     Create a Unix like command line string from a
-    @param prog_name Name (if added to the system path) or path of the programm
-    @param opt_dict Dictionnary of option arguments such as "-t 5". The option flag have to
-    be the key (without "-") and the the option value in the dictionnary value. If no value is
-    requested after the option flag "None" had to be asigned to the value field.
+    @param prog_name Name (if added to the system path) or path of the program
+    @param opt_dict Dictionary of option arguments such as "-t 5". The option flag have to
+    be the key (without "-") and the the option value in the dictionary value. If no value is
+    requested after the option flag "None" had to be assigned to the value field.
     @param opt_list List of simple command line arguments
     @exemple make_cmd_str("bwa", {"b":None, t":6, "i":"../idx/seq.fa"}, ["../read1", "../read2"])
     """
@@ -361,7 +361,7 @@ def bash_basic(cmd):
 def bash(cmd, stdin=None, ret_stderr=False, ret_stdout=True, str_output=True):
     """
     Run a command line in the default shell and return the standard output
-    @param  cmd A command line string formated as a string
+    @param  cmd A command line string formatted as a string
     @param  stdinput    Facultative parameters to redirect an object to the standard input
     @param  ret_stderr  If True the standard error output will be returned
     @param  ret_stdout  If True the standard output will be returned
@@ -547,43 +547,108 @@ class dict_to_html(OrderedDict):
 def reformat_table(
     input_file,
     output_file,
-    init_template,
-    final_template,
+    init_template=[],
+    final_template=[],
     header = '',
     keep_original_header = True,
+    header_from_final_template = False,
     replace_internal_space='_',
     replace_null_val="*",
     subst_dict={},
     filter_dict=[],
-    predicate=None):
+    predicate=None,
+    standard_template=None):
     """
-    Reformat a table given an intial and a final line templates indicated as a list where numbers
-    indicate the data column and strings the formating characters
-    Example initial line = "chr1    631539    631540    Squires|id1    0    +"
-    Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
-    Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
-    Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
-    *
-    A nested dictionnary of substitution per position can also be provided to replace
-    specific values by others :
-    subst_dict = { 0:{"chr1":"1","chr2":"2"}, 3:{"Squires":"5376774764","Li":"27664684"}}
-    *
-    In addition a dictionnary of list per position can be provided to fiter out lines 
-    with specific values :
-    filter_dict =  { 0:["chr2", "chr4"], 1:["46767", "87765"], 5:["76559", "77543"]}
-    *
-    Finally values can also be filtered based on a lambda function predicate
-    Example of filtering base on the difference of value between 2 positions of the line.    
-    predicate = lambda val_list: abs(int(val_list[1])-int(val_list[2])) <= 2000
+    Reformat a table given an initial and a final line templates indicated as a list where numbers
+    indicate the data column and strings the formatting characters
+    
+    @param  input_file   A file with a structured text formatting (uncompressed)
+    @param  output_file   A file path to output the reformatted table
+    @param  init_template   A list of indexes and separators describing the structure of the input file
+            Example initial line = "chr1    631539    631540    Squires|id1    0    +"
+            Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
+            Alternatively, instead of the numbers, string indexes can be used, but they need to be enclosed in curly brackets to
+            differentiate them from the separators. This greatly simplify the writing of the final template.
+            Example initial line = "chr1    631539    631540    Squires|id1    0    +"
+            Initial template = ["{chrom}","\t","{start}","\t","{end}","|","{name}","\t","{score}","\t","{strand}"]
+    @param  final_template  A list of indexes and separators describing the required structure of the output file. Name indexes need to 
+            match indexes of the init_template and have to follow the same synthax
+            Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
+            Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
+    @param  header   A string to write as a file header at the beginning of the file
+    @param  keep_original_header   If True the original header of the input file will be copied at the beginning of the output file [DEFAULT:True]
+    @param  header_from_final_template  Generate a header according to the name or number of the fields given in the final_template [DEFAULT:True]
+    @param  replace_internal_space  All internal blank space will be replaced by this character [DEFAULT:"_"]
+    @param  replace_null_val   Field with no value will be replaced by this character [DEFAULT:"*"]
+    @param  subst_dict   Nested dictionary of substitution per position to replace specific values by others [DEFAULT:None]
+            Example: { 0:{"chr1":"1","chr2":"2"}, 3:{"Squires":"5376774764","Li":"27664684"}}
+    @param  filter_dict  A dictionary of list per position  to filter out lines  with specific values [DEFAULT:None]
+            Example: { 0:["chr2", "chr4"], 1:["46767", "87765"], 5:["76559", "77543"]}
+    @param  predicate   A lambda predicate function for more advance filtering operations [DEFAULT:None]
+            Example:  lambda val_dict: abs(int(val_dict[1])-int(val_dict[2])) <= 2000
+    @param  standard_template   Existing standard template to parse the file  instead of providing one manually. List of saved templates:
+        - "gff3_ens_gene" = Template for ensembl gff3 fields. Select only the genes lines and decompose to individual elements.
+        - "gff3_ens_transcript" = Template for ensembl gff3 fields. Select only the transcript lines and decompose to individual elements.
     """
     
+    # Verify if the user provided a standard template and parameter the function accordingly
+    # If needed the predicate2 variable will be used to filter the data according to the template
+    if standard_template:
+        
+        if standard_template == "gff3_ens_gene":
+            print("Using gff3 ensembl gene template. Non-gene features will be filtered out")
+            
+            init_template = ["{seqid}","\t","{source}","\t","{type}","\t","{start}","\t","{end}","\t","{score}","\t","{strand}","\t","{phase}",
+            "\tID=","{ID}",
+            ";gene_id=","{gene_id}",
+            ";gene_type=","{gene_type}",
+            ";gene_status=","{gene_status}",
+            ";gene_name=","{gene_name}",
+            ";level=","{level}",
+            ";havana_gene=","{havana_gene}"]
+                        
+            predicate2 = lambda v:v["type"]=="gene"
+            
+        if standard_template == "gff3_ens_transcript":
+            print("Using gff3 ensembl transcript template. Non-transcript features will be filtered out")
+            
+            init_template = ["{seqid}","\t","{source}","\t","{type}","\t","{start}","\t","{end}","\t","{score}","\t","{strand}","\t","{phase}",
+            "\tID=","{ID}",
+            ";Parent=","{Parent}",
+            ";gene_id=","{gene_id}",
+            ";transcript_id=","{transcript_id}",
+            ";gene_type=","{gene_type}",
+            ";gene_status=","{gene_status}",
+            ";gene_name=","{gene_name}",
+            ";transcript_type=","{transcript_type}",
+            ";transcript_status=","{transcript_status}",
+            ";transcript_name=","{transcript_name}",
+            ";level=","{level}",
+            ";transcript_support_level=","{transcript_support_level}",
+            ";tag=","{tag}",
+            ";havana_gene=","{havana_gene}",
+            ";havana_transcript=","{havana_transcript}"]
+            
+            predicate2 = lambda v:v["type"]=="transcript"
+                       
+    else:
+        predicate2 = None
+    
+    
+    # Print the pattern of decomposition and recomposition
+    print ("Initial template values")
+    print (_template_to_str(init_template))
+    print ("Final template values")
+    print (_template_to_str(final_template))
+
+    # Iterate over the input file 
     with open (input_file, "r") as infile, open (output_file, "w") as outfile:
-        
         total = fail = success = filtered_out = 0
-        
         if header:
-            outfile.write(header)    
-        
+            outfile.write(header)
+        if header_from_final_template:
+            outfile.write(_template_to_str(final_template)+"\n")
+            
         for line in infile:
             
             # Original header lines
@@ -591,7 +656,6 @@ def reformat_table(
                 if keep_original_header:
                     outfile.write(line)                 
                 continue
-            
             total+=1
             
             # Decompose the original line            
@@ -600,7 +664,6 @@ def reformat_table(
                     line = line,
                     template = init_template)
                 assert raw_val, "Decomposing the line #{} resulted in an empty value list:\n{}".format(total,line)
-            
             except AssertionError as E:
                 fail+=1
                 continue
@@ -608,97 +671,131 @@ def reformat_table(
             # Filter and clean the values 
             try:
                 clean_val = _clean_values(
-                    val_list = raw_val,
+                    val_dict = raw_val,
                     replace_internal_space = replace_internal_space,
                     replace_null_val = replace_null_val,
                     subst_dict = subst_dict,
                     filter_dict = filter_dict,
-                    predicate=predicate)
+                    predicate=predicate,
+                    predicate2= predicate2)
                 assert clean_val, "The line #{} was filter according to the filter dictionnary:\n{}".format(total,line)
-            
             except AssertionError as E:
                 filtered_out+=1
                 continue
             
             # Recompose the line
             formated_line = _reformat_line(
-                val_list = clean_val,
+                val_dict = clean_val,
                 template = final_template)
-                
             outfile.write(formated_line)
             success+=1
             
     print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail".format(total, success, filtered_out, fail))
+
+def _is_str_key (element):
+    return type(element)==str and element[0]=="{" and element[-1]=="}"
     
+def _is_str_sep (element):
+    return type(element)==str and (element[0]!="{" or element[-1]!="}")
+
+def _template_to_str(template):
+    l=[]
+    for element in template:
+        if _is_str_key(element):
+            l.append(element[1:-1])
+        if type(element) == int:
+            l.append(str(element))
+    return "\t".join(l)
+
 def _decompose_line(line, template):
-    """Helper function for reformat_table. Decompose a line and extract the values given a template list"""
+    """Helper function for reformat_table. Decompose a line in a dictionnary and extract the values given a template list"""
     
-    val_list = []
+    val_dict = OrderedDict()
     
-    # Remove the first element from the line if this is a str
-    if type(template[0]) == str:
+    # Remove the first element from the line if this is a separator
+    if _is_str_sep(template[0]):
         val, sep, line = line.partition(template[0])
         template = template[1:]
     
     # Decompose the line
+    last_key = None
     for element in template:
-        if type(element) == str:
+        # if found a str key, store it and remove the curly brackets
+        if _is_str_key(element):
+            last_key = element[1:-1]
+        # if numerical key, just store it
+        if type(element) == int:
+            last_key = element
+        if _is_str_sep(element):
+            # Verify the values before filling the dict
+            assert last_key != None, "Problem in the init template"
+            assert last_key not in val_dict, "Duplicated key in the init template"
             val, sep, line = line.partition(element)
-            val_list.append(val)
+            val_dict[last_key] = val
+            last_key = None
     
-    # Manage last element of the template if it is a number
-    if type(template[-1]) == int:
-        val_list.append(line)
+    # Manage last element of the template if it is a key
+    if last_key:
+        val_dict[last_key] = line
     
-    return val_list
+    return val_dict
 
 def _clean_values (
-    val_list,
+    val_dict,
     replace_internal_space=None,
-    replace_null_val="*",
+    replace_null_val=None,
     subst_dict={},
     filter_dict={},
-    predicate=None):
+    predicate=None,
+    predicate2=None):
     """Helper function for reformat_table. Clean the extracted values"""
     
-    for pos in range(len(val_list)):
-        val_list[pos] = val_list[pos].strip()
+    for key in val_dict.keys():
+        # Strip the heading and trailing blank spaces 
+        val_dict[key] = val_dict[key].strip()
                 
         # Replace the empty field by a given char
-        if replace_null_val and not val_list[pos]:
-            val_list[pos] = replace_null_val
+        if replace_null_val and not val_dict[key]:
+            val_dict[key] = replace_null_val
         
         # Replace internal spaces by underscores
         if replace_internal_space:
-            val_list[pos] = val_list[pos].replace(" ","_")
+            val_dict[key] = val_dict[key].replace(" ","_")
         
         # Filter line based on the filter_dict
-        if pos in filter_dict and val_list[pos] in filter_dict[pos]:
+        if key in filter_dict and val_dict[key] in filter_dict[key]:
             return None
         
         # Filter line base on predicate function
-        if predicate and not predicate(val_list):
+        if predicate and not predicate(val_dict):
+            return None
+        
+        # Filter line base on an eventual second predicate function
+        if predicate2 and not predicate2(val_dict):
             return None
         
         # Use the substitution dict exept if the value is not in the dict in this case use the default value
-        if pos in subst_dict and val_list[pos] in subst_dict[pos]:
-            val_list[pos] = subst_dict[pos][val_list[pos]]    
+        if key in subst_dict and val_dict[key] in subst_dict[key]:
+            val_dict[key] = subst_dict[key][val_dict[key]]    
     
-    return val_list
+    return val_dict
 
-def _reformat_line (val_list, template):
+def _reformat_line (val_dict, template):
     """Helper function for reformat_table. Reassemble a line from a list of values and a template list"""
     
     line = ""
     try:
         for element in template:
-            if type(element) == str:
+            if _is_str_sep(element):
                 line+=element
             if type(element) == int:
-                line+=val_list[element]
+                line+=val_dict[element]
+            if _is_str_key(element):
+                line+=val_dict[element[1:-1]]
+            
     except IndexError as E:
         print (E)
-        print (val_list)
+        print (val_dict)
         print (template)
         raise
         
