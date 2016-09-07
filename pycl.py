@@ -701,11 +701,13 @@ def _is_str_sep (element):
 def _template_to_str(template):
     l=[]
     for element in template:
-        if _is_str_key(element):
+        if _is_str_sep(element):
+            l.append(element)
+        elif _is_str_key(element):
             l.append(element[1:-1])
-        if type(element) == int:
+        elif type(element) == int:
             l.append(str(element))
-    return "\t".join(l)
+    return "".join(l)
 
 def _decompose_line(line, template):
     """Helper function for reformat_table. Decompose a line in a dictionnary and extract the values given a template list"""
