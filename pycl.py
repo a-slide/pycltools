@@ -191,7 +191,10 @@ def linerange (file, range_list=[]):
 def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
     """
     Create a summary of selected columns of a file
-    Possible return types: md = markdown formatted table, dict = raw parsing dict, report = Indented_text_report
+    Possible return types:
+        md = markdown formatted table,
+        dict = raw parsing dict,
+        report = Indented_text_report
     """ 
         
     res_dict = OrderedDict()
@@ -512,9 +515,20 @@ class dict_to_html(OrderedDict):
     {'a':{'val1':2,'val2':3},'b':{'val1':4,'val2':5},'c':{'val1':7,'val2':8}}
     """
 
-    def __init__ (self, d):
-        for key in sorted(d.keys()):
-            self[key] = d[key]
+    def __init__ (self, d, max_col=20, max_row=20):
+        # Preprocess dict
+        i=0
+        for k1, v1 in d.items():
+            i+=1
+            if i > max_col:
+                break
+            self[k1] = OrderedDict()
+            j=0
+            for k2, v2 in v1.items():
+                j+=1
+                if j > max_row:
+                    break
+                self[k1][k2]=v2
             
     def _repr_html_(self):
         html = ["<table width=100%>"]
@@ -557,7 +571,8 @@ def reformat_table(
     subst_dict={},
     filter_dict=[],
     predicate=None,
-    standard_template=None):
+    standard_template=None,
+    verbose=False):
     """
     Reformat a table given an initial and a final line templates indicated as a list where numbers
     indicate the data column and strings the formatting characters
@@ -589,6 +604,7 @@ def reformat_table(
     @param  standard_template   Existing standard template to parse the file  instead of providing one manually. List of saved templates:
         - "gff3_ens_gene" = Template for ensembl gff3 fields. Select only the genes lines and decompose to individual elements.
         - "gff3_ens_transcript" = Template for ensembl gff3 fields. Select only the transcript lines and decompose to individual elements.
+    @param verbose If True will print detailed information [DEFAULT:False]
     """
     
     # Verify if the user provided a standard template and parameter the function accordingly
@@ -636,10 +652,11 @@ def reformat_table(
     
     
     # Print the pattern of decomposition and recomposition
-    print ("Initial template values")
-    print (_template_to_str(init_template))
-    print ("Final template values")
-    print (_template_to_str(final_template))
+    if verbose:
+        print ("Initial template values")
+        print (_template_to_str(init_template))
+        print ("Final template values")
+        print (_template_to_str(final_template))
 
     # Iterate over the input file 
     with open (input_file, "r") as infile, open (output_file, "w") as outfile:
@@ -689,8 +706,9 @@ def reformat_table(
                 template = final_template)
             outfile.write(formated_line)
             success+=1
-            
-    print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail".format(total, success, filtered_out, fail))
+    
+    if verbose:
+        print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail".format(total, success, filtered_out, fail))
 
 def _is_str_key (element):
     return type(element)==str and element[0]=="{" and element[-1]=="}"
