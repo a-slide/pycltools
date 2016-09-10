@@ -11,6 +11,8 @@ Test and documentation are available in the following [jupyter notebook](https:/
 ## Authors and Contact
 
 Adrien Leger - 2016
+Enright's lab
+EMBL EBI
 
 * <aleg@ebi.ac.uk>
 * [Github](https://github.com/a-slide)
