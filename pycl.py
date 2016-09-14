@@ -14,7 +14,7 @@ from os import mkdir as osmkdir
 from gzip import open as gopen
 from shutil import copy as shutilCopy
 from shutil import Error as shutilError
-from sys import stdout
+import sys
 from collections import OrderedDict
 from subprocess import Popen, PIPE
 import gzip
@@ -357,7 +357,7 @@ def bash_basic(cmd):
     """Sent basic bash command"""
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = process.communicate()
-    print(stdout.decode())
+    print (stdout.decode())
     print (stderr.decode())
 
 
@@ -384,7 +384,7 @@ def bash(cmd, stdin=None, ret_stderr=False, ret_stdout=True, str_output=True):
         proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = proc.communicate()
 
-    if proc.returncode == 1:
+    if proc.returncode >= 1:
         msg = "An error occured during execution of following command :\n"
         msg += "COMMAND : {}\n".format(cmd)
         msg += "STDERR : {}\n".format(stderr.decode())
@@ -410,6 +410,87 @@ def bash(cmd, stdin=None, ret_stderr=False, ret_stdout=True, str_output=True):
    
     # Last possibility
     return None
+
+
+def bash_live(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=None, print_stderr=True, ret_stderr=False, log_stderr=None):
+    """
+    More advanced verssion of bash calling with live printing of the standard output and possibilities to log the redirect
+    the output and error as a string return or directly in files.
+    @param  cmd A command line string formatted as a string
+    @param  print_stdout    If True the standard output will be LIVE printed through the system standard output stream
+    @param  ret_stdout      If True the standard output will be returned as a string
+    @param  log_stdout      If a filename is given, the standard output will logged in this file
+    @param  print_stderr    If True the standard error will be printed through the system standard error stream
+    @param  ret_stderr      If True the standard error will be returned as a string
+    @param  log_stderr      If a filename is given, the standard error will logged in this file 
+    @note If ret_stderr and ret_stdout are True a tuple will be returned and if both are False None will be returned
+    @exception  (ValueError,OSError) May be raise by Popen
+    """
+    
+    #empty str buffer
+    stdout_str = ""
+    stderr_str = ""
+    
+    # First execute the command parse the output
+    proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+    
+    # Only 1 standard stream can be output at the time stdout or stderr
+    while proc.poll() is None:
+        
+        # Live parse stdout
+        if live == "stdout":
+            for line in iter(proc.stdout.readline, b''):
+                if print_stdout:
+                    sys.stdout.write(line)
+                if ret_stdout or log_stdout:
+                    stdout_str += line.decode()
+                            
+        # Live parse stderr
+        elif live == "stderr":
+            for line in iter(proc.stderr.readline, b''):
+                if print_stderr:
+                    sys.stderr.write(line)
+                if ret_stderr or log_stderr:
+                    stderr_str += line.decode()
+            
+    # Verify that the command was successful and if not print error message and raise an exception
+    if proc.returncode >= 1:
+        sys.stderr.write("Error code #{} during execution of the command : {}\n".format(proc.returncode, cmd))
+        sys.stderr.write(proc.stderr.read())
+        return None
+    
+    if live != "stdout" and (print_stdout or ret_stdout or log_stdout):
+        for line in iter(proc.stdout.readline, b''):
+            if print_stdout:
+                sys.stdout.write(line)
+            if ret_stdout or log_stdout:
+                stdout_str += line.decode()
+    
+    if live != "stderr" and (print_stderr or ret_stderr or log_stderr):
+        for line in iter(proc.stderr.readline, b''):
+            if print_stderr:
+                sys.stderr.write(line)
+            if ret_stderr or log_stderr:
+                stderr_str += line.decode()
+
+    # Write log in file if requested
+    if log_stdout:
+        with open (log_stdout, "w") as fp:
+            fp.write(stdout_str)
+
+    if log_stderr:
+        with open (log_stderr, "w") as fp:
+            fp.write(stderr_str)
+            
+    # Return standard output and err if requested
+    if ret_stdout and ret_stderr:
+        return (stdout_str, stderr_str)
+    if ret_stdout:
+        return stdout_str
+    if ret_stderr:
+        return stderr_str
+    return None
+
 
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
 
