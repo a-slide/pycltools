@@ -163,7 +163,6 @@ def head (file, n=10, ignore_hashtag_line=False):
         except StopIteration:
             print ("Only {} lines in the file".format(line_num))
             break
-    print()
     f.close()
  
 def linerange (file, range_list=[]):
@@ -641,7 +640,8 @@ class dict_to_html(OrderedDict):
 
 def reformat_table(
     input_file,
-    output_file,
+    output_file="",
+    return_df=False,
     init_template=[],
     final_template=[],
     header = '',
@@ -658,8 +658,10 @@ def reformat_table(
     Reformat a table given an initial and a final line templates indicated as a list where numbers
     indicate the data column and strings the formatting characters
     
-    @param  input_file   A file with a structured text formatting (uncompressed)
-    @param  output_file   A file path to output the reformatted table
+    @param  input_file   A file with a structured text formatting (gzipped or not)
+    @param  output_file   A file path to output the reformatted table (if empty will not write in a file)
+    @param  return_df   If true will return a pandas dataframe containing the reformated table (Third party pandas package required)
+            by default the columns will be names after the final template [DEFAULT:False]
     @param  init_template   A list of indexes and separators describing the structure of the input file
             Example initial line = "chr1    631539    631540    Squires|id1    0    +"
             Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
@@ -685,6 +687,7 @@ def reformat_table(
     @param  standard_template   Existing standard template to parse the file  instead of providing one manually. List of saved templates:
         - "gff3_ens_gene" = Template for ensembl gff3 fields. Select only the genes lines and decompose to individual elements.
         - "gff3_ens_transcript" = Template for ensembl gff3 fields. Select only the transcript lines and decompose to individual elements.
+        - "gtf_ens_gene" = Template for ensembl gft fields. Select only the genes lines and decompose to individual elements
     @param verbose If True will print detailed information [DEFAULT:False]
     """
     
@@ -703,6 +706,19 @@ def reformat_table(
             ";gene_name=","{gene_name}",
             ";level=","{level}",
             ";havana_gene=","{havana_gene}"]
+                        
+            predicate2 = lambda v:v["type"]=="gene"
+
+        if standard_template == "gtf_ens_gene":
+            print("Using gtf ensembl gene template. Non-gene features will be filtered out")
+            
+            init_template = ["{seqid}","\t","{source}","\t","{type}","\t","{start}","\t","{end}","\t","{score}","\t","{strand}","\t","{phase}",
+            "\tgene_id \"","{gene_id}",
+            "\"; gene_type \"","{gene_type}",
+            "\"; gene_status \"","{gene_status}",
+            "\"; gene_name \"","{gene_name}",
+            "\"; level ","{level}",
+            "; havana_gene \"","{havana_gene}"]
                         
             predicate2 = lambda v:v["type"]=="gene"
             
@@ -730,8 +746,7 @@ def reformat_table(
                        
     else:
         predicate2 = None
-    
-    
+        
     # Print the pattern of decomposition and recomposition
     if verbose:
         print ("Initial template values")
@@ -739,24 +754,41 @@ def reformat_table(
         print ("Final template values")
         print (_template_to_str(final_template))
 
-    # Iterate over the input file 
-    with open (input_file, "r") as infile, open (output_file, "w") as outfile:
-        total = fail = success = filtered_out = 0
-        if header:
-            outfile.write(header)
-        if header_from_final_template:
-            outfile.write(_template_to_str(final_template)+"\n")
-            
+    #Init counters
+    total = fail = success = filtered_out = 0
+    
+    # Init an empty panda dataframe if required
+    if return_df:
+        import pandas as pd
+        df = pd.DataFrame(columns = _template_to_list(final_template))
+    
+    # init empty handlers
+    infile = outfile = None
+    try:
+        # open the input file gziped or not
+        infile = gopen(input_file, "rt") if input_file[-2:].lower()=="gz" else open(input_file, "r")
+        
+        # open the output file if required
+        if output_file:
+            outfile = open (output_file, "wt")
+            if header:
+                outfile.write(header)
+            if header_from_final_template:
+                outfile.write(_template_to_str(final_template)+"\n")
+                    
         for line in infile:
             
             # Original header lines
             if line[0] == "#":
-                if keep_original_header:
-                    outfile.write(line)                 
+                # write in file if required
+                if output_file:
+                      if keep_original_header:
+                        outfile.write(line)
                 continue
+                    
             total+=1
             
-            # Decompose the original line            
+            # Decompose the original line
             try:
                 raw_val = _decompose_line(
                     line = line,
@@ -781,12 +813,26 @@ def reformat_table(
                 filtered_out+=1
                 continue
             
-            # Recompose the line
-            formated_line = _reformat_line(
-                val_dict = clean_val,
-                template = final_template)
-            outfile.write(formated_line)
+            # Fill the dataframe if needed
+            if return_df:
+                df.loc[len(df)]= _reformat_list (val_dict=clean_val, template=final_template)
+            
+            # Recompose the line and write in file if needed
+            if output_file:
+                formated_line = _reformat_line (val_dict=clean_val, template=final_template)
+                outfile.write(formated_line)
+            
             success+=1
+    
+    # Close the files properly
+    finally:
+        if infile:
+            infile.close()
+        if outfile:
+            outfile.close()
+    
+    if return_df:
+        return df
     
     if verbose:
         print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail".format(total, success, filtered_out, fail))
@@ -807,6 +853,15 @@ def _template_to_str(template):
         elif type(element) == int:
             l.append(str(element))
     return "".join(l)
+
+def _template_to_list(template):
+    l=[]
+    for element in template:
+        if _is_str_key(element):
+            l.append(element[1:-1])
+        elif type(element) == int:
+            l.append(str(element))
+    return l
 
 def _decompose_line(line, template):
     """Helper function for reformat_table. Decompose a line in a dictionnary and extract the values given a template list"""
@@ -882,16 +937,16 @@ def _clean_values (
     return val_dict
 
 def _reformat_line (val_dict, template):
-    """Helper function for reformat_table. Reassemble a line from a list of values and a template list"""
+    """Helper function for reformat_table. Reassemble a line from a dict of values and a template list"""
     
     line = ""
     try:
         for element in template:
             if _is_str_sep(element):
                 line+=element
-            if type(element) == int:
+            elif type(element) == int:
                 line+=val_dict[element]
-            if _is_str_key(element):
+            elif _is_str_key(element):
                 line+=val_dict[element[1:-1]]
             
     except IndexError as E:
@@ -901,6 +956,25 @@ def _reformat_line (val_dict, template):
         raise
         
     return line+"\n"
+
+def _reformat_list (val_dict, template):
+    """Helper function for reformat_table. Reassemble a list from a dict of values and a template list"""
+    
+    l=[]
+    try:
+        for element in template:
+            if type(element) == int:
+                l.append(val_dict[element])
+            elif _is_str_key(element):
+                l.append(val_dict[element[1:-1]])
+            
+    except IndexError as E:
+        print (E)
+        print (val_dict)
+        print (template)
+        raise
+        
+    return l
 
 ##~~~~~~~ WEB TOOLS ~~~~~~~#
 
