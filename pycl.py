@@ -1074,3 +1074,30 @@ def wget(url, out_name="", progress_block=100000000):
         print(status)
         
     return out_name
+
+##~~~~~~~ FUNCTIONS TOOLS ~~~~~~~#
+
+def print_arg():
+    """
+    Print calling function named and unnamed arguments
+    """
+    # import the function inspection module
+    from inspect import getargvalues, stack
+    # Parse all arg
+    posname, kwname, args = getargvalues(stack()[1][0])[-3:]
+    # For enumerated named arguments
+    if args:
+        print("Enumerated named argument list:")
+        for i, j in args.items():
+            if i != posname and i != kwname:
+                print("\t{}: {}".format(i,j))   
+        # For **kwarg arguments
+        if kwname:
+            print("Unenumerated named arguments list:")
+            for i, j in args[kwname].items():
+                print("\t{}: {}".format(i,j)) 
+        args.update(args.pop(kwname, []))
+        if posname:
+            print("Unnamed positional arguments list:")
+            for i in args[posname]:
+                print("\t{}".format(i))
