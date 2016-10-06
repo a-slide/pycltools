@@ -19,6 +19,42 @@ from collections import OrderedDict
 from subprocess import Popen, PIPE
 import gzip
 
+##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
+
+def toogle_code():
+    """
+    Hide code with a clickable link in a jupyter notebook
+    """
+    # notebook display functions
+    from IPython.core.display import display, HTML
+    
+    display(HTML(
+    '''<script>
+    code_show=true; 
+    function code_toggle() {
+     if (code_show){
+     $('div.input').hide();
+     } else {
+     $('div.input').show();
+     }
+     code_show = !code_show
+    } 
+    $( document ).ready(code_toggle);
+    </script>
+    <b><a href="javascript:code_toggle()">Toggle on/off the raw code</a></b>''')
+    )
+
+def larger_display (percent=100):
+    """
+    Resize the area of the screen containing the notebook according to a given percentage of the available width 
+    @param  percent percentage of the width of the screen to use [DEFAULT:100]
+    """
+    # notebook display functions
+    from IPython.core.display import display, HTML
+    
+    # resizing
+    display(HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent)))
+
 #~~~~~~~ PREDICATES ~~~~~~~#
 
 def is_readable_file (fp):
