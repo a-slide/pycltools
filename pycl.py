@@ -73,9 +73,19 @@ def file_basename (path):
     return path.rpartition('/')[2].partition('.')[0]
 
 def file_extension (path):
-    """ Return The extension of a file in lower-case """
-    return path.rpartition(".")[2].lower()
-
+    """ Return The extension of a file in lower-case. If archived file ("gz", "zip", "xz", "bz2") 
+    the method will output the base extension + the archive extension"""
+    split_name = path.split("/")[-1].split(".")
+    # No extension ? 
+    if len (split_name) == 1:
+        return ""
+    # Manage compressed files
+    elif len (split_name) > 2 and split_name[-1].lower() in ["gz", "zip", "xz", "bz2"]:
+        return ".{}.{}".format(split_name[-2], split_name[-1]).lower()
+    # Normal situation = return the last element of the list
+    else:
+        return ".{}".format(split_name[-1]).lower()
+    
 def file_name (path):
     """ Return The complete name of a file with the extension but without folder location """
     return path.rpartition("/")[2]    
@@ -706,7 +716,7 @@ def reformat_table(
             Example initial line = "chr1    631539    631540    Squires|id1    0    +"
             Initial template = ["{chrom}","\t","{start}","\t","{end}","|","{name}","\t","{score}","\t","{strand}"]
     @param  final_template  A list of indexes and separators describing the required structure of the output file. Name indexes need to 
-            match indexes of the init_template and have to follow the same synthax
+            match indexes of the init_template and have to follow the same synthax  [DEFAULT:Same that init template]
             Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
             Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
     @param  header   A string to write as a file header at the beginning of the file
@@ -727,6 +737,9 @@ def reformat_table(
     @param verbose If True will print detailed information [DEFAULT:False]
     """
     
+    if verbose:
+        print_arg()
+
     # Verify if the user provided a standard template and parameter the function accordingly
     # If needed the predicate2 variable will be used to filter the data according to the template
     if standard_template:
@@ -782,7 +795,12 @@ def reformat_table(
                        
     else:
         predicate2 = None
-        
+    
+    if not final_template:
+        if verbose:
+            print ("No final template given. Create final template from init template")
+        final_template = init_template
+    
     # Print the pattern of decomposition and recomposition
     if verbose:
         print ("Initial template values")
