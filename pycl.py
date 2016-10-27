@@ -233,18 +233,22 @@ def linerange (file, range_list=[]):
                 print ("End coordinate out of line range: {}".format(end))
             print("")
 
-def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
+def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
     """
     Create a summary of selected columns of a file
     Possible return types:
         md = markdown formatted table,
         dict = raw parsing dict,
         report = Indented_text_report
+    * fp
+        Path to the file to be parsed
+    * colrange
+        a list of column index to parse
     """ 
         
     res_dict = OrderedDict()
     
-    with open(file, "r") as f:
+    with open(fp, "r") as f:
         # Manage the first line
         first_line = False
         header_found = False
@@ -306,7 +310,6 @@ def colsum (file, colrange=None, separator="", header=False, ignore_hashtag_line
                 buffer+= dict_to_md(col_dict, colnum, "Count", transpose=True, sort_by_val=True, max_items=max_items)
             buffer+='\n'
         return buffer
-        
     else:
         print ("Invalid return type")
 
@@ -869,7 +872,7 @@ def reformat_table(
             
             # Fill the dataframe if needed
             if return_df:
-                df.loc[len(df)]= _reformat_list (val_dict=clean_val, template=final_template)
+                df.at[len(df)]= _reformat_list (val_dict=clean_val, template=final_template)
             
             # Recompose the line and write in file if needed
             if output_file:
@@ -1155,3 +1158,83 @@ def print_arg():
             print("Unnamed positional arguments list:")
             for i in args[posname]:
                 print("\t{}".format(i))
+
+##~~~~~~~ SSH TOOLS ~~~~~~~#
+
+def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, ssh_config="~/.ssh/config"):
+    """
+    Copy a file over ssh in a target remote directory
+    * hostname
+        Name of the host ssh server 
+    * username
+        name of the user
+    * rsa_private_key
+        path to the rsa private key
+    * local_file
+        path to the local file
+    * remote_dir
+        path to the target directory
+    * ssh_config
+        use as an alternative method instead of giving the username and rsa_private_key. Will fetch them from the config file directly
+    """
+    # function import
+    import paramiko
+    
+    if not username or not rsa_private_key:
+        print ("Parse the ssh config file")
+        ssh_config = path.expanduser(ssh_config)
+        # Find host in the host list of the ssh config file
+        with open (ssh_config) as conf:
+            host_dict = OrderedDict()
+            host=None
+            for line in conf:
+                if not line.startswith("#"): 
+                    if line.startswith("Host"):
+                        host = line.strip().split()[1]
+                        host_dict[host] = OrderedDict()
+                    else:
+                        ls = line.strip().split()
+                        if len(ls) == 2: 
+                            host_dict[host][ls[0]]= ls[1]
+        
+        try:
+            username = host_dict[hostname]["User"]
+            rsa_private_key = path.expanduser(host_dict[hostname]["IdentityFile"])
+            hostname = host_dict[hostname]["Hostname"]
+        except KeyError as E:
+            print(E)
+            print('Hostname not found in the config file or config not containing User, IdentityFile and Hostname')
+            raise
+                          
+    # now, connect and use paramiko Transport to negotiate SSH2 across the connection
+    print ('Establishing SSH connection to: {} ...'.format(hostname))
+    with paramiko.Transport(hostname) as t:
+        t.start_client()
+
+        try:
+            key = paramiko.RSAKey.from_private_key_file(rsa_private_key)
+            t.auth_publickey(username, key)
+            print ('... Success!')
+
+        except Exception as e:
+            print ('... Failed loading {}'.format(rsa_private_key))
+
+        assert t.is_authenticated(), 'RSA key auth failed!'
+        
+        sftp = t.open_session()
+        sftp = paramiko.SFTPClient.from_transport(t)
+        
+        if remote_dir.startswith ("~"):
+            remote_dir = "."+remote_dir[1:]
+        
+        try:
+            sftp.mkdir(remote_dir)
+            print ('Create directory {}'.format(remote_dir))
+        except IOError as e:
+            print ('Assuming {} exists'.format(remote_dir))
+
+        remote_file = remote_dir + '/' + path.basename(local_file)
+
+        print ('Copying local file from {} to {}:{}'.format(local_file, hostname, remote_file))
+        sftp.put(local_file, remote_file)
+        print ('All operations complete!')
