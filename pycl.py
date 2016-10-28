@@ -357,7 +357,7 @@ def mkdir(fp, level=1):
     if cur_path:
         _mkdir(cur_path)
     
-    # If the path is longer than the current level cpntinue to call mkdir recursively
+    # If the path is longer than the current level continue to call mkdir recursively
     if len(fp.split("/")) > level:
         mkdir(fp, level=level+1)
 
