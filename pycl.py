@@ -193,46 +193,74 @@ def gunzip_file (in_path, out_path=None):
 #~~~~~~~ FILE INFORMATION ~~~~~~~#
             
 def head (file, n=10, ignore_hashtag_line=False):
-    """Emulate linux head cmd. Also works for gzip files"""
+    """Emulate linux head cmd. Handle gziped files"""
     
-    f = gopen(file, "rt") if is_gziped(file) else open (file, "r")
-    
-    line_num = 0
-    while (line_num < n):
-        try:
-            line = next(f)[:-1]
-            if ignore_hashtag_line and line[0] == "#":
-                continue
-            print (line)
-            line_num+=1
+    try:
+        f = gopen(file, "rt") if is_gziped(file) else open (file, "r")
         
-        except StopIteration:
-            print ("Only {} lines in the file".format(line_num))
-            break
-    f.close()
+        line_num = 0
+        while (line_num < n):
+            try:
+                line = next(f)[:-1]
+                if ignore_hashtag_line and line[0] == "#":
+                    continue
+                print (line)
+                line_num+=1
+            
+            except StopIteration:
+                print ("Only {} lines in the file".format(line_num))
+                break
+    # close the file properly
+    finally:
+        try:
+            f.close()
+        except:
+            pass
  
-def linerange (file, range_list=[]):
-    """Print a range of lines in a file according to a list of start end lists"""
+def linerange (fp, range_list=[], line_numbering = True):
+    """
+    Print a range of lines in a file according to a list of start end lists. Handle gziped files
+    * fp
+        Path to the file to be parsed
+    * range_list
+        list of start, end coordinates lists or tuples
+    * line_numbering
+        If True the number of the line will be indicated in front of the line
+    
+    """
+    
     if not range_list:
-        n_line = fastcount(file)
+        n_line = fastcount(fp)
         range_list=[[0,2],[n_line-3, n_line-1]]
     
-    for start, end in (range_list):
-        found_first_line = found_last_line = False
-        with open(file, "r") as f:
-            for n, line in enumerate(f):
-                if n >= start:
-                    found_first_line = True
-                    print ("{}\t{}".format(n, line[0:-1]))
-                if n >= end:
-                    found_last_line = True
+    try:
+        f = gopen(fp, "rt") if is_gziped(fp) else open (fp, "r")
+        previous_line_empty = False
+        for n, line in enumerate(f):
+            line_print = False
+            for start, end in range_list:
+                if start <= n <= end:
+                    if line_numbering:
+                        l = "{}\t{}".format(n, line.strip())
+                    else:
+                        l= line.strip()
+                    print (l)
+                    line_print = True
+                    previous_line_empty = False
                     break
-            if found_first_line == False:
-                print ("Start coordinate out of line range: {}".format(start))
-            if found_last_line == False:
-                print ("End coordinate out of line range: {}".format(end))
-            print("")
-
+                    
+            if not line_print:
+                if not previous_line_empty:
+                    print("...")
+                    previous_line_empty = True
+                    
+    # close the file properly
+    finally:
+        try:
+            f.close()
+        except:
+            pass
+    
 def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
     """
     Create a summary of selected columns of a file
@@ -313,28 +341,45 @@ def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=F
     else:
         print ("Invalid return type")
 
-def fastcount(file):
-    """Efficient way to count the number of lines in a file"""
-    f = open(file)                  
-    lines = 0
-    buf_size = 1024 * 1024
-    read_f = f.read # loop optimization
+def fastcount(fp):
+    """Efficient way to count the number of lines in a file. Handle gziped files"""
+    try:
+        f = gopen(fp, "rt") if is_gziped(fp) else open (fp, "r")
+        lines = 0
+        buf_size = 1024 * 1024
+        read_f = f.read # loop optimization
 
-    buf = read_f(buf_size)
-    while buf:
-        lines += buf.count('\n')
         buf = read_f(buf_size)
-    return lines
+        while buf:
+            lines += buf.count('\n')
+            buf = read_f(buf_size)
 
-def simplecount(filename, ignore_hashtag_line=False):
+    # close the file properly
+    finally:
+        try:
+            f.close()
+            return lines
+        except:
+            pass
+    
+def simplecount(fp, ignore_hashtag_line=False):
     """Simple way to count the number of lines in a file with more options"""
     lines = 0
-    for line in open(filename):
-        if ignore_hashtag_line and line[0] == "#":
-            continue
-        lines += 1
-    return lines
-
+    try:
+        f = gopen(fp, "rt") if is_gziped(fp) else open (fp, "r")
+    
+        for line in f:
+            if ignore_hashtag_line and line[0] == "#":
+                continue
+            lines += 1
+            
+    # close the file properly
+    finally:
+        try:
+            f.close()
+            return lines
+        except:
+            pass
 
 #~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
   
