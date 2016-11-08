@@ -47,7 +47,7 @@ def toogle_code():
 def larger_display (percent=100):
     """
     Resize the area of the screen containing the notebook according to a given percentage of the available width 
-    @param  percent percentage of the width of the screen to use [DEFAULT:100]
+    *  percent percentage of the width of the screen to use [DEFAULT:100]
     """
     # notebook display functions
     from IPython.core.display import display, HTML
@@ -118,8 +118,10 @@ def rm_blank (name, replace=""):
 def copyFile(src, dest):
     """
     Copy a single file to a destination file or folder (with error handling/reporting)
-    @param src Source file path
-    @param dest Path of the folder where to copy the source file
+    * src
+        Source file path
+    * dest
+        Path of the folder where to copy the source file
     """
     try:
         shutilCopy(src, dest)
@@ -132,9 +134,11 @@ def copyFile(src, dest):
 
 def gzip_file (in_path, out_path=None):
     """
-    @param in_path Path of the input uncompressed file
-    @param out_path Path of the output compressed file (facultative)
-    @exception  OSError Can be raise by open
+    gzip a file
+    * in_path
+        Path of the input uncompressed file
+    * out_path
+        Path of the output compressed file (facultative)
     """
     # Generate a automatic name if none is given
     if not out_path:
@@ -162,9 +166,11 @@ def gzip_file (in_path, out_path=None):
 
 def gunzip_file (in_path, out_path=None):
     """
-    @param in_path Path of the input compressed file
-    @param out_path Path of the output uncompressed file (facultative)
-    @exception  OSError Can be raise by open
+    ungzip a file
+    * in_path
+        Path of the input compressed file
+    * out_path
+        Path of the output uncompressed file (facultative)
     """
     # Generate a automatic name without .gz extension if none is given
     if not out_path:
@@ -264,14 +270,21 @@ def linerange (fp, range_list=[], line_numbering = True):
 def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
     """
     Create a summary of selected columns of a file
-    Possible return types:
-        md = markdown formatted table,
-        dict = raw parsing dict,
-        report = Indented_text_report
     * fp
         Path to the file to be parsed
     * colrange
-        a list of column index to parse
+        A list of column index to parse
+    * separator
+        A character or a list of characters to split the lines 
+    * ignore_hashtag_line
+        skip line starting with a # symbol
+    * max_items
+        maximum item per line
+    * ret_type
+        Possible return types:
+        md = markdown formatted table,
+        dict = raw parsing dict,
+        report = Indented_text_report
     """ 
         
     res_dict = OrderedDict()
@@ -388,10 +401,10 @@ def mkdir(fp, level=1):
     Reproduce the ability of UNIX "mkdir -p" command
     (ie if the path already exits no exception will be raised).
     Can create nested directories by recursivity
-    @param  fp path name where the folder should be created
-    @level  level   level in the path where to start to create the directories.
-                    Used by the program for the recursive creation of directories
-    @exception  OSError or PermissionError can be raise by os.mkdir
+    * fp
+        path name where the folder should be created
+    *level
+        level in the path where to start to create the directories. Used by the program for the recursive creation of directories
     """
         
     # Extract the path corresponding to the current level of subdirectory and create it if needed
@@ -418,13 +431,15 @@ def _mkdir (fp):
 
 def make_cmd_str(prog_name, opt_dict={}, opt_list=[]):
     """
-    Create a Unix like command line string from a
-    @param prog_name Name (if added to the system path) or path of the program
-    @param opt_dict Dictionary of option arguments such as "-t 5". The option flag have to
-    be the key (without "-") and the the option value in the dictionary value. If no value is
-    requested after the option flag "None" had to be assigned to the value field.
-    @param opt_list List of simple command line arguments
-    @exemple make_cmd_str("bwa", {"b":None, t":6, "i":"../idx/seq.fa"}, ["../read1", "../read2"])
+    Create a Unix like command line string from the prog name, a dict named arguments and a list of unmammed arguments
+    exemple make_cmd_str("bwa", {"b":None, t":6, "i":"../idx/seq.fa"}, ["../read1", "../read2"])
+    * prog_name
+        Name (if added to the system path) or path of the program
+    * opt_dict
+        Dictionary of option arguments such as "-t 5". The option flag have to be the key (without "-") and the the option value in the
+        dictionary value. If no value is requested after the option flag "None" had to be assigned to the value field.
+    * opt_list
+        List of simple command line arguments
     """
     
     # Start the string by the name of the program
@@ -454,70 +469,24 @@ def bash_basic(cmd):
     print (stderr.decode())
 
 
-def bash(cmd, stdin=None, ret_stderr=False, ret_stdout=True, str_output=True):
+def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=None, print_stderr=True, ret_stderr=False, log_stderr=None):
     """
-    Run a command line in the default shell and return the standard output
-    @param  cmd A command line string formatted as a string
-    @param  stdinput    Facultative parameters to redirect an object to the standard input
-    @param  ret_stderr  If True the standard error output will be returned
-    @param  ret_stdout  If True the standard output will be returned
-    @param  str_output  Transform the std output in a string instead of the bytes-like object
-    @note If ret_stderr and ret_stdout are True a tuple will be returned and if both are False
-    None will be returned
-    @return If no standard error return the standard output as a string
-    @exception  OSError Raise if a message is return on the standard error output
-    @exception  (ValueError,OSError) May be raise by Popen
-    """
-
-    # Execute the command line in the default shell
-    if stdin:
-        proc = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = proc.communicate(input=stdin)
-    else:
-        proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = proc.communicate()
-
-    if proc.returncode >= 1:
-        msg = "An error occured during execution of following command :\n"
-        msg += "COMMAND : {}\n".format(cmd)
-        msg += "STDERR : {}\n".format(stderr.decode())
-        print (msg)
-        return None
-
-    # Else return data according to user choices is returned
-    if str_output:
-        if ret_stdout and ret_stderr:
-            return stdout.decode(), stderr.decode()
-        elif ret_stdout:
-            return stdout.decode()
-        elif ret_stderr:
-            return stderr.decode()
-        
-    else:
-        if ret_stdout and ret_stderr:
-            return stdout, stderr
-        elif ret_stdout:
-            return stdout
-        elif ret_stderr:
-            return stderrOrderedDict
-   
-    # Last possibility
-    return None
-
-
-def bash_live(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=None, print_stderr=True, ret_stderr=False, log_stderr=None):
-    """
-    More advanced verssion of bash calling with live printing of the standard output and possibilities to log the redirect
-    the output and error as a string return or directly in files.
-    @param  cmd A command line string formatted as a string
-    @param  print_stdout    If True the standard output will be LIVE printed through the system standard output stream
-    @param  ret_stdout      If True the standard output will be returned as a string
-    @param  log_stdout      If a filename is given, the standard output will logged in this file
-    @param  print_stderr    If True the standard error will be printed through the system standard error stream
-    @param  ret_stderr      If True the standard error will be returned as a string
-    @param  log_stderr      If a filename is given, the standard error will logged in this file 
-    @note If ret_stderr and ret_stdout are True a tuple will be returned and if both are False None will be returned
-    @exception  (ValueError,OSError) May be raise by Popen
+    More advanced version of bash calling with live printing of the standard output and possibilities to log the redirect
+    the output and error as a string return or directly in files. If ret_stderr and ret_stdout are True a tuple will be returned and if
+    both are False None will be returned
+    * cmd A command line string formatted as a string
+    * print_stdout
+        If True the standard output will be LIVE printed through the system standard output stream
+    * ret_stdout
+        If True the standard output will be returned as a string
+    * log_stdout
+        If a filename is given, the standard output will logged in this file
+    * print_stderr
+        If True the standard error will be printed through the system standard error stream
+    * ret_stderr
+        If True the standard error will be returned as a string
+    * log_stderr
+        If a filename is given, the standard error will logged in this file 
     """
     
     #empty str buffer
@@ -584,6 +553,37 @@ def bash_live(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdou
         return stderr_str
     return None
 
+
+def bash_update(cmd, update_freq=1):
+    """
+    FOR JUPYTER NOTEBOOK
+    Run a bash command and print the output in the cell. The output is updated each time until the output is None.
+    This is suitable for monitoring tasks that log events until there is nothing else to print such as bjobs or bpeeks.    
+    * cmd
+        A command line string formatted as a string
+    * update_freq
+        The frequency of output updating in seconds [DEFAULT: 1]
+    """
+
+    # imports
+    from time import sleep
+    from IPython.display import clear_output
+
+    # Init stdout buffer
+    stdout_prev= "" 
+
+    # Loop and update the line is something changes
+    while True:
+        stdout = bash(cmd, ret_stderr=False, ret_stdout=True, print_stderr=False, print_stdout=False)
+        if stdout != stdout_prev:
+            clear_output()
+            print (stdout)
+            stdout_prev = stdout
+        if not stdout:
+            print("All done")
+            break
+        
+        sleep(update_freq)
 
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
 
@@ -752,37 +752,52 @@ def reformat_table(
     Reformat a table given an initial and a final line templates indicated as a list where numbers
     indicate the data column and strings the formatting characters
     
-    @param  input_file   A file with a structured text formatting (gzipped or not)
-    @param  output_file   A file path to output the reformatted table (if empty will not write in a file)
-    @param  return_df   If true will return a pandas dataframe containing the reformated table (Third party pandas package required)
-            by default the columns will be names after the final template [DEFAULT:False]
-    @param  init_template   A list of indexes and separators describing the structure of the input file
+    *  input_file
+        A file with a structured text formatting (gzipped or not)
+    *  output_file
+        A file path to output the reformatted table (if empty will not write in a file)
+    *  return_df
+        If true will return a pandas dataframe containing the reformated table (Third party pandas package required) by default the columns
+        will be names after the final template [DEFAULT:False]
+    *  init_template
+        A list of indexes and separators describing the structure of the input file
             Example initial line = "chr1    631539    631540    Squires|id1    0    +"
             Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
             Alternatively, instead of the numbers, string indexes can be used, but they need to be enclosed in curly brackets to
             differentiate them from the separators. This greatly simplify the writing of the final template.
             Example initial line = "chr1    631539    631540    Squires|id1    0    +"
             Initial template = ["{chrom}","\t","{start}","\t","{end}","|","{name}","\t","{score}","\t","{strand}"]
-    @param  final_template  A list of indexes and separators describing the required structure of the output file. Name indexes need to 
-            match indexes of the init_template and have to follow the same synthax  [DEFAULT:Same that init template]
+    *  final_template
+        A list of indexes and separators describing the required structure of the output file. Name indexes need to match indexes of the
+        init_template and have to follow the same synthax  [DEFAULT:Same that init template]
             Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
             Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
-    @param  header   A string to write as a file header at the beginning of the file
-    @param  keep_original_header   If True the original header of the input file will be copied at the beginning of the output file [DEFAULT:True]
-    @param  header_from_final_template  Generate a header according to the name or number of the fields given in the final_template [DEFAULT:True]
-    @param  replace_internal_space  All internal blank space will be replaced by this character [DEFAULT:"_"]
-    @param  replace_null_val   Field with no value will be replaced by this character [DEFAULT:"*"]
-    @param  subst_dict   Nested dictionary of substitution per position to replace specific values by others [DEFAULT:None]
+    *  header
+        A string to write as a file header at the beginning of the file
+    *  keep_original_header
+        If True the original header of the input file will be copied at the beginning of the output file [DEFAULT:True]
+    *  header_from_final_template
+        Generate a header according to the name or number of the fields given in the final_template [DEFAULT:True]
+    *  replace_internal_space
+        All internal blank space will be replaced by this character [DEFAULT:"_"]
+    *  replace_null_val
+        Field with no value will be replaced by this character [DEFAULT:"*"]
+    *  subst_dict
+        Nested dictionary of substitution per position to replace specific values by others [DEFAULT:None]
             Example: { 0:{"chr1":"1","chr2":"2"}, 3:{"Squires":"5376774764","Li":"27664684"}}
-    @param  filter_dict  A dictionary of list per position  to filter out lines  with specific values [DEFAULT:None]
+    *  filter_dict
+        A dictionary of list per position  to filter out lines  with specific values [DEFAULT:None]
             Example: { 0:["chr2", "chr4"], 1:["46767", "87765"], 5:["76559", "77543"]}
-    @param  predicate   A lambda predicate function for more advance filtering operations [DEFAULT:None]
+    *  predicate
+        A lambda predicate function for more advance filtering operations [DEFAULT:None]
             Example:  lambda val_dict: abs(int(val_dict[1])-int(val_dict[2])) <= 2000
-    @param  standard_template   Existing standard template to parse the file  instead of providing one manually. List of saved templates:
+    *  standard_template
+        Existing standard template to parse the file  instead of providing one manually. List of saved templates:
         - "gff3_ens_gene" = Template for ensembl gff3 fields. Select only the genes lines and decompose to individual elements.
         - "gff3_ens_transcript" = Template for ensembl gff3 fields. Select only the transcript lines and decompose to individual elements.
         - "gtf_ens_gene" = Template for ensembl gft fields. Select only the genes lines and decompose to individual elements
-    @param verbose If True will print detailed information [DEFAULT:False]
+    * verbose
+        If True will print detailed information [DEFAULT:False]
     """
     
     if verbose:
@@ -1099,9 +1114,12 @@ def url_exist (url):
 def wget(url, out_name="", progress_block=100000000):
     """
     Download a file from an URL to a local storage.
-    @param  url             A internet URL pointing to the file to download
-    @param  outname         Name of the outfile where (facultative)
-    @param  progress_block  size of the byte block for the progression of the download
+    *  url
+        A internet URL pointing to the file to download
+    *  outname
+        Name of the outfile where (facultative)
+    *  progress_block
+        size of the byte block for the progression of the download
     """
     
     def size_to_status (size):
