@@ -23,6 +23,7 @@ import gzip
 
 def toogle_code():
     """
+    FOR JUPYTER NOTEBOOK ONLY
     Hide code with a clickable link in a jupyter notebook
     """
     # notebook display functions
@@ -46,6 +47,7 @@ def toogle_code():
 
 def larger_display (percent=100):
     """
+    FOR JUPYTER NOTEBOOK ONLY
     Resize the area of the screen containing the notebook according to a given percentage of the available width 
     *  percent percentage of the width of the screen to use [DEFAULT:100]
     """
@@ -54,6 +56,43 @@ def larger_display (percent=100):
     
     # resizing
     display(HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent)))
+    
+def jprint(text, **kwargs):
+    """
+    FOR JUPYTER NOTEBOOK ONLY
+    Format a string in HTML and print the output. Equivalent of print, but highly customizable
+    Many options can be passed to the function.
+    Boolean options : bold, italic, highlight, underlined, striked, subscripted, superscripted
+    String oprions: font, color, size, align, background_color
+    """
+    # notebook display functions
+    from IPython.core.display import display, HTML
+    
+    # Replace new lines and tab by their html equivalent
+    s = text.replace("\n", "<br>").replace("\t", "&emsp;")
+    
+    # For boolean options
+    if "bold" in kwargs and kwargs["bold"]: s = "<b>{}</b>".format(s)
+    if "italic" in kwargs and kwargs["italic"]: s = "<i>{}</i>".format(s)
+    if "highlight" in kwargs and kwargs["highlight"]: s = "<mark>{}</mark>".format(s)
+    if "underlined" in kwargs and kwargs["underlined"]: s = "<ins>{}</ins>".format(s)
+    if "striked" in kwargs and kwargs["striked"]: s = "<del>{}</del>".format(s)
+    if "subscripted" in kwargs and kwargs["subscripted"]: s = "<sub>{}</sub>".format(s)
+    if "superscripted" in kwargs and kwargs["superscripted"]: s = "<sup>{}</sup>".format(s)
+    
+    # for style options
+    style=""
+    if "font" in kwargs and kwargs["font"]: style+= "font-family:{};".format(kwargs["font"])
+    if "color" in kwargs and kwargs["color"]: style+= "color:{};".format(kwargs["color"])
+    if "size" in kwargs and kwargs["size"]: style+= "font-size:{}%;".format(kwargs["size"])
+    if "align" in kwargs and kwargs["align"]: style+= "text-align:{};".format(kwargs["align"])
+    if "background_color" in kwargs and kwargs["background_color"]: style+= "background-color:{};".format(kwargs["background_color"])
+    
+    # Format final string
+    if style: s = "<p style=\"{}\">{}</p>".format(style,s)
+    else: s = "<p>{}</p>".format(s)
+        
+    display(HTML(s))
 
 #~~~~~~~ PREDICATES ~~~~~~~#
 
