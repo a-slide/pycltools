@@ -57,19 +57,26 @@ def larger_display (percent=100):
     # resizing
     display(HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent)))
     
-def jprint(text, **kwargs):
+def jprint(*args, **kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
     Format a string in HTML and print the output. Equivalent of print, but highly customizable
     Many options can be passed to the function.
-    Boolean options : bold, italic, highlight, underlined, striked, subscripted, superscripted
-    String oprions: font, color, size, align, background_color
+    * args
+        One or several objects that can be cast in str
+    ** kwargs
+        Formatting options to tweak the html rendering 
+        Boolean options : bold, italic, highlight, underlined, striked, subscripted, superscripted
+        String oprions: font, color, size, align, background_color
     """
     # notebook display functions
     from IPython.core.display import display, HTML
     
+    # Join the different elements together and cast in string 
+    s =  " ".join([str(i) for i in args])
+    
     # Replace new lines and tab by their html equivalent
-    s = text.replace("\n", "<br>").replace("\t", "&emsp;")
+    s = s.replace("\n", "<br>").replace("\t", "&emsp;")
     
     # For boolean options
     if "bold" in kwargs and kwargs["bold"]: s = "<b>{}</b>".format(s)
