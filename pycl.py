@@ -28,10 +28,10 @@ def toogle_code():
     """
     # notebook display functions
     from IPython.core.display import display, HTML
-    
+
     display(HTML(
     '''<script>
-    code_show=true; 
+    code_show=true;
     function code_toggle() {
      if (code_show){
      $('div.input').hide();
@@ -39,7 +39,7 @@ def toogle_code():
      $('div.input').show();
      }
      code_show = !code_show
-    } 
+    }
     $( document ).ready(code_toggle);
     </script>
     <b><a href="javascript:code_toggle()">Toggle on/off the raw code</a></b>''')
@@ -48,15 +48,15 @@ def toogle_code():
 def larger_display (percent=100):
     """
     FOR JUPYTER NOTEBOOK ONLY
-    Resize the area of the screen containing the notebook according to a given percentage of the available width 
+    Resize the area of the screen containing the notebook according to a given percentage of the available width
     *  percent percentage of the width of the screen to use [DEFAULT:100]
     """
     # notebook display functions
     from IPython.core.display import display, HTML
-    
+
     # resizing
     display(HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent)))
-    
+
 def jprint(*args, **kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
@@ -65,19 +65,19 @@ def jprint(*args, **kwargs):
     * args
         One or several objects that can be cast in str
     ** kwargs
-        Formatting options to tweak the html rendering 
+        Formatting options to tweak the html rendering
         Boolean options : bold, italic, highlight, underlined, striked, subscripted, superscripted
         String oprions: font, color, size, align, background_color
     """
     # notebook display functions
     from IPython.core.display import display, HTML
-    
-    # Join the different elements together and cast in string 
+
+    # Join the different elements together and cast in string
     s =  " ".join([str(i) for i in args])
-    
+
     # Replace new lines and tab by their html equivalent
     s = s.replace("\n", "<br>").replace("\t", "&emsp;")
-    
+
     # For boolean options
     if "bold" in kwargs and kwargs["bold"]: s = "<b>{}</b>".format(s)
     if "italic" in kwargs and kwargs["italic"]: s = "<i>{}</i>".format(s)
@@ -86,7 +86,7 @@ def jprint(*args, **kwargs):
     if "striked" in kwargs and kwargs["striked"]: s = "<del>{}</del>".format(s)
     if "subscripted" in kwargs and kwargs["subscripted"]: s = "<sub>{}</sub>".format(s)
     if "superscripted" in kwargs and kwargs["superscripted"]: s = "<sup>{}</sup>".format(s)
-    
+
     # for style options
     style=""
     if "font" in kwargs and kwargs["font"]: style+= "font-family:{};".format(kwargs["font"])
@@ -94,11 +94,11 @@ def jprint(*args, **kwargs):
     if "size" in kwargs and kwargs["size"]: style+= "font-size:{}%;".format(kwargs["size"])
     if "align" in kwargs and kwargs["align"]: style+= "text-align:{};".format(kwargs["align"])
     if "background_color" in kwargs and kwargs["background_color"]: style+= "background-color:{};".format(kwargs["background_color"])
-    
+
     # Format final string
     if style: s = "<p style=\"{}\">{}</p>".format(style,s)
     else: s = "<p>{}</p>".format(s)
-        
+
     display(HTML(s))
 
 #~~~~~~~ PREDICATES ~~~~~~~#
@@ -119,10 +119,10 @@ def file_basename (path):
     return path.rpartition('/')[2].partition('.')[0]
 
 def file_extension (path):
-    """ Return The extension of a file in lower-case. If archived file ("gz", "zip", "xz", "bz2") 
+    """ Return The extension of a file in lower-case. If archived file ("gz", "zip", "xz", "bz2")
     the method will output the base extension + the archive extension"""
     split_name = path.split("/")[-1].split(".")
-    # No extension ? 
+    # No extension ?
     if len (split_name) == 1:
         return ""
     # Manage compressed files
@@ -131,10 +131,10 @@ def file_extension (path):
     # Normal situation = return the last element of the list
     else:
         return ".{}".format(split_name[-1]).lower()
-    
+
 def file_name (path):
     """ Return The complete name of a file with the extension but without folder location """
-    return path.rpartition("/")[2]    
+    return path.rpartition("/")[2]
 
 def dir_name (path):
     """ Return the complete path where is located the file without the file name """
@@ -143,17 +143,17 @@ def dir_name (path):
 ##~~~~~~~ STRING FORMATTING ~~~~~~~#
 
 def supersplit (string, separator=""):
-    """like split but can take a list of separators instead of a simple separator """    
+    """like split but can take a list of separators instead of a simple separator """
     if not separator:
         return string.split()
-    
+
     if type(separator) == str:
         return string.split(separator)
-    
+
     for sep in separator:
         string = string.replace(sep, "#")
     return string.split("#")
-    
+
 def rm_blank (name, replace=""):
     """ Replace blank spaces in a name by a given character (default = remove)
     Blanks at extremities are always removed and nor replaced """
@@ -243,13 +243,13 @@ def gunzip_file (in_path, out_path=None):
                 print ("Can't remove {}".format(out_path))
 
 #~~~~~~~ FILE INFORMATION ~~~~~~~#
-            
+
 def head (file, n=10, ignore_hashtag_line=False):
     """Emulate linux head cmd. Handle gziped files"""
-    
+
     try:
         f = gopen(file, "rt") if is_gziped(file) else open (file, "r")
-        
+
         line_num = 0
         while (line_num < n):
             try:
@@ -258,7 +258,7 @@ def head (file, n=10, ignore_hashtag_line=False):
                     continue
                 print (line)
                 line_num+=1
-            
+
             except StopIteration:
                 print ("Only {} lines in the file".format(line_num))
                 break
@@ -268,7 +268,7 @@ def head (file, n=10, ignore_hashtag_line=False):
             f.close()
         except:
             pass
- 
+
 def linerange (fp, range_list=[], line_numbering = True):
     """
     Print a range of lines in a file according to a list of start end lists. Handle gziped files
@@ -278,13 +278,13 @@ def linerange (fp, range_list=[], line_numbering = True):
         list of start, end coordinates lists or tuples
     * line_numbering
         If True the number of the line will be indicated in front of the line
-    
+
     """
-    
+
     if not range_list:
         n_line = fastcount(fp)
         range_list=[[0,2],[n_line-3, n_line-1]]
-    
+
     try:
         f = gopen(fp, "rt") if is_gziped(fp) else open (fp, "r")
         previous_line_empty = False
@@ -300,19 +300,63 @@ def linerange (fp, range_list=[], line_numbering = True):
                     line_print = True
                     previous_line_empty = False
                     break
-                    
+
             if not line_print:
                 if not previous_line_empty:
                     print("...")
                     previous_line_empty = True
-                    
+
     # close the file properly
     finally:
         try:
             f.close()
         except:
             pass
-    
+
+def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="#", sep="\t"):
+    """
+    Count unique occurences in a specific column of a tabulated file
+    * fp
+        Path to the file to be parsed (gzipped or not)
+    * colnum
+        Index number of the column to summarize
+    * select_values
+        Select specific lines in the file based on a dictionary containing column index(es) and valu(es) or list
+        of values to select. Exemple {2:["exon", "transcript"], 4:"lincRNA"}. DEFAULT=None
+    * drop_values
+        Same think that select_value but will drop the lines instead. DEFAULT=None
+    * skip_comment
+        Drop any comment lines starting with this character. DEFAULT="#"
+    * sep
+        Character or list of characters to use in order to split the lines. Exemple ["\t",";"]. DEFAULT="\t"
+    """
+    import pandas as pd
+
+    # Transform separator in regular expression if needed
+    if type (sep) == list:
+        sep = "[{}]".format("".join(sep))
+        engine='python'
+    else:
+        engine='c'
+
+    df = pd.read_csv(fp, sep=sep, index_col=False, header=None, comment=skip_comment, engine=engine)
+
+    if select_values:
+        for i, j in select_values.items():
+            if type(j) == str:
+                df = df[(df[i] == j)]
+            if type(j) == list:
+                df = df[(df[i].isin(j))]
+
+    if drop_values:
+        for i, j in drop_values.items():
+            if type(j) == str:
+                df = df[(df[i] != j)]
+            if type(j) == list:
+                df = df[(~df[i].isin(j))]
+
+    return df.groupby(colnum).size().sort_values(ascending=False)
+
 def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
     """
     Create a summary of selected columns of a file
@@ -321,7 +365,7 @@ def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=F
     * colrange
         A list of column index to parse
     * separator
-        A character or a list of characters to split the lines 
+        A character or a list of characters to split the lines
     * ignore_hashtag_line
         skip line starting with a # symbol
     * max_items
@@ -331,21 +375,21 @@ def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=F
         md = markdown formatted table,
         dict = raw parsing dict,
         report = Indented_text_report
-    """ 
-        
+    """
+
     res_dict = OrderedDict()
-    
+
     with open(fp, "r") as f:
         # Manage the first line
         first_line = False
         header_found = False
         while not first_line:
-            
+
             line = next(f)
 
             if ignore_hashtag_line and line[0] == "#":
                 continue
-            
+
             # Split the first line
             ls = supersplit(line, separator)
 
@@ -356,12 +400,12 @@ def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=F
                 header_found = True
                 #print("Header found")
                 continue
-                
-            # Get the number of col if not given and handle the first line            
+
+            # Get the number of col if not given and handle the first line
             if not colrange:
                 colrange = [i for i in range(len(ls))]
                 #print("Found {} colums".format(len(ls)))
-                
+
             # Manage the first valid line
             #print("First line found")
             for colnum in colrange:
@@ -369,7 +413,7 @@ def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=F
                 val = ls[colnum].strip()
                 res_dict[colnum][val]=1
             first_line = True
-        
+
         # Continue to read and parse the lines
         for line in f:
             ls = supersplit(line, separator)
@@ -379,11 +423,11 @@ def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=F
                     res_dict[colnum][val] = 0
                 res_dict[colnum][val]+=1
 
-    # Return directly the whole dict            
+    # Return directly the whole dict
     if ret_type == "dict":
         return res_dict
-    
-    # Return an indented text report 
+
+    # Return an indented text report
     if ret_type == "report":
         return dict_to_report(res_dict, tab="\t", sep="\t", sort_dict=True, max_items=max_items)
 
@@ -420,18 +464,18 @@ def fastcount(fp):
             return lines
         except:
             pass
-    
+
 def simplecount(fp, ignore_hashtag_line=False):
     """Simple way to count the number of lines in a file with more options"""
     lines = 0
     try:
         f = gopen(fp, "rt") if is_gziped(fp) else open (fp, "r")
-    
+
         for line in f:
             if ignore_hashtag_line and line[0] == "#":
                 continue
             lines += 1
-            
+
     # close the file properly
     finally:
         try:
@@ -441,7 +485,7 @@ def simplecount(fp, ignore_hashtag_line=False):
             pass
 
 #~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
-  
+
 def mkdir(fp, level=1):
     """
     Reproduce the ability of UNIX "mkdir -p" command
@@ -452,7 +496,7 @@ def mkdir(fp, level=1):
     *level
         level in the path where to start to create the directories. Used by the program for the recursive creation of directories
     """
-        
+
     # Extract the path corresponding to the current level of subdirectory and create it if needed
     fp = path.abspath(fp)
     split_path = fp.split("/")
@@ -460,7 +504,7 @@ def mkdir(fp, level=1):
     cur_path = "/".join(split_path[0:level])
     if cur_path:
         _mkdir(cur_path)
-    
+
     # If the path is longer than the current level continue to call mkdir recursively
     if len(fp.split("/")) > level:
         mkdir(fp, level=level+1)
@@ -487,7 +531,7 @@ def make_cmd_str(prog_name, opt_dict={}, opt_list=[]):
     * opt_list
         List of simple command line arguments
     """
-    
+
     # Start the string by the name of the program
     cmd = "{} ".format(prog_name)
 
@@ -532,19 +576,19 @@ def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=Non
     * ret_stderr
         If True the standard error will be returned as a string
     * log_stderr
-        If a filename is given, the standard error will logged in this file 
+        If a filename is given, the standard error will logged in this file
     """
-    
+
     #empty str buffer
     stdout_str = ""
     stderr_str = ""
-    
+
     # First execute the command parse the output
     proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-    
+
     # Only 1 standard stream can be output at the time stdout or stderr
     while proc.poll() is None:
-        
+
         # Live parse stdout
         if live == "stdout":
             for line in iter(proc.stdout.readline, b''):
@@ -552,7 +596,7 @@ def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=Non
                     sys.stdout.write(line)
                 if ret_stdout or log_stdout:
                     stdout_str += line.decode()
-                            
+
         # Live parse stderr
         elif live == "stderr":
             for line in iter(proc.stderr.readline, b''):
@@ -560,20 +604,20 @@ def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=Non
                     sys.stderr.write(line)
                 if ret_stderr or log_stderr:
                     stderr_str += line.decode()
-            
+
     # Verify that the command was successful and if not print error message and raise an exception
     if proc.returncode >= 1:
         sys.stderr.write("Error code #{} during execution of the command : {}\n".format(proc.returncode, cmd))
         sys.stderr.write(proc.stderr.read())
         return None
-    
+
     if live != "stdout" and (print_stdout or ret_stdout or log_stdout):
         for line in iter(proc.stdout.readline, b''):
             if print_stdout:
                 sys.stdout.write(line)
             if ret_stdout or log_stdout:
                 stdout_str += line.decode()
-    
+
     if live != "stderr" and (print_stderr or ret_stderr or log_stderr):
         for line in iter(proc.stderr.readline, b''):
             if print_stderr:
@@ -589,7 +633,7 @@ def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=Non
     if log_stderr:
         with open (log_stderr, "w") as fp:
             fp.write(stderr_str)
-            
+
     # Return standard output and err if requested
     if ret_stdout and ret_stderr:
         return (stdout_str, stderr_str)
@@ -604,7 +648,7 @@ def bash_update(cmd, update_freq=1):
     """
     FOR JUPYTER NOTEBOOK
     Run a bash command and print the output in the cell. The output is updated each time until the output is None.
-    This is suitable for monitoring tasks that log events until there is nothing else to print such as bjobs or bpeeks.    
+    This is suitable for monitoring tasks that log events until there is nothing else to print such as bjobs or bpeeks.
     * cmd
         A command line string formatted as a string
     * update_freq
@@ -616,7 +660,7 @@ def bash_update(cmd, update_freq=1):
     from IPython.display import clear_output
 
     # Init stdout buffer
-    stdout_prev= "" 
+    stdout_prev= ""
 
     # Loop and update the line is something changes
     while True:
@@ -628,7 +672,7 @@ def bash_update(cmd, update_freq=1):
         if not stdout:
             print("All done")
             break
-        
+
         sleep(update_freq)
 
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
@@ -642,14 +686,14 @@ def dict_to_md (
     sort_by_val=True,
     max_items=None):
     """Def to transform a dict into a markdown formated table"""
-    
+
     # Preprocess dict
     if sort_by_key:
         d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[0])))
-        
+
     if sort_by_val:
         d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
-        
+
     if max_items and len(d)>max_items:
         d2 = OrderedDict()
         n = 0
@@ -660,7 +704,7 @@ def dict_to_md (
                 break
         d2["..."]="..."
         d=d2
-    
+
     # Prepare output
     if transpose:
         buffer = "|{}|".format(key_label)
@@ -673,12 +717,12 @@ def dict_to_md (
         for value in d.values():
             buffer += "{}|".format(value)
         buffer += "\n"
-        
+
     else:
         buffer = "|{}|{}|\n|:---|:---|\n".format(key_label, value_label)
         for key, value in d.items():
             buffer += "|{}|{}|\n".format(key, value)
-    
+
     return buffer
 
 def dict_to_report (
@@ -689,20 +733,20 @@ def dict_to_report (
     sort_dict=True,
     max_items=None):
     """Recursive function to return a text report from nested dict or OrderedDict objects"""
-    
+
     # Preprocess dict
     if sort_dict:
-        
+
         # Verify that all value in the dict are numerical
         all_num = True
         for value in d.values():
             if not type(value) in [int, float]:
                 all_num = False
-        
-        # Sort dict by val only if it contains numerical values       
+
+        # Sort dict by val only if it contains numerical values
         if all_num:
             d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
-            
+
             if max_items and len(d)>max_items:
                 d2 = OrderedDict()
                 n=0
@@ -713,11 +757,11 @@ def dict_to_report (
                         break
                 d2["..."]="..."
                 d=d2
-                    
+
         # Else sort alphabeticaly by key
         else:
             d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
-    
+
     # Prepare output
     report = ""
     for name, value in d.items():
@@ -726,7 +770,7 @@ def dict_to_report (
             report += dict_to_report(value, tab=tab, ntab=ntab+1, sep=sep, sort_dict=sort_dict, max_items=max_items)
         else:
             report += "{}{}{}{}\n".format(tab*ntab, name, sep, value)
-    return report        
+    return report
 
 class dict_to_html(OrderedDict):
     """
@@ -749,10 +793,10 @@ class dict_to_html(OrderedDict):
                 if j > max_row:
                     break
                 self[k1][k2]=v2
-            
+
     def _repr_html_(self):
         html = ["<table width=100%>"]
-        
+
         first_col = False
         for key, val in self.items():
 
@@ -764,7 +808,7 @@ class dict_to_html(OrderedDict):
                     html.append("<td><b>{}</b></td>".format(subkey))
                 first_col = True
                 html.append("</tr>")
-                
+
             # Add row header and values
             html.append("<tr><td><b>{}</b></td>".format(key))
             for subkey in subkeys:
@@ -772,8 +816,8 @@ class dict_to_html(OrderedDict):
             html.append("</tr>")
 
         # End the table
-        html.append("</table>")   
-        
+        html.append("</table>")
+
         return ''.join(html)
 
 ##~~~~~~~ TABLE FORMATTING ~~~~~~~#
@@ -797,7 +841,7 @@ def reformat_table(
     """
     Reformat a table given an initial and a final line templates indicated as a list where numbers
     indicate the data column and strings the formatting characters
-    
+
     *  input_file
         A file with a structured text formatting (gzipped or not)
     *  output_file
@@ -845,17 +889,17 @@ def reformat_table(
     * verbose
         If True will print detailed information [DEFAULT:False]
     """
-    
+
     if verbose:
         print_arg()
 
     # Verify if the user provided a standard template and parameter the function accordingly
     # If needed the predicate2 variable will be used to filter the data according to the template
     if standard_template:
-        
+
         if standard_template == "gff3_ens_gene":
             print("Using gff3 ensembl gene template. Non-gene features will be filtered out")
-            
+
             init_template = ["{seqid}","\t","{source}","\t","{type}","\t","{start}","\t","{end}","\t","{score}","\t","{strand}","\t","{phase}",
             "\tID=","{ID}",
             ";gene_id=","{gene_id}",
@@ -864,12 +908,12 @@ def reformat_table(
             ";gene_name=","{gene_name}",
             ";level=","{level}",
             ";havana_gene=","{havana_gene}"]
-                        
+
             predicate2 = lambda v:v["type"]=="gene"
 
         if standard_template == "gtf_ens_gene":
             print("Using gtf ensembl gene template. Non-gene features will be filtered out")
-            
+
             init_template = ["{seqid}","\t","{source}","\t","{type}","\t","{start}","\t","{end}","\t","{score}","\t","{strand}","\t","{phase}",
             "\tgene_id \"","{gene_id}",
             "\"; gene_type \"","{gene_type}",
@@ -877,12 +921,12 @@ def reformat_table(
             "\"; gene_name \"","{gene_name}",
             "\"; level ","{level}",
             "; havana_gene \"","{havana_gene}"]
-                        
+
             predicate2 = lambda v:v["type"]=="gene"
-            
+
         if standard_template == "gff3_ens_transcript":
             print("Using gff3 ensembl transcript template. Non-transcript features will be filtered out")
-            
+
             init_template = ["{seqid}","\t","{source}","\t","{type}","\t","{start}","\t","{end}","\t","{score}","\t","{strand}","\t","{phase}",
             "\tID=","{ID}",
             ";Parent=","{Parent}",
@@ -899,17 +943,17 @@ def reformat_table(
             ";tag=","{tag}",
             ";havana_gene=","{havana_gene}",
             ";havana_transcript=","{havana_transcript}"]
-            
+
             predicate2 = lambda v:v["type"]=="transcript"
-                       
+
     else:
         predicate2 = None
-    
+
     if not final_template:
         if verbose:
             print ("No final template given. Create final template from init template")
         final_template = init_template
-    
+
     # Print the pattern of decomposition and recomposition
     if verbose:
         print ("Initial template values")
@@ -919,18 +963,18 @@ def reformat_table(
 
     #Init counters
     total = fail = success = filtered_out = 0
-    
+
     # Init an empty panda dataframe if required
     if return_df:
         import pandas as pd
         df = pd.DataFrame(columns = _template_to_list(final_template))
-    
+
     # init empty handlers
     infile = outfile = None
     try:
         # open the input file gziped or not
         infile = gopen(input_file, "rt") if input_file[-2:].lower()=="gz" else open(input_file, "r")
-        
+
         # open the output file if required
         if output_file:
             outfile = open (output_file, "wt")
@@ -938,9 +982,9 @@ def reformat_table(
                 outfile.write(header)
             if header_from_final_template:
                 outfile.write(_template_to_str(final_template)+"\n")
-                    
+
         for line in infile:
-            
+
             # Original header lines
             if line[0] == "#":
                 # write in file if required
@@ -948,9 +992,9 @@ def reformat_table(
                       if keep_original_header:
                         outfile.write(line)
                 continue
-                    
+
             total+=1
-            
+
             # Decompose the original line
             try:
                 raw_val = _decompose_line(
@@ -960,8 +1004,8 @@ def reformat_table(
             except AssertionError as E:
                 fail+=1
                 continue
-            
-            # Filter and clean the values 
+
+            # Filter and clean the values
             try:
                 clean_val = _clean_values(
                     val_dict = raw_val,
@@ -975,34 +1019,34 @@ def reformat_table(
             except AssertionError as E:
                 filtered_out+=1
                 continue
-            
+
             # Fill the dataframe if needed
             if return_df:
                 df.at[len(df)]= _reformat_list (val_dict=clean_val, template=final_template)
-            
+
             # Recompose the line and write in file if needed
             if output_file:
                 formated_line = _reformat_line (val_dict=clean_val, template=final_template)
                 outfile.write(formated_line)
-            
+
             success+=1
-    
+
     # Close the files properly
     finally:
         if infile:
             infile.close()
         if outfile:
             outfile.close()
-    
+
     if return_df:
         return df
-    
+
     if verbose:
         print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail".format(total, success, filtered_out, fail))
 
 def _is_str_key (element):
     return type(element)==str and element[0]=="{" and element[-1]=="}"
-    
+
 def _is_str_sep (element):
     return type(element)==str and (element[0]!="{" or element[-1]!="}")
 
@@ -1028,14 +1072,14 @@ def _template_to_list(template):
 
 def _decompose_line(line, template):
     """Helper function for reformat_table. Decompose a line in a dictionnary and extract the values given a template list"""
-    
+
     val_dict = OrderedDict()
-    
+
     # Remove the first element from the line if this is a separator
     if _is_str_sep(template[0]):
         val, sep, line = line.partition(template[0])
         template = template[1:]
-    
+
     # Decompose the line
     last_key = None
     for element in template:
@@ -1052,11 +1096,11 @@ def _decompose_line(line, template):
             val, sep, line = line.partition(element)
             val_dict[last_key] = val
             last_key = None
-    
+
     # Manage last element of the template if it is a key
     if last_key:
         val_dict[last_key] = line
-    
+
     return val_dict
 
 def _clean_values (
@@ -1068,40 +1112,40 @@ def _clean_values (
     predicate=None,
     predicate2=None):
     """Helper function for reformat_table. Clean the extracted values"""
-    
+
     for key in val_dict.keys():
-        # Strip the heading and trailing blank spaces 
+        # Strip the heading and trailing blank spaces
         val_dict[key] = val_dict[key].strip()
-                
+
         # Replace the empty field by a given char
         if replace_null_val and not val_dict[key]:
             val_dict[key] = replace_null_val
-        
+
         # Replace internal spaces by underscores
         if replace_internal_space:
             val_dict[key] = val_dict[key].replace(" ","_")
-        
+
         # Filter line based on the filter_dict
         if key in filter_dict and val_dict[key] in filter_dict[key]:
             return None
-        
+
         # Filter line base on predicate function
         if predicate and not predicate(val_dict):
             return None
-        
+
         # Filter line base on an eventual second predicate function
         if predicate2 and not predicate2(val_dict):
             return None
-        
+
         # Use the substitution dict exept if the value is not in the dict in this case use the default value
         if key in subst_dict and val_dict[key] in subst_dict[key]:
-            val_dict[key] = subst_dict[key][val_dict[key]]    
-    
+            val_dict[key] = subst_dict[key][val_dict[key]]
+
     return val_dict
 
 def _reformat_line (val_dict, template):
     """Helper function for reformat_table. Reassemble a line from a dict of values and a template list"""
-    
+
     line = ""
     try:
         for element in template:
@@ -1111,18 +1155,18 @@ def _reformat_line (val_dict, template):
                 line+=val_dict[element]
             elif _is_str_key(element):
                 line+=val_dict[element[1:-1]]
-            
+
     except IndexError as E:
         print (E)
         print (val_dict)
         print (template)
         raise
-        
+
     return line+"\n"
 
 def _reformat_list (val_dict, template):
     """Helper function for reformat_table. Reassemble a list from a dict of values and a template list"""
-    
+
     l=[]
     try:
         for element in template:
@@ -1130,26 +1174,26 @@ def _reformat_list (val_dict, template):
                 l.append(val_dict[element])
             elif _is_str_key(element):
                 l.append(val_dict[element[1:-1]])
-            
+
     except IndexError as E:
         print (E)
         print (val_dict)
         print (template)
         raise
-        
+
     return l
 
 ##~~~~~~~ WEB TOOLS ~~~~~~~#
 
 def url_exist (url):
     """ Predicate verifying if an url exist without downloading all the link"""
-    
+
     # third party import
     import httplib2
-    
+
     # Chek the url
     h = httplib2.Http()
-    
+
     try:
         resp = h.request(url, 'HEAD')
         return int(resp[0]['status']) < 400
@@ -1167,7 +1211,7 @@ def wget(url, out_name="", progress_block=100000000):
     *  progress_block
         size of the byte block for the progression of the download
     """
-    
+
     def size_to_status (size):
         if size >= 1000000000:
             status = "{} GB".format(round(size/1000000000, 1))
@@ -1178,12 +1222,12 @@ def wget(url, out_name="", progress_block=100000000):
         else :
             status = "{} B".format(size)
         return status
-    
-    # function specific imports 
+
+    # function specific imports
     from urllib.request import urlopen
     from urllib.parse import urlsplit
     from urllib.error import HTTPError, URLError
-    
+
     # Open the url and retrieve info
     try:
         u = urlopen(url)
@@ -1191,17 +1235,17 @@ def wget(url, out_name="", progress_block=100000000):
     except (HTTPError, URLError, ValueError) as E:
         print (E)
         return None
-        
+
     # Attribute a file name if not given
     if not out_name:
         out_name = file_name(path)
         if not out_name:
             out_name = 'output.file'
 
-    # Create the output file and 
+    # Create the output file and
     with open(out_name, 'wb') as fp:
-        
-        # Retrieve file meta information 
+
+        # Retrieve file meta information
         meta = u.info()
         meta_func = meta.getheaders if hasattr(meta, 'getheaders') else meta.get_all
         meta_size = meta_func("Content-Length")
@@ -1211,34 +1255,34 @@ def wget(url, out_name="", progress_block=100000000):
         else:
             file_size=None
             print("Downloading: {}\tSize unknown".format(url))
-        
+
         # Buffered reading of the file to download
         file_size_dl = 0
         block_sz = 1000000
-        
+
         last_pblock = progress_block
         while True:
             buffer = u.read(block_sz)
             if not buffer:
                 break
             fp.write(buffer)
-            
+
             # Progress bar
             file_size_dl += len(buffer)
-            
+
             if file_size_dl >= last_pblock:
                 status = "{} Downloaded".format(size_to_status(file_size_dl))
-                if file_size: 
+                if file_size:
                     status += "\t[{} %]".format (round(file_size_dl*100/file_size, 2))
                 print(status)
                 last_pblock += progress_block
-        
+
         # Final step of the progress bar
         status = "{} Downloaded".format(size_to_status(file_size_dl))
-        if file_size: 
+        if file_size:
             status += "\t[100 %]"
         print(status)
-        
+
     return out_name
 
 ##~~~~~~~ FUNCTIONS TOOLS ~~~~~~~#
@@ -1256,12 +1300,12 @@ def print_arg():
         print("Enumerated named argument list:")
         for i, j in args.items():
             if i != posname and i != kwname:
-                print("\t{}: {}".format(i,j))   
+                print("\t{}: {}".format(i,j))
         # For **kwarg arguments
         if kwname:
             print("Unenumerated named arguments list:")
             for i, j in args[kwname].items():
-                print("\t{}: {}".format(i,j)) 
+                print("\t{}: {}".format(i,j))
         args.update(args.pop(kwname, []))
         if posname:
             print("Unnamed positional arguments list:")
@@ -1274,7 +1318,7 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
     """
     Copy a file over ssh in a target remote directory
     * hostname
-        Name of the host ssh server 
+        Name of the host ssh server
     * username
         name of the user
     * rsa_private_key
@@ -1288,7 +1332,7 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
     """
     # function import
     import paramiko
-    
+
     if not username or not rsa_private_key:
         print ("Parse the ssh config file")
         ssh_config = path.expanduser(ssh_config)
@@ -1297,15 +1341,15 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
             host_dict = OrderedDict()
             host=None
             for line in conf:
-                if not line.startswith("#"): 
+                if not line.startswith("#"):
                     if line.startswith("Host"):
                         host = line.strip().split()[1]
                         host_dict[host] = OrderedDict()
                     else:
                         ls = line.strip().split()
-                        if len(ls) == 2: 
+                        if len(ls) == 2:
                             host_dict[host][ls[0]]= ls[1]
-        
+
         try:
             username = host_dict[hostname]["User"]
             rsa_private_key = path.expanduser(host_dict[hostname]["IdentityFile"])
@@ -1314,7 +1358,7 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
             print(E)
             print('Hostname not found in the config file or config not containing User, IdentityFile and Hostname')
             raise
-                          
+
     # now, connect and use paramiko Transport to negotiate SSH2 across the connection
     print ('Establishing SSH connection to: {} ...'.format(hostname))
     with paramiko.Transport(hostname) as t:
@@ -1329,13 +1373,13 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
             print ('... Failed loading {}'.format(rsa_private_key))
 
         assert t.is_authenticated(), 'RSA key auth failed!'
-        
+
         sftp = t.open_session()
         sftp = paramiko.SFTPClient.from_transport(t)
-        
+
         if remote_dir.startswith ("~"):
             remote_dir = "."+remote_dir[1:]
-        
+
         try:
             sftp.mkdir(remote_dir)
             print ('Create directory {}'.format(remote_dir))
