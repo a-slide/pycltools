@@ -550,14 +550,12 @@ def make_cmd_str(prog_name, opt_dict={}, opt_list=[]):
 
     return cmd
 
-
 def bash_basic(cmd):
     """Sent basic bash command"""
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = process.communicate()
     print (stdout.decode())
     print (stderr.decode())
-
 
 def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=None, print_stderr=True, ret_stderr=False, log_stderr=None):
     """
@@ -643,7 +641,6 @@ def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=Non
         return stderr_str
     return None
 
-
 def bash_update(cmd, update_freq=1):
     """
     FOR JUPYTER NOTEBOOK
@@ -663,17 +660,20 @@ def bash_update(cmd, update_freq=1):
     stdout_prev= ""
 
     # Loop and update the line is something changes
-    while True:
-        stdout = bash(cmd, ret_stderr=False, ret_stdout=True, print_stderr=False, print_stdout=False)
-        if stdout != stdout_prev:
-            clear_output()
-            print (stdout)
-            stdout_prev = stdout
-        if not stdout:
-            print("All done")
-            break
+    try:
+        while True:
+            stdout = bash(cmd, ret_stderr=False, ret_stdout=True, print_stderr=False, print_stdout=False)
+            if stdout != stdout_prev:
+                clear_output()
+                print (stdout)
+                stdout_prev = stdout
+            if not stdout:
+                print("All done")
+                break
 
-        sleep(update_freq)
+            sleep(update_freq)
+    except KeyboardInterrupt:
+        print("Stop monitoring\n")
 
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
 
@@ -1199,7 +1199,6 @@ def url_exist (url):
         return int(resp[0]['status']) < 400
     except:
         return False
-
 
 def wget(url, out_name="", progress_block=100000000):
     """
