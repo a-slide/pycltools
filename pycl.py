@@ -67,7 +67,7 @@ def jprint(*args, **kwargs):
     ** kwargs
         Formatting options to tweak the html rendering
         Boolean options : bold, italic, highlight, underlined, striked, subscripted, superscripted
-        String oprions: font, color, size, align, background_color
+        String oprions: font, color, size, align, background_color, line_height 
     """
     # notebook display functions
     from IPython.core.display import display, HTML
@@ -94,6 +94,7 @@ def jprint(*args, **kwargs):
     if "size" in kwargs and kwargs["size"]: style+= "font-size:{}%;".format(kwargs["size"])
     if "align" in kwargs and kwargs["align"]: style+= "text-align:{};".format(kwargs["align"])
     if "background_color" in kwargs and kwargs["background_color"]: style+= "background-color:{};".format(kwargs["background_color"])
+    if "line_height" in kwargs and kwargs["line_height"]: style+= "line-height:{}px;".format(kwargs["line_height"])
 
     # Format final string
     if style: s = "<p style=\"{}\">{}</p>".format(style,s)
@@ -244,32 +245,7 @@ def gunzip_file (in_path, out_path=None):
 
 #~~~~~~~ FILE INFORMATION ~~~~~~~#
 
-def head (file, n=10, ignore_hashtag_line=False):
-    """Emulate linux head cmd. Handle gziped files"""
-
-    try:
-        f = gopen(file, "rt") if is_gziped(file) else open (file, "r")
-
-        line_num = 0
-        while (line_num < n):
-            try:
-                line = next(f)[:-1]
-                if ignore_hashtag_line and line[0] == "#":
-                    continue
-                print (line)
-                line_num+=1
-
-            except StopIteration:
-                print ("Only {} lines in the file".format(line_num))
-                break
-    # close the file properly
-    finally:
-        try:
-            f.close()
-        except:
-            pass
-
-def linerange (fp, range_list=[], line_numbering = True):
+def linerange (fp, range_list=[], line_numbering=True):
     """
     Print a range of lines in a file according to a list of start end lists. Handle gziped files
     * fp
@@ -296,16 +272,67 @@ def linerange (fp, range_list=[], line_numbering = True):
                         l = "{}\t{}".format(n, line.strip())
                     else:
                         l= line.strip()
-                    print (l)
+                    jprint (l, line_height=10)
                     line_print = True
                     previous_line_empty = False
                     break
 
             if not line_print:
                 if not previous_line_empty:
-                    print("...")
+                    jprint("...", line_height=10)
                     previous_line_empty = True
 
+    # close the file properly
+    finally:
+        try:
+            f.close()
+        except:
+            pass
+
+def cat (fp, max_lines=100, line_numbering=False):
+    """Emulate linux cat cmd but with line cap protection. Handle gziped files"""
+    
+    n_line = fastcount(fp)
+    if n_line <= max_lines:
+        range_list = [[0, n_line-1]]
+    else:
+        range_list=[[0, max_lines/2-1],[n_line-max_lines/2, n_line-1]]
+    linerange (fp=fp, range_list=range_list, line_numbering=line_numbering)
+
+def tail (fp, n=10, line_numbering=False):
+    """Emulate linux tail cmd. Handle gziped files"""
+    
+    n_line = fastcount(fp)
+    if n_line <= n:
+        range_list = [[0, n_line-1]]
+        jprint ("Only {} lines in the file".format(n_line))
+    else:
+        range_list=[[n_line-n, n_line-1]]
+    linerange (fp=fp, range_list=range_list, line_numbering=line_numbering)
+
+def head (fp, n=10, line_numbering=False, ignore_hashtag_line=False):
+    """Emulate linux head cmd. Handle gziped files"""
+
+    try:
+        f = gopen(fp, "rt") if is_gziped(fp) else open (fp, "r")
+
+        line_num = 0
+        while (line_num < n):
+            try:
+                if line_numbering:
+                    l = "{}\t{}".format(line_num, next(f).strip())
+                else:
+                    l= next(f).strip()
+                if ignore_hashtag_line and l[0] == "#":
+                    continue
+                    
+                jprint (l, line_height=10)
+                line_num+=1
+
+            except StopIteration:
+                jprint ("Only {} lines in the file".format(line_num))
+                break
+                
     # close the file properly
     finally:
         try:
