@@ -263,7 +263,7 @@ def gunzip_file (in_path, out_path=None):
             except OSError:
                 print ("Can't remove {}".format(out_path))
 
-#~~~~~~~ FILE INFORMATION ~~~~~~~#
+#~~~~~~~ FILE INFORMATION/PARSING ~~~~~~~#
 
 def linerange (fp, range_list=[], line_numbering=True):
     """

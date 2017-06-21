@@ -13,13 +13,13 @@
                       _/                         
 """
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='pycl',
     version='1.0.dev1',
     description='pycl contains a generic collection of functions and classes for basic file manipulation in python 3',
-    long_description=open('README.md', 'r').read(),
+    long_description=open('README.rst', 'r').read(),
     url='https://github.com/a-slide/pycl',
     author='Adrien Leger',
     author_email='aleg@ebi.ac.uk',
@@ -34,7 +34,6 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6', ],
-
     packages=["pycl"],
     package_dir={'pycl': 'pycl'},
     package_data={'pycl': ['data/*', "test_pycl.ipynb"]},
