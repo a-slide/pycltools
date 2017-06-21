@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
-"""
-@package pycl
-@copyright  [GNU General Public License v2](http://www.gnu.org/licenses/gpl-2.0.html)
-@author     Adrien Leger - 2016
-* <aleg@ebi.ac.uk>
-* [Github](https://github.com/a-slide)
+"""       
+  ___         _ 
+ | _ \_  _ __| |
+ |  _/ || / _| |
+ |_|  \_, \__|_|
+      |__/        
+                                __   __      __  
+ /\  _| _. _ _   |   _ _  _ _    _) /  \ /| /__  
+/--\(_|| |(-| )  |__(-(_)(-|    /__ \__/  | \__) 
+                      _/                         
 """
 
 # Strandard library imports
@@ -18,6 +22,7 @@ import sys
 from collections import OrderedDict
 from subprocess import Popen, PIPE
 import gzip
+from time import sleep
 
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
 
@@ -26,8 +31,13 @@ def toogle_code():
     FOR JUPYTER NOTEBOOK ONLY
     Hide code with a clickable link in a jupyter notebook
     """
-    # notebook display functions
-    from IPython.core.display import display, HTML
+    # Function specific third party import    
+    try:
+        from IPython.core.display import display, HTML    
+    except (NameError, ImportError) as E:
+        print (E)
+        print ("jupyter notebook is required to use this function. Please verify your dependencies")
+        sys.exit()
 
     display(HTML(
     '''<script>
@@ -51,8 +61,13 @@ def larger_display (percent=100):
     Resize the area of the screen containing the notebook according to a given percentage of the available width
     *  percent percentage of the width of the screen to use [DEFAULT:100]
     """
-    # notebook display functions
-    from IPython.core.display import display, HTML
+    # Function specific third party import    
+    try:
+        from IPython.core.display import display, HTML    
+    except (NameError, ImportError) as E:
+        print (E)
+        print ("jupyter notebook is required to use this function. Please verify your dependencies")
+        sys.exit()
 
     # resizing
     display(HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent)))
@@ -69,8 +84,13 @@ def jprint(*args, **kwargs):
         Boolean options : bold, italic, highlight, underlined, striked, subscripted, superscripted
         String oprions: font, color, size, align, background_color, line_height 
     """
-    # notebook display functions
-    from IPython.core.display import display, HTML
+    # Function specific third party import    
+    try:
+        from IPython.core.display import display, HTML    
+    except (NameError, ImportError) as E:
+        print (E)
+        print ("jupyter notebook is required to use this function. Please verify your dependencies")
+        sys.exit()
 
     # Join the different elements together and cast in string
     s =  " ".join([str(i) for i in args])
@@ -357,8 +377,15 @@ def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="
     * sep
         Character or list of characters to use in order to split the lines. Exemple ["\t",";"]. DEFAULT="\t"
     """
-    import pandas as pd
-
+    
+    # Function specific third party import    
+    try:
+        import pandas as pd    
+    except (NameError, ImportError) as E:
+        print (E)
+        print ("pandas is required to use this function. Please verify your dependencies")
+        sys.exit()
+    
     # Transform separator in regular expression if needed
     if type (sep) == list:
         sep = "[{}]".format("".join(sep))
@@ -679,9 +706,13 @@ def bash_update(cmd, update_freq=1):
         The frequency of output updating in seconds [DEFAULT: 1]
     """
 
-    # imports
-    from time import sleep
-    from IPython.display import clear_output
+    # imports    
+    try:
+        from IPython.core.display import clear_output   
+    except (NameError, ImportError) as E:
+        print (E)
+        print ("jupyter notebook is required to use this function. Please verify your dependencies")
+        sys.exit()
 
     # Init stdout buffer
     stdout_prev= ""
@@ -993,7 +1024,14 @@ def reformat_table(
 
     # Init an empty panda dataframe if required
     if return_df:
-        import pandas as pd
+        
+    # Function specific third party import    
+        try:
+            import pandas as pd    
+        except (NameError, ImportError) as E:
+            print (E)
+            print ("pandas is required to use this option. Please verify your dependencies")
+            sys.exit()
         df = pd.DataFrame(columns = _template_to_list(final_template))
 
     # init empty handlers
@@ -1215,8 +1253,13 @@ def _reformat_list (val_dict, template):
 def url_exist (url):
     """ Predicate verifying if an url exist without downloading all the link"""
 
-    # third party import
-    import httplib2
+    # Function specific third party import    
+    try:
+        import httplib2  
+    except (NameError, ImportError) as E:
+        print (E)
+        print ("httplib2 is required to use this function. Please verify your dependencies")
+        sys.exit()
 
     # Chek the url
     h = httplib2.Http()
@@ -1249,7 +1292,7 @@ def wget(url, out_name="", progress_block=100000000):
             status = "{} B".format(size)
         return status
 
-    # function specific imports
+    # Function specific standard lib imports
     from urllib.request import urlopen
     from urllib.parse import urlsplit
     from urllib.error import HTTPError, URLError
@@ -1317,8 +1360,10 @@ def print_arg():
     """
     Print calling function named and unnamed arguments
     """
-    # import the function inspection module
+
+    # Function specific standard lib imports
     from inspect import getargvalues, stack
+    
     # Parse all arg
     posname, kwname, args = getargvalues(stack()[1][0])[-3:]
     # For enumerated named arguments
@@ -1356,8 +1401,13 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
     * ssh_config
         use as an alternative method instead of giving the username and rsa_private_key. Will fetch them from the config file directly
     """
-    # function import
-    import paramiko
+    # Function specific third party import    
+    try:
+        import paramiko
+    except (NameError, ImportError) as E:
+        print (E)
+        print ("paramiko is required to use this function. Please verify your dependencies")
+        sys.exit()
 
     if not username or not rsa_private_key:
         print ("Parse the ssh config file")
