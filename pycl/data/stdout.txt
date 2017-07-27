@@ -1,6 +1,6 @@
-LICENSE
+data
+__init__.py
 __pycache__
 pycl.py
-README.md
-test_data
+pycl.pyc
 test_pycl.ipynb

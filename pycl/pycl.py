@@ -1,85 +1,56 @@
 # -*- coding: utf-8 -*-
 
-"""       
-  ___         _ 
- | _ \_  _ __| |
- |  _/ || / _| |
- |_|  \_, \__|_|
-      |__/        
-                                __   __      __  
- /\  _| _. _ _   |   _ _  _ _    _) /  \ /| /__  
-/--\(_|| |(-| )  |__(-(_)(-|    /__ \__/  | \__) 
-                      _/                         
-"""
-
 # Strandard library imports
-from os import access, R_OK, remove, path
-from os import mkdir as osmkdir
-from gzip import open as gopen
-from shutil import copy as shutilCopy
-from shutil import Error as shutilError
+import os
+import gzip
+import shutil
 import sys
+import gzip
+import warnings
+import time
 from collections import OrderedDict
 from subprocess import Popen, PIPE
-import gzip
-from time import sleep
 
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
 
-def toogle_code():
+def jhelp(function, full=False, **kwargs):
     """
-    FOR JUPYTER NOTEBOOK ONLY
-    Hide code with a clickable link in a jupyter notebook
+    Print a nice looking help string based on the name of a declared function. By default print the function definition and description
+    * function
+        Name of a declared function or class method
+    * full
+        If True, the help string will included a description of all arguments
     """
-    # Function specific third party import    
+    # For some reason signature is not aways importable. In these cases the build-in help in invoqued
     try:
-        from IPython.core.display import display, HTML    
+        from IPython.core.display import display, HTML, Markdown
+        from inspect import signature, isfunction, ismethod
     except (NameError, ImportError) as E:
-        print (E)
-        print ("jupyter notebook is required to use this function. Please verify your dependencies")
-        sys.exit()
-
-    display(HTML(
-    '''<script>
-    code_show=true;
-    function code_toggle() {
-     if (code_show){
-     $('div.input').hide();
-     } else {
-     $('div.input').show();
-     }
-     code_show = !code_show
-    }
-    $( document ).ready(code_toggle);
-    </script>
-    <b><a href="javascript:code_toggle()">Toggle on/off the raw code</a></b>''')
-    )
-
-def larger_display (percent=100):
-    """
-    FOR JUPYTER NOTEBOOK ONLY
-    Resize the area of the screen containing the notebook according to a given percentage of the available width
-    *  percent percentage of the width of the screen to use [DEFAULT:100]
-    """
-    # Function specific third party import    
-    try:
-        from IPython.core.display import display, HTML    
-    except (NameError, ImportError) as E:
-        print (E)
-        print ("jupyter notebook is required to use this function. Please verify your dependencies")
-        sys.exit()
-
-    # resizing
-    display(HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent)))
+        warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
+        help(function)
+        return
+                
+    if isfunction(function) or ismethod(function):
+        name = function.__name__.strip()
+        sig = str(signature(function)).strip()
+        display(HTML ("<b>{}</b> {}".format(name, sig)))
+        
+        if function.__doc__:
+            for line in function.__doc__.split("\n"):
+                line = line.strip()
+                if not full and line.startswith("*"):
+                    break
+                display(Markdown(line.strip()))
+    else:
+        jprint("{} is not a function".format(function))
 
 def jprint(*args, **kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
-    Format a string in HTML and print the output. Equivalent of print, but highly customizable
-    Many options can be passed to the function.
-    * args
+    Format a string in HTML and print the output. Equivalent of print, but highly customizable. Many options can be passed to the function.
+    * *args
         One or several objects that can be cast in str
-    ** kwargs
+    * **kwargs
         Formatting options to tweak the html rendering
         Boolean options : bold, italic, highlight, underlined, striked, subscripted, superscripted
         String oprions: font, color, size, align, background_color, line_height 
@@ -88,10 +59,10 @@ def jprint(*args, **kwargs):
     try:
         from IPython.core.display import display, HTML    
     except (NameError, ImportError) as E:
-        print (E)
-        print ("jupyter notebook is required to use this function. Please verify your dependencies")
-        sys.exit()
-
+        warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
+        print(args)
+        return
+    
     # Join the different elements together and cast in string
     s =  " ".join([str(i) for i in args])
 
@@ -122,27 +93,79 @@ def jprint(*args, **kwargs):
 
     display(HTML(s))
 
+def toogle_code():
+    """
+    FOR JUPYTER NOTEBOOK ONLY
+    Hide code with a clickable link in a jupyter notebook
+    """
+    # Function specific third party import    
+    try:
+        from IPython.core.display import display, HTML    
+    except (NameError, ImportError) as E:
+        warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
+        return
+
+    display(HTML(
+    '''<script>
+    code_show=true;
+    function code_toggle() {
+     if (code_show){
+     $('div.input').hide();
+     } else {
+     $('div.input').show();
+     }
+     code_show = !code_show
+    }
+    $( document ).ready(code_toggle);
+    </script>
+    <b><a href="javascript:code_toggle()">Toggle on/off the raw code</a></b>''')
+    )
+
+def larger_display (percent=100):
+    """
+    FOR JUPYTER NOTEBOOK ONLY
+    Resize the area of the screen containing the notebook according to a given percentage of the available width
+    *  percent percentage of the width of the screen to use [DEFAULT:100]
+    """
+    # Function specific third party import    
+    try:
+        from IPython.core.display import display, HTML    
+    except (NameError, ImportError) as E:
+        warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
+        return
+
+    # resizing
+    display(HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent)))
+
 #~~~~~~~ PREDICATES ~~~~~~~#
 
 def is_readable_file (fp):
-    """ Verify the readability of a file or list of file """
-    if not access(fp, R_OK):
+    """
+    Verify the readability of a file or list of file
+    """
+    if not os.access(fp, os.R_OK):
         raise IOError ("{} is not a valid file".format(fp))
 
 def is_gziped (fp):
-    """ Return True if the file is Gziped else False """
+    """
+    Return True if the file is Gziped else False
+    """
     return fp[-2:].lower() == "gz"
 
 #~~~~~~~ PATH MANIPULATION ~~~~~~~#
 
-def file_basename (path):
-    """Return the basename of a file without folder location and extension """
-    return path.rpartition('/')[2].partition('.')[0]
+def file_basename (fp):
+    """
+    Return the basename of a file without folder location and extension
+    """
+    return fp.rpartition('/')[2].partition('.')[0]
 
-def file_extension (path):
-    """ Return The extension of a file in lower-case. If archived file ("gz", "zip", "xz", "bz2")
-    the method will output the base extension + the archive extension"""
-    split_name = path.split("/")[-1].split(".")
+def file_extension (fp):
+    """
+    Return The extension of a file in lower-case. If archived file ("gz", "zip", "xz", "bz2")
+    the method will output the base extension + the archive extension
+    """
+    split_name = fp.split("/")[-1].split(".")
     # No extension ?
     if len (split_name) == 1:
         return ""
@@ -153,18 +176,38 @@ def file_extension (path):
     else:
         return ".{}".format(split_name[-1]).lower()
 
-def file_name (path):
-    """ Return The complete name of a file with the extension but without folder location """
-    return path.rpartition("/")[2]
+def file_name (fp):
+    """
+    Return The complete name of a file with the extension but without folder location
+    """
+    return fp.rpartition("/")[2]
 
-def dir_name (path):
-    """ Return the complete path where is located the file without the file name """
-    return path.rpartition("/")[0].rpartition("/")[2]
+def dir_name (fp):
+    """
+    Return the complete path where is located the file without the file name
+    """
+    return fp.rpartition("/")[0].rpartition("/")[2]
+
+def has_extension (fp, ext, pos=-1):
+    """
+    Test presence of extension in a file path
+    * ext
+        Single extension name or list of extension names  without dot. Example ["gz, "fa"]
+    * pos
+        Postition of the extension in the file path. -1 for the last, -2 for the penultimate and so on [DEFAULT -1 = Last position]
+    """
+    # Cast in list
+    if type(ext) == str:
+        ext = [ext]
+    # Test ext presence
+    return fp.split(".")[pos].lower() in ext
 
 ##~~~~~~~ STRING FORMATTING ~~~~~~~#
 
 def supersplit (string, separator=""):
-    """like split but can take a list of separators instead of a simple separator """
+    """
+    like split but can take a list of separators instead of a simple separator
+    """
     if not separator:
         return string.split()
 
@@ -191,77 +234,77 @@ def copyFile(src, dest):
         Path of the folder where to copy the source file
     """
     try:
-        shutilCopy(src, dest)
+        shutil.copy(src, dest)
     # eg. src and dest are the same file
-    except shutilError as E:
+    except shutil.Error as E:
         print('Error: %s' % E)
     # eg. source or destination doesn't exist
     except IOError as E:
         print('Error: %s' % E.strerror)
 
-def gzip_file (in_path, out_path=None):
+def gzip_file (fpin, fpout=None):
     """
     gzip a file
-    * in_path
+    * fpin
         Path of the input uncompressed file
-    * out_path
+    * fpout
         Path of the output compressed file (facultative)
     """
     # Generate a automatic name if none is given
-    if not out_path:
-        out_path = in_path +".gz"
+    if not fpout:
+        fpout = fpin +".gz"
 
     # Try to initialize handle for
     try:
-        in_handle = open(in_path, "rb")
-        out_handle = gopen(out_path, "wb")
+        in_handle = open(fpin, "rb")
+        out_handle = gzip.open(fpout, "wb")
         # Write input file in output file
-        print ("Compressing {}".format(in_path))
+        print ("Compressing {}".format(fpin))
         out_handle.write (in_handle.read())
         # Close both files
         in_handle.close()
         out_handle.close()
-        return path.abspath(out_path)
+        return os.path.abspath(fpout)
 
     except IOError as E:
         print(E)
-        if path.isfile (out_path):
+        if os.path.isfile (fpout):
             try:
-                remove (out_path)
+                os.remove (fpout)
             except OSError:
-                print ("Can't remove {}".format(out_path))
+                print ("Can't remove {}".format(fpout))
 
-def gunzip_file (in_path, out_path=None):
+def gunzip_file (fpin, fpout=None):
     """
     ungzip a file
-    * in_path
+    * fpin
         Path of the input compressed file
-    * out_path
+    * fpout
         Path of the output uncompressed file (facultative)
     """
     # Generate a automatic name without .gz extension if none is given
-    if not out_path:
-        out_path = in_path[0:-3]
+    if not fpout:
+        fpout = fpin[0:-3]
 
     try:
         # Try to initialize handle for
-        in_handle = gzip.GzipFile(in_path, 'rb')
-        out_handle = open(out_path, "wb")
+        in_handle = gzip.GzipFile(fpin, 'rb')
+        out_handle = open(fpout, "wb")
         # Write input file in output file
-        print ("Uncompressing {}".format(in_path))
+        print ("Uncompressing {}".format(fpin))
         out_handle.write (in_handle.read())
         # Close both files
         out_handle.close()
         in_handle.close()
-        return path.abspath(out_path)
+        return os.path.abspath(fpout)
 
     except IOError as E:
         print(E)
-        if path.isfile (out_path):
+        if os.path.isfile (fpout):
             try:
-                remove (out_path)
+                os.remove (fpout)
             except OSError:
-                print ("Can't remove {}".format(out_path))
+                print ("Can't remove {}".format(fpout))
 
 #~~~~~~~ FILE INFORMATION/PARSING ~~~~~~~#
 
@@ -282,7 +325,7 @@ def linerange (fp, range_list=[], line_numbering=True):
         range_list=[[0,2],[n_line-3, n_line-1]]
 
     try:
-        f = gopen(fp, "rt") if is_gziped(fp) else open (fp, "r")
+        f = gzip.open(fp, "rt") if is_gziped(fp) else open (fp, "r")
         previous_line_empty = False
         for n, line in enumerate(f):
             line_print = False
@@ -310,8 +353,9 @@ def linerange (fp, range_list=[], line_numbering=True):
             pass
 
 def cat (fp, max_lines=100, line_numbering=False):
-    """Emulate linux cat cmd but with line cap protection. Handle gziped files"""
-    
+    """
+    Emulate linux cat cmd but with line cap protection. Handle gziped files
+    """
     n_line = fastcount(fp)
     if n_line <= max_lines:
         range_list = [[0, n_line-1]]
@@ -320,8 +364,9 @@ def cat (fp, max_lines=100, line_numbering=False):
     linerange (fp=fp, range_list=range_list, line_numbering=line_numbering)
 
 def tail (fp, n=10, line_numbering=False):
-    """Emulate linux tail cmd. Handle gziped files"""
-    
+    """
+    Emulate linux tail cmd. Handle gziped files
+    """
     n_line = fastcount(fp)
     if n_line <= n:
         range_list = [[0, n_line-1]]
@@ -331,10 +376,11 @@ def tail (fp, n=10, line_numbering=False):
     linerange (fp=fp, range_list=range_list, line_numbering=line_numbering)
 
 def head (fp, n=10, line_numbering=False, ignore_hashtag_line=False):
-    """Emulate linux head cmd. Handle gziped files"""
-
+    """
+    Emulate linux head cmd. Handle gziped files
+    """
     try:
-        f = gopen(fp, "rt") if is_gziped(fp) else open (fp, "r")
+        f = gzip.open(fp, "rt") if is_gziped(fp) else open (fp, "r")
 
         line_num = 0
         while (line_num < n):
@@ -499,9 +545,11 @@ def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=F
         print ("Invalid return type")
 
 def fastcount(fp):
-    """Efficient way to count the number of lines in a file. Handle gziped files"""
+    """
+    Efficient way to count the number of lines in a file. Handle gziped files
+    """
     try:
-        f = gopen(fp, "rt") if is_gziped(fp) else open (fp, "r")
+        f = gzip.open(fp, "rt") if is_gziped(fp) else open (fp, "r")
         lines = 0
         buf_size = 1024 * 1024
         read_f = f.read # loop optimization
@@ -520,10 +568,12 @@ def fastcount(fp):
             pass
 
 def simplecount(fp, ignore_hashtag_line=False):
-    """Simple way to count the number of lines in a file with more options"""
+    """
+    Simple way to count the number of lines in a file with more options
+    """
     lines = 0
     try:
-        f = gopen(fp, "rt") if is_gziped(fp) else open (fp, "r")
+        f = gzip.open(fp, "rt") if is_gziped(fp) else open (fp, "r")
 
         for line in f:
             if ignore_hashtag_line and line[0] == "#":
@@ -547,12 +597,12 @@ def mkdir(fp, level=1):
     Can create nested directories by recursivity
     * fp
         path name where the folder should be created
-    *level
+    * level
         level in the path where to start to create the directories. Used by the program for the recursive creation of directories
     """
 
     # Extract the path corresponding to the current level of subdirectory and create it if needed
-    fp = path.abspath(fp)
+    fp = os.path.abspath(fp)
     split_path = fp.split("/")
     cur_level = split_path[level-1]
     cur_path = "/".join(split_path[0:level])
@@ -564,12 +614,11 @@ def mkdir(fp, level=1):
         mkdir(fp, level=level+1)
 
 def _mkdir (fp):
-    if path.exists(fp) and path.isdir(fp):
-        #print ("Entering {}".format(fp))
+    if os.path.exists(fp) and os.path.isdir(fp):
         pass
     else:
         print ("Creating {}".format(fp))
-        osmkdir(fp)
+        os.mkdir(fp)
 
 #~~~~~~~ SHELL MANIPULATION ~~~~~~~#
 
@@ -616,7 +665,8 @@ def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=Non
     More advanced version of bash calling with live printing of the standard output and possibilities to log the redirect
     the output and error as a string return or directly in files. If ret_stderr and ret_stdout are True a tuple will be returned and if
     both are False None will be returned
-    * cmd A command line string formatted as a string
+    * cmd
+        A command line string formatted as a string
     * print_stdout
         If True the standard output will be LIVE printed through the system standard output stream
     * ret_stdout
@@ -729,7 +779,7 @@ def bash_update(cmd, update_freq=1):
                 print("All done")
                 break
 
-            sleep(update_freq)
+            time.sleep(update_freq)
     except KeyboardInterrupt:
         print("Stop monitoring\n")
 
@@ -743,8 +793,9 @@ def dict_to_md (
     sort_by_key=False,
     sort_by_val=True,
     max_items=None):
-    """Def to transform a dict into a markdown formated table"""
-
+    """
+    Transform a dict into a markdown formated table
+    """
     # Preprocess dict
     if sort_by_key:
         d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[0])))
@@ -790,8 +841,9 @@ def dict_to_report (
     sep=":",
     sort_dict=True,
     max_items=None):
-    """Recursive function to return a text report from nested dict or OrderedDict objects"""
-
+    """
+    Recursive function to return a text report from nested dict or OrderedDict objects
+    """
     # Preprocess dict
     if sort_dict:
 
@@ -829,54 +881,6 @@ def dict_to_report (
         else:
             report += "{}{}{}{}\n".format(tab*ntab, name, sep, value)
     return report
-
-class dict_to_html(OrderedDict):
-    """
-    Overridden dict class which takes a 2 level dict and renders an HTML Table in IPython Notebook
-    Using the magic repr_html_
-    {'a':{'val1':2,'val2':3},'b':{'val1':4,'val2':5},'c':{'val1':7,'val2':8}}
-    """
-
-    def __init__ (self, d, max_col=20, max_row=20):
-        # Preprocess dict
-        i=0
-        for k1, v1 in d.items():
-            i+=1
-            if i > max_col:
-                break
-            self[k1] = OrderedDict()
-            j=0
-            for k2, v2 in v1.items():
-                j+=1
-                if j > max_row:
-                    break
-                self[k1][k2]=v2
-
-    def _repr_html_(self):
-        html = ["<table width=100%>"]
-
-        first_col = False
-        for key, val in self.items():
-
-            # Add Columns header for the first line
-            if not first_col:
-                html.append("<tr><td> </td>")
-                subkeys = sorted(val.keys())
-                for subkey in subkeys:
-                    html.append("<td><b>{}</b></td>".format(subkey))
-                first_col = True
-                html.append("</tr>")
-
-            # Add row header and values
-            html.append("<tr><td><b>{}</b></td>".format(key))
-            for subkey in subkeys:
-                html.append("<td>{}</td>".format(self[key][subkey]))
-            html.append("</tr>")
-
-        # End the table
-        html.append("</table>")
-
-        return ''.join(html)
 
 ##~~~~~~~ TABLE FORMATTING ~~~~~~~#
 
@@ -1038,7 +1042,7 @@ def reformat_table(
     infile = outfile = None
     try:
         # open the input file gziped or not
-        infile = gopen(input_file, "rt") if input_file[-2:].lower()=="gz" else open(input_file, "r")
+        infile = gzip.open(input_file, "rt") if input_file[-2:].lower()=="gz" else open(input_file, "r")
 
         # open the output file if required
         if output_file:
@@ -1251,7 +1255,9 @@ def _reformat_list (val_dict, template):
 ##~~~~~~~ WEB TOOLS ~~~~~~~#
 
 def url_exist (url):
-    """ Predicate verifying if an url exist without downloading all the link"""
+    """
+    Predicate verifying if an url exist without downloading all the link
+    """
 
     # Function specific third party import    
     try:
@@ -1411,7 +1417,7 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
 
     if not username or not rsa_private_key:
         print ("Parse the ssh config file")
-        ssh_config = path.expanduser(ssh_config)
+        ssh_config = os.path.expanduser(ssh_config)
         # Find host in the host list of the ssh config file
         with open (ssh_config) as conf:
             host_dict = OrderedDict()
@@ -1428,7 +1434,7 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
 
         try:
             username = host_dict[hostname]["User"]
-            rsa_private_key = path.expanduser(host_dict[hostname]["IdentityFile"])
+            rsa_private_key = os.path.expanduser(host_dict[hostname]["IdentityFile"])
             hostname = host_dict[hostname]["Hostname"]
         except KeyError as E:
             print(E)
@@ -1462,8 +1468,47 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
         except IOError as e:
             print ('Assuming {} exists'.format(remote_dir))
 
-        remote_file = remote_dir + '/' + path.basename(local_file)
+        remote_file = remote_dir + '/' + os.path.basename(local_file)
 
         print ('Copying local file from {} to {}:{}'.format(local_file, hostname, remote_file))
         sftp.put(local_file, remote_file)
         print ('All operations complete!')
+
+##~~~~~~~ PACKAGE TOOLS ~~~~~~~#
+
+def get_package_file (package, fp=""):
+    """
+    Verify the existence of a file from the package data and return a file path 
+    * package
+        Name of the package
+    * fp
+        Relative path to the file in the package. Usually package_name/data/file_name
+        if the path points to a directory the directory arborescence will be printed
+    """
+    # Try to import pkg_resources package and try to get the file via pkg_resources
+    try:
+        from pkg_resources import Requirement, resource_filename, DistributionNotFound
+        fp = resource_filename(Requirement.parse(package), fp)
+    except (NameError, ImportError, DistributionNotFound) as E:
+        warnings.warn(str(E))
+        return
+        
+    # if the path exists
+    if os.path.exists(fp):
+        
+        # In case no fp is given or if the path is a directory list the package files, print the arborescence
+        if os.path.isdir(fp):
+            for root, dirs, files in os.walk(fp):
+                path = root.split(os.sep)
+                print((len(path) - 1) * '-', os.path.basename(root))
+                for file in files:
+                    print(len(path) * '-', file)
+            return fp
+        
+        # If file exist and is readable
+        if os.access(fp, os.R_OK):
+            return fp
+    
+    else:
+        warnings.warn("File does not exist or is not readeable")
+        return
