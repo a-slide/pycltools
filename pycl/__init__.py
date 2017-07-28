@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Define self package variable
-__version__ = '1.0.dev2'
+__version__ = '1.0.2'
 __all__ = ["pycl"]
 __doc__='python3 library containing general utilities to manipulate files, strings and folders'
 __author__= 'Adrien Leger'
