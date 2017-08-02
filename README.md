@@ -115,7 +115,7 @@ Sample data files are provided with the package for testing purpose. Depending o
 
 A list of the available functions is provided below. Functions are comprehensively detailed in the testing notebook provided with the package or in html version on nbviewer: [link to test_notebook](https://nbviewer.jupyter.org/github/a-slide/pycl/blob/master/pycl/test_pycl.ipynb?flush_cache=true)
 
-<b>bash</b> (cmd, live='stdout', print_stdout=True, ret_stdout=False, log_stdout=None, print_stderr=True, ret_stderr=False, log_stderr=None)
+<b>bash</b> (cmd, live='stdout', print_stdout=True, ret_stdout=False, log_stdout=None, print_stderr=True, ret_stderr=False, log_stderr=None, **kwargs)
 
 More advanced version of bash calling with live printing of the standard output and possibilities to log the redirect
 
@@ -153,13 +153,13 @@ If a filename is given, the standard error will logged in this file
 
     ________________________________________________________________________________
 
-<b>bash_basic</b> (cmd)
+<b>bash_basic</b> (cmd, **kwargs)
 
 Sent basic bash command
 
     ________________________________________________________________________________
 
-<b>bash_update</b> (cmd, update_freq=1)
+<b>bash_update</b> (cmd, update_freq=1, **kwargs)
 
 FOR JUPYTER NOTEBOOK
 
@@ -177,13 +177,29 @@ The frequency of output updating in seconds [DEFAULT: 1]
 
     ________________________________________________________________________________
 
-<b>cat</b> (fp, max_lines=100, line_numbering=False)
+<b>cat</b> (fp, max_lines=100, line_numbering=False, max_char_line=150, **kwargs)
 
 Emulate linux cat cmd but with line cap protection. Handle gziped files
 
+* fp
+
+Path to the file to be parsed
+
+* max_lines
+
+Maximal number of lines to print
+
+* line_numbering
+
+If True the number of the line will be indicated in front of the line
+
+* max_char_line
+
+Maximal number of character to print per line
+
     ________________________________________________________________________________
 
-<b>colsum</b> (fp, colrange=None, separator='', header=False, ignore_hashtag_line=False, max_items=10, ret_type='md')
+<b>colsum</b> (fp, colrange=None, separator='', header=False, ignore_hashtag_line=False, max_items=10, ret_type='md', **kwargs)
 
 Create a summary of selected columns of a file
 
@@ -219,7 +235,7 @@ report = Indented_text_report
 
     ________________________________________________________________________________
 
-<b>copyFile</b> (src, dest)
+<b>copyFile</b> (src, dest, **kwargs)
 
 Copy a single file to a destination file or folder (with error handling/reporting)
 
@@ -233,7 +249,7 @@ Path of the folder where to copy the source file
 
     ________________________________________________________________________________
 
-<b>count_uniq</b> (fp, colnum, select_values=None, drop_values=None, skip_comment='#', sep='\t')
+<b>count_uniq</b> (fp, colnum, select_values=None, drop_values=None, skip_comment='#', sep='\t', **kwargs)
 
 Count unique occurences in a specific column of a tabulated file
 
@@ -265,37 +281,37 @@ Character or list of characters to use in order to split the lines. Exemple ["	"
 
     ________________________________________________________________________________
 
-<b>dict_to_md</b> (d, key_label='', value_label='', transpose=False, sort_by_key=False, sort_by_val=True, max_items=None)
+<b>dict_to_md</b> (d, key_label='', value_label='', transpose=False, sort_by_key=False, sort_by_val=True, max_items=None, **kwargs)
 
 Transform a dict into a markdown formated table
 
     ________________________________________________________________________________
 
-<b>dict_to_report</b> (d, tab='\t', ntab=0, sep=':', sort_dict=True, max_items=None)
+<b>dict_to_report</b> (d, tab='\t', ntab=0, sep=':', sort_dict=True, max_items=None, **kwargs)
 
 Recursive function to return a text report from nested dict or OrderedDict objects
 
     ________________________________________________________________________________
 
-<b>dir_name</b> (fp)
+<b>dir_name</b> (fp, **kwargs)
 
 Return the complete path where is located the file without the file name
 
     ________________________________________________________________________________
 
-<b>fastcount</b> (fp)
+<b>fastcount</b> (fp, **kwargs)
 
 Efficient way to count the number of lines in a file. Handle gziped files
 
     ________________________________________________________________________________
 
-<b>file_basename</b> (fp)
+<b>file_basename</b> (fp, **kwargs)
 
 Return the basename of a file without folder location and extension
 
     ________________________________________________________________________________
 
-<b>file_extension</b> (fp)
+<b>file_extension</b> (fp, **kwargs)
 
 Return The extension of a file in lower-case. If archived file ("gz", "zip", "xz", "bz2")
 
@@ -303,13 +319,13 @@ the method will output the base extension + the archive extension
 
     ________________________________________________________________________________
 
-<b>file_name</b> (fp)
+<b>file_name</b> (fp, **kwargs)
 
 Return The complete name of a file with the extension but without folder location
 
     ________________________________________________________________________________
 
-<b>get_package_file</b> (package, fp='')
+<b>get_package_file</b> (package, fp='', **kwargs)
 
 Verify the existence of a file from the package data and return a file path
 
@@ -325,7 +341,7 @@ if the path points to a directory the directory arborescence will be printed
 
     ________________________________________________________________________________
 
-<b>gunzip_file</b> (fpin, fpout=None)
+<b>gunzip_file</b> (fpin, fpout=None, **kwargs)
 
 ungzip a file
 
@@ -339,7 +355,7 @@ Path of the output uncompressed file (facultative)
 
     ________________________________________________________________________________
 
-<b>gzip_file</b> (fpin, fpout=None)
+<b>gzip_file</b> (fpin, fpout=None, **kwargs)
 
 gzip a file
 
@@ -353,7 +369,7 @@ Path of the output compressed file (facultative)
 
     ________________________________________________________________________________
 
-<b>has_extension</b> (fp, ext, pos=-1)
+<b>has_extension</b> (fp, ext, pos=-1, **kwargs)
 
 Test presence of extension in a file path
 
@@ -367,19 +383,39 @@ Postition of the extension in the file path. -1 for the last, -2 for the penulti
 
     ________________________________________________________________________________
 
-<b>head</b> (fp, n=10, line_numbering=False, ignore_hashtag_line=False)
+<b>head</b> (fp, n=10, line_numbering=False, ignore_hashtag_line=False, max_char_line=150, **kwargs)
 
 Emulate linux head cmd. Handle gziped files
 
+* fp
+
+Path to the file to be parsed
+
+* n
+
+Number of lines to print starting from the begining of the file
+
+* line_numbering
+
+If True the number of the line will be indicated in front of the line
+
+* ignore_hashtag_line
+
+Skip initial lines starting with a # symbol
+
+* max_char_line
+
+Maximal number of character to print per line
+
     ________________________________________________________________________________
 
-<b>is_gziped</b> (fp)
+<b>is_gziped</b> (fp, **kwargs)
 
 Return True if the file is Gziped else False
 
     ________________________________________________________________________________
 
-<b>is_readable_file</b> (fp)
+<b>is_readable_file</b> (fp, **kwargs)
 
 Verify the readability of a file or list of file
 
@@ -419,7 +455,7 @@ String oprions: font, color, size, align, background_color, line_height
 
     ________________________________________________________________________________
 
-<b>larger_display</b> (percent=100)
+<b>larger_display</b> (percent=100, **kwargs)
 
 FOR JUPYTER NOTEBOOK ONLY
 
@@ -429,7 +465,7 @@ Resize the area of the screen containing the notebook according to a given perce
 
     ________________________________________________________________________________
 
-<b>linerange</b> (fp, range_list=[], line_numbering=True)
+<b>linerange</b> (fp, range_list=[], line_numbering=True, max_char_line=150, **kwargs)
 
 Print a range of lines in a file according to a list of start end lists. Handle gziped files
 
@@ -445,9 +481,13 @@ list of start, end coordinates lists or tuples
 
 If True the number of the line will be indicated in front of the line
 
+* max_char_line
+
+Maximal number of character to print per line
+
     ________________________________________________________________________________
 
-<b>make_cmd_str</b> (prog_name, opt_dict={}, opt_list=[])
+<b>make_cmd_str</b> (prog_name, opt_dict={}, opt_list=[], **kwargs)
 
 Create a Unix like command line string from the prog name, a dict named arguments and a list of unmammed arguments
 
@@ -469,7 +509,7 @@ List of simple command line arguments
 
     ________________________________________________________________________________
 
-<b>mkdir</b> (fp, level=1)
+<b>mkdir</b> (fp, level=1, **kwargs)
 
 Reproduce the ability of UNIX "mkdir -p" command
 
@@ -487,13 +527,13 @@ level in the path where to start to create the directories. Used by the program 
 
     ________________________________________________________________________________
 
-<b>print_arg</b> ()
+<b>print_arg</b> (**kwargs)
 
 Print calling function named and unnamed arguments
 
     ________________________________________________________________________________
 
-<b>reformat_table</b> (input_file, output_file='', return_df=False, init_template=[], final_template=[], header='', keep_original_header=True, header_from_final_template=False, replace_internal_space='_', replace_null_val='*', subst_dict={}, filter_dict=[], predicate=None, standard_template=None, verbose=False)
+<b>reformat_table</b> (input_file, output_file='', return_df=False, init_template=[], final_template=[], header='', keep_original_header=True, header_from_final_template=False, replace_internal_space='_', replace_null_val='*', subst_dict={}, filter_dict=[], predicate=None, standard_template=None, verbose=False, **kwargs)
 
 Reformat a table given an initial and a final line templates indicated as a list where numbers
 
@@ -593,7 +633,7 @@ If True will print detailed information [DEFAULT:False]
 
     ________________________________________________________________________________
 
-<b>rm_blank</b> (name, replace='')
+<b>rm_blank</b> (name, replace='', **kwargs)
 
 Replace blank spaces in a name by a given character (default = remove)
 
@@ -601,7 +641,7 @@ Blanks at extremities are always removed and nor replaced
 
     ________________________________________________________________________________
 
-<b>scp</b> (hostname, local_file, remote_dir, username=None, rsa_private_key=None, ssh_config='~/.ssh/config')
+<b>scp</b> (hostname, local_file, remote_dir, username=None, rsa_private_key=None, ssh_config='~/.ssh/config', **kwargs)
 
 Copy a file over ssh in a target remote directory
 
@@ -631,25 +671,41 @@ use as an alternative method instead of giving the username and rsa_private_key.
 
     ________________________________________________________________________________
 
-<b>simplecount</b> (fp, ignore_hashtag_line=False)
+<b>simplecount</b> (fp, ignore_hashtag_line=False, **kwargs)
 
 Simple way to count the number of lines in a file with more options
 
     ________________________________________________________________________________
 
-<b>supersplit</b> (string, separator='')
+<b>supersplit</b> (string, separator='', **kwargs)
 
 like split but can take a list of separators instead of a simple separator
 
     ________________________________________________________________________________
 
-<b>tail</b> (fp, n=10, line_numbering=False)
+<b>tail</b> (fp, n=10, line_numbering=False, max_char_line=150, **kwargs)
 
 Emulate linux tail cmd. Handle gziped files
 
+* fp
+
+Path to the file to be parsed
+
+* n
+
+Number of lines to print starting from the end of the file
+
+* line_numbering
+
+If True the number of the line will be indicated in front of the line
+
+* max_char_line
+
+Maximal number of character to print per line
+
     ________________________________________________________________________________
 
-<b>toogle_code</b> ()
+<b>toogle_code</b> (**kwargs)
 
 FOR JUPYTER NOTEBOOK ONLY
 
@@ -657,13 +713,13 @@ Hide code with a clickable link in a jupyter notebook
 
     ________________________________________________________________________________
 
-<b>url_exist</b> (url)
+<b>url_exist</b> (url, **kwargs)
 
 Predicate verifying if an url exist without downloading all the link
 
     ________________________________________________________________________________
 
-<b>wget</b> (url, out_name='', progress_block=100000000)
+<b>wget</b> (url, out_name='', progress_block=100000000, **kwargs)
 
 Download a file from an URL to a local storage.
 

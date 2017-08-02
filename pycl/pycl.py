@@ -93,7 +93,7 @@ def jprint(*args, **kwargs):
 
     display(HTML(s))
 
-def toogle_code():
+def toogle_code(**kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
     Hide code with a clickable link in a jupyter notebook
@@ -121,7 +121,7 @@ def toogle_code():
     <b><a href="javascript:code_toggle()">Toggle on/off the raw code</a></b>''')
     )
 
-def larger_display (percent=100):
+def larger_display (percent=100, **kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
     Resize the area of the screen containing the notebook according to a given percentage of the available width
@@ -139,14 +139,14 @@ def larger_display (percent=100):
 
 #~~~~~~~ PREDICATES ~~~~~~~#
 
-def is_readable_file (fp):
+def is_readable_file (fp, **kwargs):
     """
     Verify the readability of a file or list of file
     """
     if not os.access(fp, os.R_OK):
         raise IOError ("{} is not a valid file".format(fp))
 
-def is_gziped (fp):
+def is_gziped (fp, **kwargs):
     """
     Return True if the file is Gziped else False
     """
@@ -154,13 +154,13 @@ def is_gziped (fp):
 
 #~~~~~~~ PATH MANIPULATION ~~~~~~~#
 
-def file_basename (fp):
+def file_basename (fp, **kwargs):
     """
     Return the basename of a file without folder location and extension
     """
     return fp.rpartition('/')[2].partition('.')[0]
 
-def file_extension (fp):
+def file_extension (fp, **kwargs):
     """
     Return The extension of a file in lower-case. If archived file ("gz", "zip", "xz", "bz2")
     the method will output the base extension + the archive extension
@@ -176,19 +176,19 @@ def file_extension (fp):
     else:
         return ".{}".format(split_name[-1]).lower()
 
-def file_name (fp):
+def file_name (fp, **kwargs):
     """
     Return The complete name of a file with the extension but without folder location
     """
     return fp.rpartition("/")[2]
 
-def dir_name (fp):
+def dir_name (fp, **kwargs):
     """
     Return the complete path where is located the file without the file name
     """
     return fp.rpartition("/")[0].rpartition("/")[2]
 
-def has_extension (fp, ext, pos=-1):
+def has_extension (fp, ext, pos=-1, **kwargs):
     """
     Test presence of extension in a file path
     * ext
@@ -204,7 +204,7 @@ def has_extension (fp, ext, pos=-1):
 
 ##~~~~~~~ STRING FORMATTING ~~~~~~~#
 
-def supersplit (string, separator=""):
+def supersplit (string, separator="", **kwargs):
     """
     like split but can take a list of separators instead of a simple separator
     """
@@ -218,14 +218,14 @@ def supersplit (string, separator=""):
         string = string.replace(sep, "#")
     return string.split("#")
 
-def rm_blank (name, replace=""):
+def rm_blank (name, replace="", **kwargs):
     """ Replace blank spaces in a name by a given character (default = remove)
     Blanks at extremities are always removed and nor replaced """
     return replace.join(name.split())
 
 #~~~~~~~ FILE MANIPULATION ~~~~~~~#
 
-def copyFile(src, dest):
+def copyFile(src, dest, **kwargs):
     """
     Copy a single file to a destination file or folder (with error handling/reporting)
     * src
@@ -242,7 +242,7 @@ def copyFile(src, dest):
     except IOError as E:
         print('Error: %s' % E.strerror)
 
-def gzip_file (fpin, fpout=None):
+def gzip_file (fpin, fpout=None, **kwargs):
     """
     gzip a file
     * fpin
@@ -274,7 +274,7 @@ def gzip_file (fpin, fpout=None):
             except OSError:
                 print ("Can't remove {}".format(fpout))
 
-def gunzip_file (fpin, fpout=None):
+def gunzip_file (fpin, fpout=None, **kwargs):
     """
     ungzip a file
     * fpin
@@ -308,7 +308,7 @@ def gunzip_file (fpin, fpout=None):
 
 #~~~~~~~ FILE INFORMATION/PARSING ~~~~~~~#
 
-def linerange (fp, range_list=[], line_numbering=True):
+def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwargs):
     """
     Print a range of lines in a file according to a list of start end lists. Handle gziped files
     * fp
@@ -317,9 +317,9 @@ def linerange (fp, range_list=[], line_numbering=True):
         list of start, end coordinates lists or tuples
     * line_numbering
         If True the number of the line will be indicated in front of the line
-
+    * max_char_line
+        Maximal number of character to print per line
     """
-
     if not range_list:
         n_line = fastcount(fp)
         range_list=[[0,2],[n_line-3, n_line-1]]
@@ -334,8 +334,13 @@ def linerange (fp, range_list=[], line_numbering=True):
                     if line_numbering:
                         l = "{}\t{}".format(n, line.strip())
                     else:
-                        l= line.strip()
-                    jprint (l, line_height=10)
+                        l = line.strip()
+                        
+                    if len(l) > max_char_line:
+                        jprint (l[0:max_char_line]+"...", line_height=10)
+                    else:
+                        jprint (l, line_height=10)
+                        
                     line_print = True
                     previous_line_empty = False
                     break
@@ -352,20 +357,36 @@ def linerange (fp, range_list=[], line_numbering=True):
         except:
             pass
 
-def cat (fp, max_lines=100, line_numbering=False):
+def cat (fp, max_lines=100, line_numbering=False, max_char_line=150, **kwargs):
     """
     Emulate linux cat cmd but with line cap protection. Handle gziped files
+    * fp
+        Path to the file to be parsed
+    * max_lines
+        Maximal number of lines to print
+    * line_numbering
+        If True the number of the line will be indicated in front of the line
+    * max_char_line
+        Maximal number of character to print per line
     """
     n_line = fastcount(fp)
     if n_line <= max_lines:
         range_list = [[0, n_line-1]]
     else:
         range_list=[[0, max_lines/2-1],[n_line-max_lines/2, n_line-1]]
-    linerange (fp=fp, range_list=range_list, line_numbering=line_numbering)
+    linerange (fp=fp, range_list=range_list, line_numbering=line_numbering, max_char_line=max_char_line)
 
-def tail (fp, n=10, line_numbering=False):
+def tail (fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
     """
     Emulate linux tail cmd. Handle gziped files
+    * fp
+        Path to the file to be parsed
+    * n
+        Number of lines to print starting from the end of the file 
+    * line_numbering
+        If True the number of the line will be indicated in front of the line
+    * max_char_line
+        Maximal number of character to print per line
     """
     n_line = fastcount(fp)
     if n_line <= n:
@@ -373,11 +394,21 @@ def tail (fp, n=10, line_numbering=False):
         jprint ("Only {} lines in the file".format(n_line))
     else:
         range_list=[[n_line-n, n_line-1]]
-    linerange (fp=fp, range_list=range_list, line_numbering=line_numbering)
+    linerange (fp=fp, range_list=range_list, line_numbering=line_numbering, max_char_line=max_char_line)
 
-def head (fp, n=10, line_numbering=False, ignore_hashtag_line=False):
+def head (fp, n=10, line_numbering=False, ignore_hashtag_line=False, max_char_line=150, **kwargs):
     """
     Emulate linux head cmd. Handle gziped files
+    * fp
+        Path to the file to be parsed
+    * n
+        Number of lines to print starting from the begining of the file 
+    * line_numbering
+        If True the number of the line will be indicated in front of the line
+    * ignore_hashtag_line
+        Skip initial lines starting with a # symbol
+    * max_char_line
+        Maximal number of character to print per line
     """
     try:
         f = gzip.open(fp, "rt") if is_gziped(fp) else open (fp, "r")
@@ -391,8 +422,12 @@ def head (fp, n=10, line_numbering=False, ignore_hashtag_line=False):
                     l= next(f).strip()
                 if ignore_hashtag_line and l[0] == "#":
                     continue
-                    
-                jprint (l, line_height=10)
+                
+                if len(l) > max_char_line:
+                    jprint (l[0:max_char_line]+"...", line_height=10)
+                else:
+                    jprint (l, line_height=10)
+                
                 line_num+=1
 
             except StopIteration:
@@ -406,7 +441,7 @@ def head (fp, n=10, line_numbering=False, ignore_hashtag_line=False):
         except:
             pass
 
-def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="#", sep="\t"):
+def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="#", sep="\t", **kwargs):
     """
     Count unique occurences in a specific column of a tabulated file
     * fp
@@ -457,7 +492,7 @@ def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="
 
     return df.groupby(colnum).size().sort_values(ascending=False)
 
-def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md"):
+def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md", **kwargs):
     """
     Create a summary of selected columns of a file
     * fp
@@ -544,7 +579,7 @@ def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=F
     else:
         print ("Invalid return type")
 
-def fastcount(fp):
+def fastcount(fp, **kwargs):
     """
     Efficient way to count the number of lines in a file. Handle gziped files
     """
@@ -567,7 +602,7 @@ def fastcount(fp):
         except:
             pass
 
-def simplecount(fp, ignore_hashtag_line=False):
+def simplecount(fp, ignore_hashtag_line=False, **kwargs):
     """
     Simple way to count the number of lines in a file with more options
     """
@@ -590,7 +625,7 @@ def simplecount(fp, ignore_hashtag_line=False):
 
 #~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
 
-def mkdir(fp, level=1):
+def mkdir(fp, level=1, **kwargs):
     """
     Reproduce the ability of UNIX "mkdir -p" command
     (ie if the path already exits no exception will be raised).
@@ -622,7 +657,7 @@ def _mkdir (fp):
 
 #~~~~~~~ SHELL MANIPULATION ~~~~~~~#
 
-def make_cmd_str(prog_name, opt_dict={}, opt_list=[]):
+def make_cmd_str(prog_name, opt_dict={}, opt_list=[], **kwargs):
     """
     Create a Unix like command line string from the prog name, a dict named arguments and a list of unmammed arguments
     exemple make_cmd_str("bwa", {"b":None, t":6, "i":"../idx/seq.fa"}, ["../read1", "../read2"])
@@ -653,14 +688,15 @@ def make_cmd_str(prog_name, opt_dict={}, opt_list=[]):
 
     return cmd
 
-def bash_basic(cmd):
+def bash_basic(cmd, **kwargs):
     """Sent basic bash command"""
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = process.communicate()
     print (stdout.decode())
     print (stderr.decode())
 
-def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=None, print_stderr=True, ret_stderr=False, log_stderr=None):
+def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=None, print_stderr=True, ret_stderr=False, log_stderr=None,
+    **kwargs):
     """
     More advanced version of bash calling with live printing of the standard output and possibilities to log the redirect
     the output and error as a string return or directly in files. If ret_stderr and ret_stdout are True a tuple will be returned and if
@@ -745,7 +781,7 @@ def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=Non
         return stderr_str
     return None
 
-def bash_update(cmd, update_freq=1):
+def bash_update(cmd, update_freq=1, **kwargs):
     """
     FOR JUPYTER NOTEBOOK
     Run a bash command and print the output in the cell. The output is updated each time until the output is None.
@@ -785,14 +821,7 @@ def bash_update(cmd, update_freq=1):
 
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
 
-def dict_to_md (
-    d,
-    key_label="",
-    value_label="",
-    transpose=False,
-    sort_by_key=False,
-    sort_by_val=True,
-    max_items=None):
+def dict_to_md (d, key_label="", value_label="", transpose=False, sort_by_key=False, sort_by_val=True, max_items=None, **kwargs):
     """
     Transform a dict into a markdown formated table
     """
@@ -834,13 +863,7 @@ def dict_to_md (
 
     return buffer
 
-def dict_to_report (
-    d,
-    tab="\t",
-    ntab=0,
-    sep=":",
-    sort_dict=True,
-    max_items=None):
+def dict_to_report (d, tab="\t", ntab=0, sep=":", sort_dict=True, max_items=None, **kwargs):
     """
     Recursive function to return a text report from nested dict or OrderedDict objects
     """
@@ -899,7 +922,8 @@ def reformat_table(
     filter_dict=[],
     predicate=None,
     standard_template=None,
-    verbose=False):
+    verbose=False,
+    **kwargs):
     """
     Reformat a table given an initial and a final line templates indicated as a list where numbers
     indicate the data column and strings the formatting characters
@@ -1254,7 +1278,7 @@ def _reformat_list (val_dict, template):
 
 ##~~~~~~~ WEB TOOLS ~~~~~~~#
 
-def url_exist (url):
+def url_exist (url, **kwargs):
     """
     Predicate verifying if an url exist without downloading all the link
     """
@@ -1276,7 +1300,7 @@ def url_exist (url):
     except:
         return False
 
-def wget(url, out_name="", progress_block=100000000):
+def wget(url, out_name="", progress_block=100000000, **kwargs):
     """
     Download a file from an URL to a local storage.
     *  url
@@ -1362,7 +1386,7 @@ def wget(url, out_name="", progress_block=100000000):
 
 ##~~~~~~~ FUNCTIONS TOOLS ~~~~~~~#
 
-def print_arg():
+def print_arg(**kwargs):
     """
     Print calling function named and unnamed arguments
     """
@@ -1391,7 +1415,7 @@ def print_arg():
 
 ##~~~~~~~ SSH TOOLS ~~~~~~~#
 
-def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, ssh_config="~/.ssh/config"):
+def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, ssh_config="~/.ssh/config", **kwargs):
     """
     Copy a file over ssh in a target remote directory
     * hostname
@@ -1476,7 +1500,7 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
 
 ##~~~~~~~ PACKAGE TOOLS ~~~~~~~#
 
-def get_package_file (package, fp=""):
+def get_package_file (package, fp="", **kwargs):
     """
     Verify the existence of a file from the package data and return a file path 
     * package
