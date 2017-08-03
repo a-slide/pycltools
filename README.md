@@ -39,7 +39,7 @@ pip3 install git+https://github.com/a-slide/pycl.git
 
 To update the package:
 
-```bash
+```python
 pip3 install git+https://github.com/a-slide/pycl.git --upgrade
 ```
 
@@ -295,7 +295,29 @@ Recursive function to return a text report from nested dict or OrderedDict objec
 
 <b>dir_name</b> (fp, **kwargs)
 
-Return the complete path where is located the file without the file name
+Return the name of the directory where the file is located
+
+    ________________________________________________________________________________
+
+<b>dir_path</b> (fp, **kwargs)
+
+Return the directory path of a file
+
+    ________________________________________________________________________________
+
+<b>extensions</b> (fp, comp_ext_list=['gz', 'tgz', 'zip', 'xz', 'bz2'], **kwargs)
+
+Return The extension of a file in lower-case. If archived file ("gz", "tgz", "zip", "xz", "bz2")
+
+the method will output the base extension + the archive extension as a string
+
+    ________________________________________________________________________________
+
+<b>extensions_list</b> (fp, comp_ext_list=['gz', 'tgz', 'zip', 'xz', 'bz2'], **kwargs)
+
+Return The extension of a file in lower-case. If archived file ("gz", "tgz", "zip", "xz", "bz2")
+
+the method will output the base extension + the archive extension as a list
 
     ________________________________________________________________________________
 
@@ -308,14 +330,6 @@ Efficient way to count the number of lines in a file. Handle gziped files
 <b>file_basename</b> (fp, **kwargs)
 
 Return the basename of a file without folder location and extension
-
-    ________________________________________________________________________________
-
-<b>file_extension</b> (fp, **kwargs)
-
-Return The extension of a file in lower-case. If archived file ("gz", "zip", "xz", "bz2")
-
-the method will output the base extension + the archive extension
 
     ________________________________________________________________________________
 

@@ -152,42 +152,6 @@ def is_gziped (fp, **kwargs):
     """
     return fp[-2:].lower() == "gz"
 
-#~~~~~~~ PATH MANIPULATION ~~~~~~~#
-
-def file_basename (fp, **kwargs):
-    """
-    Return the basename of a file without folder location and extension
-    """
-    return fp.rpartition('/')[2].partition('.')[0]
-
-def file_extension (fp, **kwargs):
-    """
-    Return The extension of a file in lower-case. If archived file ("gz", "zip", "xz", "bz2")
-    the method will output the base extension + the archive extension
-    """
-    split_name = fp.split("/")[-1].split(".")
-    # No extension ?
-    if len (split_name) == 1:
-        return ""
-    # Manage compressed files
-    elif len (split_name) > 2 and split_name[-1].lower() in ["gz", "zip", "xz", "bz2"]:
-        return ".{}.{}".format(split_name[-2], split_name[-1]).lower()
-    # Normal situation = return the last element of the list
-    else:
-        return ".{}".format(split_name[-1]).lower()
-
-def file_name (fp, **kwargs):
-    """
-    Return The complete name of a file with the extension but without folder location
-    """
-    return fp.rpartition("/")[2]
-
-def dir_name (fp, **kwargs):
-    """
-    Return the complete path where is located the file without the file name
-    """
-    return fp.rpartition("/")[0].rpartition("/")[2]
-
 def has_extension (fp, ext, pos=-1, **kwargs):
     """
     Test presence of extension in a file path
@@ -201,6 +165,64 @@ def has_extension (fp, ext, pos=-1, **kwargs):
         ext = [ext]
     # Test ext presence
     return fp.split(".")[pos].lower() in ext
+
+#~~~~~~~ PATH MANIPULATION ~~~~~~~#
+
+def file_basename (fp, **kwargs):
+    """
+    Return the basename of a file without folder location and extension
+    """
+    return fp.rpartition('/')[2].partition('.')[0]
+
+def extensions (fp, comp_ext_list=["gz", "tgz", "zip", "xz", "bz2"], **kwargs):
+    """
+    Return The extension of a file in lower-case. If archived file ("gz", "tgz", "zip", "xz", "bz2")
+    the method will output the base extension + the archive extension as a string
+    """
+    split_name = fp.split("/")[-1].split(".")
+    # No extension ?
+    if len (split_name) == 1:
+        return ""
+    # Manage compressed files
+    elif len (split_name) > 2 and split_name[-1].lower() in comp_ext_list:
+        return ".{}.{}".format(split_name[-2], split_name[-1]).lower()
+    # Normal situation = return the last element of the list
+    else:
+        return ".{}".format(split_name[-1]).lower()
+
+def extensions_list (fp, comp_ext_list=["gz", "tgz", "zip", "xz", "bz2"], **kwargs):
+    """
+    Return The extension of a file in lower-case. If archived file ("gz", "tgz", "zip", "xz", "bz2")
+    the method will output the base extension + the archive extension as a list
+    """
+    split_name = fp.split("/")[-1].split(".")
+    # No extension ?
+    if len (split_name) == 1:
+        return []
+    # Manage compressed files
+    elif len (split_name) > 2 and split_name[-1].lower() in comp_ext_list:
+        return [split_name[-2].lower(), split_name[-1].lower()]
+    # Normal situation = return the last element of the list
+    else:
+        return [split_name[-1].lower()]
+
+def file_name (fp, **kwargs):
+    """
+    Return The complete name of a file with the extension but without folder location
+    """
+    return fp.rpartition("/")[2]
+
+def dir_name (fp, **kwargs):
+    """
+    Return the name of the directory where the file is located
+    """
+    return fp.rpartition("/")[0].rpartition("/")[2]
+
+def dir_path (fp, **kwargs):
+    """
+    Return the directory path of a file
+    """
+    return fp.rpartition("/")[0]
 
 ##~~~~~~~ STRING FORMATTING ~~~~~~~#
 
