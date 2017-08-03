@@ -1,4 +1,4 @@
-# pycl 1.0.2 package documentation
+# pycl 1.0.3 package documentation
 
 ___
 **pycl is a package written in python3 containing a collection of generic functions and classes for file parsing, manipulation...**
@@ -61,7 +61,7 @@ This option is also suitable if you are interested in further developing the pac
 
 * Clone the repository locally
 
-```python
+```bash
 git clone https://github.com/a-slide/pycl.git
 ```
 
