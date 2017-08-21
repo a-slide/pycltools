@@ -8,6 +8,7 @@ import sys
 import gzip
 import warnings
 import time
+import random
 from collections import OrderedDict
 from subprocess import Popen, PIPE
 
@@ -345,9 +346,15 @@ def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwar
     if not range_list:
         n_line = fastcount(fp)
         range_list=[[0,2],[n_line-3, n_line-1]]
-
-    try:
-        f = gzip.open(fp, "rt") if is_gziped(fp) else open (fp, "r")
+    
+    if is_gziped(fp):
+        open_fun = gzip.open
+        open_mode =  "rt"
+    else:
+        open_fun = open
+        open_mode =  "r"
+        
+    with open_fun(fp, open_mode) as f:
         previous_line_empty = False
         for n, line in enumerate(f):
             line_print = False
@@ -371,13 +378,6 @@ def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwar
                 if not previous_line_empty:
                     jprint("...", line_height=10)
                     previous_line_empty = True
-
-    # close the file properly
-    finally:
-        try:
-            f.close()
-        except:
-            pass
 
 def cat (fp, max_lines=100, line_numbering=False, max_char_line=150, **kwargs):
     """
@@ -418,50 +418,92 @@ def tail (fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
         range_list=[[n_line-n, n_line-1]]
     linerange (fp=fp, range_list=range_list, line_numbering=line_numbering, max_char_line=max_char_line)
 
-def head (fp, n=10, line_numbering=False, ignore_hashtag_line=False, max_char_line=150, **kwargs):
+def head (fp, n=10, line_numbering=False, ignore_comment_line=False, comment_char="#", max_char_line=150, **kwargs):
     """
     Emulate linux head cmd. Handle gziped files
     * fp
         Path to the file to be parsed
     * n
-        Number of lines to print starting from the begining of the file 
+        Number of lines to print starting from the begining of the file (Default 10)
     * line_numbering
-        If True the number of the line will be indicated in front of the line
-    * ignore_hashtag_line
-        Skip initial lines starting with a # symbol
+        If True the number of the line will be indicated in front of the line (Default False)
+    * ignore_comment_line
+        Skip initial lines starting with a specific character (Default False)
+    * comment_char
+        Character or string for ignore_comment_line argument (Default "#")
     * max_char_line
-        Maximal number of character to print per line
+        Maximal number of character to print per line (Default 150)
     """
-    try:
-        f = gzip.open(fp, "rt") if is_gziped(fp) else open (fp, "r")
+    if is_gziped(fp):
+        open_fun = gzip.open
+        open_mode =  "rt"
+    else:
+        open_fun = open
+        open_mode =  "r"
+        
+    with open_fun(fp, open_mode) as fh:
 
         line_num = 0
         while (line_num < n):
             try:
-                if line_numbering:
-                    l = "{}\t{}".format(line_num, next(f).strip())
-                else:
-                    l= next(f).strip()
-                if ignore_hashtag_line and l[0] == "#":
+                l= next(fh).strip()
+                if ignore_comment_line and l.startswith(comment_char):
                     continue
-                
+                if line_numbering:
+                    l = "{}\t{}".format(line_num, l)
                 if len(l) > max_char_line:
                     jprint (l[0:max_char_line]+"...", line_height=10)
                 else:
                     jprint (l, line_height=10)
-                
                 line_num+=1
 
             except StopIteration:
                 jprint ("Only {} lines in the file".format(line_num))
                 break
-                
-    # close the file properly
-    finally:
-        try:
-            f.close()
-        except:
-            pass
+
+def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwargs):
+    """
+    Randomly sample lines in a file and print them. Handle gziped files
+    * fp
+        Path to the file to be parsed
+    * n_lines
+        Number of lines to sample in the file
+    * line_numbering
+        If True the number of the line will be indicated in front of the line
+    * max_char_line
+        Maximal number of character to print per line
+    """
+    n_lines_origin = fastcount(fp)
+    
+    # Take into account the situation in which there are less lines in the file than requested.
+    if n_lines >= n_lines_origin:
+        if verbose:
+            print("Not enough lines in source file. Writing all reads in the output file")
+        index_list = list(range(0, n_lines_origin-1))
+    else:
+        index_list = sorted(random.sample(range(0, n_lines_origin-1), n_lines))
+    
+    # Sample lines in input file according to the list of random line numbers
+    if is_gziped(fp):
+        open_fun = gzip.open
+        open_mode =  "rt"
+    else:
+        open_fun = open
+        open_mode =  "r"
+
+    with open_fun(fp, open_mode) as fh:
+        j = 0
+        for i, l in enumerate(fh):
+            if j >= n_lines:
+                break
+            if i == index_list[j]:
+                j+=1
+                l = l.strip()
+                if len(l) > max_char_line:
+                        l = l[0:max_char_line]+"..."
+                if line_numbering:
+                    l = "{}\t{}".format(i, l)
+                jprint (l, line_height=10)
 
 def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="#", sep="\t", **kwargs):
     """
@@ -605,45 +647,44 @@ def fastcount(fp, **kwargs):
     """
     Efficient way to count the number of lines in a file. Handle gziped files
     """
-    try:
-        f = gzip.open(fp, "rt") if is_gziped(fp) else open (fp, "r")
+    if is_gziped(fp):
+        open_fun = gzip.open
+        open_mode =  "rt"
+    else:
+        open_fun = open
+        open_mode =  "r"
+
+    with open_fun(fp, open_mode) as fh:
         lines = 0
         buf_size = 1024 * 1024
-        read_f = f.read # loop optimization
+        read_f = fh.read # loop optimization
 
         buf = read_f(buf_size)
         while buf:
             lines += buf.count('\n')
             buf = read_f(buf_size)
 
-    # close the file properly
-    finally:
-        try:
-            f.close()
-            return lines
-        except:
-            pass
+    return lines
 
 def simplecount(fp, ignore_hashtag_line=False, **kwargs):
     """
     Simple way to count the number of lines in a file with more options
     """
-    lines = 0
-    try:
-        f = gzip.open(fp, "rt") if is_gziped(fp) else open (fp, "r")
+    if is_gziped(fp):
+        open_fun = gzip.open
+        open_mode =  "rt"
+    else:
+        open_fun = open
+        open_mode =  "r"
 
-        for line in f:
+    with open_fun(fp, open_mode) as fh:
+        lines = 0
+        for line in fh:
             if ignore_hashtag_line and line[0] == "#":
                 continue
             lines += 1
 
-    # close the file properly
-    finally:
-        try:
-            f.close()
-            return lines
-        except:
-            pass
+    return lines
 
 #~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
 
@@ -1558,3 +1599,69 @@ def get_package_file (package, fp="", **kwargs):
     else:
         warnings.warn("File does not exist or is not readeable")
         return
+
+##~~~~~~~ SAM/BAM TOOLS ~~~~~~~#
+
+def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
+    """
+    Sample reads from a SAM/BAM file and write in a new file
+    * fp_in
+        Path to the input file in .bam/.sam/.cram (the format will be infered from extension)
+    * fp_out
+        Path to the output file in .bam/.sam/.cram (the format will be infered from extension)
+    * n_reads
+        number of reads to sample        
+    """
+    # Function specific third party import    
+    try:
+        import pysam as ps
+    except (NameError, ImportError) as E:
+        warnings.warn ("pysam is required to use this function. Please verify your dependencies")
+        return
+    
+    # Define opening mode
+    if has_extension(fp_in, "bam"):
+        mode_in = "rb"
+    elif has_extension(fp_in, "sam"):
+        mode_in = "r"
+    elif has_extension(fp_in, "cram"):
+        mode_in = "rc"
+    else:
+        warnings.warn ("Invalid input file format (.bam/.sam/.cram)")
+        return
+    if has_extension(fp_out, "bam"):
+        mode_out = "wb"
+    elif has_extension(fp_out, "sam"):
+        mode_out = "w"
+    elif has_extension(fp_out, "cram"):
+        mode_out = "wc"
+    else:
+        warnings.warn ("Invalid output file format (.bam/.sam/.cram)")
+        return
+    
+    # Count the reads and define a list of random lines to sample
+    with ps.AlignmentFile(fp_in, mode_in) as fh_in:
+        n_read_origin = fh_in.count()
+        if verbose:
+            print("Found {} reads in input file".format(n_read_origin))
+        
+        # Take into account the situation in which there are less lines in the file than requested.
+        if n_reads >= n_read_origin:
+            if verbose:
+                print("Not enough lines in source file. Writing all reads in the output file")
+            index_list = list(range(0, n_read_origin-1))
+        else:
+            index_list = sorted(random.sample(range(0, n_read_origin-1), n_reads))
+    
+    # Sample lines in input file according to the list of random line numbers
+    with ps.AlignmentFile(fp_in, mode_in) as fh_in:
+        with ps.AlignmentFile(fp_out, mode_out, header=fh_in.header) as fh_out:
+            j = 0
+            for i, line in enumerate(fh_in):
+                if j >= n_reads:
+                    break
+                if i == index_list[j]:
+                    fh_out.write(line)
+                    j+=1
+            if verbose:
+                print("Wrote {} reads in output file".format(j))
