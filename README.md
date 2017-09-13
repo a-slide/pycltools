@@ -1,8 +1,10 @@
-# pycl 1.0.3 package documentation
+# pycl 1.0.4 package documentation
 
-___
+---
+
 **pycl is a package written in python3 containing a collection of generic functions and classes for file parsing, manipulation...**
-___
+
+---
 
 pycl contains many functions organized in several categories:
 
@@ -22,7 +24,15 @@ pycl contains many functions organized in several categories:
 
 Many of the function replicate bash commands in pure python.
 
-Please be aware that pycl is an experimental package that is still under development. It was tested under Linux Ubuntu 16.04 and in an HPC environment running under Red Hat Enterprise 7.1. You are welcome to raise issues, contribute to the development and submit patches or updates.
+Please be aware that pycl is an experimental package that is still under development. It was tested under Linux Ubuntu 16.04 and in an HPC 
+environment running under Red Hat Enterprise 7.1. You are welcome to raise issues, contribute to the development and submit patches or
+updates.
+
+* Author: Adrien Leger - aleg@ebi.ac.uk
+
+* URL: https://github.com/a-slide/pycoQC
+
+* Licence: GPLv3
 
 ## Installation
 
@@ -67,14 +77,25 @@ git clone https://github.com/a-slide/pycl.git
 
 * Add the package directory (./pycl/pycl) to you python3 PATH (depending on you OS and whether you want it to be permanent ot not)
 
-### Installing dependencies (optional)
+## Python packages optional dependencies:
 
-By default pycl will not request any third party dependencies during installation, instead dependencies are called on a function basis when needed. If a dependency is missing, the function will display an error message indicating the missing dependency.
-If one plan to use all the function in pycl they can install the following dependencies:
-* pandas 0.20.0+
-* httplib2 0.9.0+
-* paramiko 2.0.0
-* notebook 4.0.0+
+* *['notebook']* for function *bash_update*
+
+* *['pandas']* for function *reformat_table*
+
+* *['notebook']* for function *toogle_code*
+
+* *['pandas']* for function *count_uniq*
+
+* *['notebook']* for function *jhelp*
+
+* *['httplib2']* for function *url_exist*
+
+* *['notebook']* for function *jprint*
+
+* *['paramiko']* for function *scp*
+
+* *['notebook']* for function *larger_display*
 
 ## Usage
 
@@ -94,13 +115,19 @@ Sample data files are provided with the package for testing purpose. Depending o
 
 * RADAR_clean.txt
 
+* sample_100.sam
+
 * RADAR_Secondary.txt.gz
 
 * Small_m5C_Squires_hg38_reformat.bed
 
+* sample.sam
+
 * stdout.txt
 
 * Small_editing_Peng_hg38_reformat.bed
+
+* sample_100.bam
 
 * RADAR_Secondary.txt
 
@@ -113,6 +140,24 @@ Sample data files are provided with the package for testing purpose. Depending o
 * RADAR_Secondary_copy.txt
 
 A list of the available functions is provided below. Functions are comprehensively detailed in the testing notebook provided with the package or in html version on nbviewer: [link to test_notebook](https://nbviewer.jupyter.org/github/a-slide/pycl/blob/master/pycl/test_pycl.ipynb?flush_cache=true)
+
+<b>bam_sample</b> (fp_in, fp_out, n_reads, verbose=False, **kwargs)
+
+Sample reads from a SAM/BAM file and write in a new file
+
+* fp_in
+
+Path to the input file in .bam/.sam/.cram (the format will be infered from extension)
+
+* fp_out
+
+Path to the output file in .bam/.sam/.cram (the format will be infered from extension)
+
+* n_reads
+
+number of reads to sample
+
+    ________________________________________________________________________________
 
 <b>bash</b> (cmd, live='stdout', print_stdout=True, ret_stdout=False, log_stdout=None, print_stderr=True, ret_stderr=False, log_stderr=None, **kwargs)
 
@@ -382,7 +427,7 @@ Path of the output compressed file (facultative)
 
     ________________________________________________________________________________
 
-<b>has_extension</b> (fp, ext, pos=-1, **kwargs)
+<b>has_extension</b> (fp, ext, pos=-1, raise_exception=False, **kwargs)
 
 Test presence of extension in a file path
 
@@ -396,7 +441,7 @@ Postition of the extension in the file path. -1 for the last, -2 for the penulti
 
     ________________________________________________________________________________
 
-<b>head</b> (fp, n=10, line_numbering=False, ignore_hashtag_line=False, max_char_line=150, **kwargs)
+<b>head</b> (fp, n=10, line_numbering=False, ignore_comment_line=False, comment_char='#', max_char_line=150, **kwargs)
 
 Emulate linux head cmd. Handle gziped files
 
@@ -406,19 +451,23 @@ Path to the file to be parsed
 
 * n
 
-Number of lines to print starting from the begining of the file
+Number of lines to print starting from the begining of the file (Default 10)
 
 * line_numbering
 
-If True the number of the line will be indicated in front of the line
+If True the number of the line will be indicated in front of the line (Default False)
 
-* ignore_hashtag_line
+* ignore_comment_line
 
-Skip initial lines starting with a # symbol
+Skip initial lines starting with a specific character (Default False)
+
+* comment_char
+
+Character or string for ignore_comment_line argument (Default "#")
 
 * max_char_line
 
-Maximal number of character to print per line
+Maximal number of character to print per line (Default 150)
 
     ________________________________________________________________________________
 
@@ -428,7 +477,7 @@ Return True if the file is Gziped else False
 
     ________________________________________________________________________________
 
-<b>is_readable_file</b> (fp, **kwargs)
+<b>is_readable_file</b> (fp, raise_exception=True, **kwargs)
 
 Verify the readability of a file or list of file
 
@@ -489,6 +538,28 @@ Path to the file to be parsed
 * range_list
 
 list of start, end coordinates lists or tuples
+
+* line_numbering
+
+If True the number of the line will be indicated in front of the line
+
+* max_char_line
+
+Maximal number of character to print per line
+
+    ________________________________________________________________________________
+
+<b>linesample</b> (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwargs)
+
+Randomly sample lines in a file and print them. Handle gziped files
+
+* fp
+
+Path to the file to be parsed
+
+* n_lines
+
+Number of lines to sample in the file
 
 * line_numbering
 

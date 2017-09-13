@@ -140,12 +140,17 @@ def larger_display (percent=100, **kwargs):
 
 #~~~~~~~ PREDICATES ~~~~~~~#
 
-def is_readable_file (fp, **kwargs):
+def is_readable_file (fp, raise_exception=True, **kwargs):
     """
     Verify the readability of a file or list of file
     """
     if not os.access(fp, os.R_OK):
-        raise IOError ("{} is not a valid file".format(fp))
+        if raise_exception:
+            raise IOError ("{} is not a valid file".format(fp))
+        else:
+            return False
+    else:
+        return True
 
 def is_gziped (fp, **kwargs):
     """
@@ -153,7 +158,7 @@ def is_gziped (fp, **kwargs):
     """
     return fp[-2:].lower() == "gz"
 
-def has_extension (fp, ext, pos=-1, **kwargs):
+def has_extension (fp, ext, pos=-1, raise_exception=False, **kwargs):
     """
     Test presence of extension in a file path
     * ext
@@ -165,10 +170,16 @@ def has_extension (fp, ext, pos=-1, **kwargs):
     if type(ext) == str:
         ext = [ext]
     # Test ext presence
-    return fp.split(".")[pos].lower() in ext
-
+    if not fp.split(".")[pos].lower() in ext:
+        if raise_exception:
+            raise ValueError ("Invalid extension for file {}. Valid extensions: {}".format(fp, "/".join(ext)))
+        else:
+            return False
+    else:
+        return True
+    
 #~~~~~~~ PATH MANIPULATION ~~~~~~~#
-
+    
 def file_basename (fp, **kwargs):
     """
     Return the basename of a file without folder location and extension
