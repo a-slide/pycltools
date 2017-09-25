@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Define self package variable
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 __all__ = ["pycl"]
 __author__= 'Adrien Leger'
 __email__ = 'aleg@ebi.ac.uk'

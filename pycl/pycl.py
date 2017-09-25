@@ -11,6 +11,8 @@ import time
 import random
 from collections import OrderedDict
 from subprocess import Popen, PIPE
+import bisect
+import itertools
 
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
 
@@ -1676,3 +1678,50 @@ def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
                     j+=1
             if verbose:
                 print("Wrote {} reads in output file".format(j))
+
+##~~~~~~~ DNA SEQUENCE TOOLS ~~~~~~~#
+
+def base_generator (bases = ["A","T","C","G"], weights = [0.56,0.56,0.44,0.44], **kwargs):
+    """
+    Generator returning DNA/RNA bases according to a probability weightning
+    * bases: list (default ["A","T","C","G"])
+        DNA RNA bases allowed in the
+    * weights: list (default [0.56,0.56,0.44,0.44])
+        Probability of each base to be returned. Should match the index of bases. The sum does not need to be equal to 1.
+        If the list is empty bases will be returned with a flat probability. The default values are the average found in human genes.
+    """
+    # If weights is provided create weighted generator
+    if weights:
+        
+        # Verify that the 2 lists are the same size
+        if len(bases) != len(weights):
+            raise ValueError ("weights is not the same length as bases.")
+            
+        # Calculate cumulated weights
+        cum_weights = list(itertools.accumulate(weights))
+
+        while True:
+            # Emit a uniform probability between 0 and the max value of the cumulative weigths
+            p = random.uniform(0, cum_weights[-1])
+            # Use bisect to retun the corresponding base
+            yield bases[bisect.bisect(cum_weights, p)]
+            
+    # If not weight if required, will return each base with the same probability
+    else:
+        while True:
+            yield random.choice(bases)
+                
+def make_sequence (bases = ["A","T","C","G"], weights = [0.56,0.56,0.44,0.44], length=1000, **kwargs):
+    """
+    return a sequence of DNA/RNA bases according to a probability weightning
+    * bases: list (default ["A","T","C","G"])
+        DNA RNA bases allowed in the
+    * weights: list (default [0.56,0.56,0.44,0.44])
+        Probability of each base to be returned. Should match the index of bases. The sum does not need to be equal to 1.
+        If the list is empty bases will be returned with a flat probability. The default values are the average found in human genes.
+    * length: int (default 1000)
+        length of the sequence to be returned
+    """
+    bgen = base_generator(bases=bases, weights=weights)
+    seq_list = [next(bgen) for _ in range (length)]
+    return "".join(seq_list)

@@ -1,4 +1,4 @@
-# pycl 1.0.4 package documentation
+# pycl 1.0.5 package documentation
 
 ---
 
@@ -42,13 +42,13 @@ Ideally, before installation, create a clean python3 virtual environment to depl
 
 Install the package with pip.
 
-```bash
+```python
 pip3 install git+https://github.com/a-slide/pycl.git
 ```
 
 To update the package:
 
-```bash
+```python
 pip3 install git+https://github.com/a-slide/pycl.git --upgrade
 ```
 
@@ -56,7 +56,7 @@ pip3 install git+https://github.com/a-slide/pycl.git --upgrade
 
 With this option, the package will be locally installed in “editable” or “develop” mode. This allows the package to be both installed and editable in project form. This is the recommended option if you wish to participate to the development of the package. As for the option before, the required dependencies will be automatically installed.
 
-```bash
+```python
 git clone https://github.com/a-slide/pycl.git
 cd pycl
 chmod u+x setup.py
@@ -71,7 +71,7 @@ This option is also suitable if you are interested in further developing the pac
 
 * Clone the repository locally
 
-```bash
+```python
 git clone https://github.com/a-slide/pycl.git
 ```
 
@@ -131,8 +131,6 @@ Sample data files are provided with the package for testing purpose. Depending o
 
 * RADAR_Secondary.txt
 
-* test_dir
-
 * RADAR_Main.txt
 
 * Small_editing_Peng_hg38.bed
@@ -156,6 +154,22 @@ Path to the output file in .bam/.sam/.cram (the format will be infered from exte
 * n_reads
 
 number of reads to sample
+
+    ________________________________________________________________________________
+
+<b>base_generator</b> (bases=['A', 'T', 'C', 'G'], weights=[0.56, 0.56, 0.44, 0.44], **kwargs)
+
+Generator returning DNA/RNA bases according to a probability weightning
+
+* bases: list (default ["A","T","C","G"])
+
+DNA RNA bases allowed in the
+
+* weights: list (default [0.56,0.56,0.44,0.44])
+
+Probability of each base to be returned. Should match the index of bases. The sum does not need to be equal to 1.
+
+If the list is empty bases will be returned with a flat probability. The default values are the average found in human genes.
 
     ________________________________________________________________________________
 
@@ -590,6 +604,26 @@ dictionary value. If no value is requested after the option flag "None" had to b
 * opt_list
 
 List of simple command line arguments
+
+    ________________________________________________________________________________
+
+<b>make_sequence</b> (bases=['A', 'T', 'C', 'G'], weights=[0.56, 0.56, 0.44, 0.44], length=1000, **kwargs)
+
+return a sequence of DNA/RNA bases according to a probability weightning
+
+* bases: list (default ["A","T","C","G"])
+
+DNA RNA bases allowed in the
+
+* weights: list (default [0.56,0.56,0.44,0.44])
+
+Probability of each base to be returned. Should match the index of bases. The sum does not need to be equal to 1.
+
+If the list is empty bases will be returned with a flat probability. The default values are the average found in human genes.
+
+* length: int (default 1000)
+
+length of the sequence to be returned
 
     ________________________________________________________________________________
 
