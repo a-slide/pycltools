@@ -408,7 +408,7 @@ def cat (fp, max_lines=100, line_numbering=False, max_char_line=150, **kwargs):
     if n_line <= max_lines:
         range_list = [[0, n_line-1]]
     else:
-        range_list=[[0, max_lines/2-1],[n_line-max_lines/2, n_line-1]]
+        range_list=[[0, max_lines/2-1],[n_line-max_lines/2, n_line]]
     linerange (fp=fp, range_list=range_list, line_numbering=line_numbering, max_char_line=max_char_line)
 
 def tail (fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
@@ -425,10 +425,10 @@ def tail (fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
     """
     n_line = fastcount(fp)
     if n_line <= n:
-        range_list = [[0, n_line-1]]
+        range_list = [[0, n_line]]
         jprint ("Only {} lines in the file".format(n_line))
     else:
-        range_list=[[n_line-n, n_line-1]]
+        range_list=[[n_line-n+1, n_line]]
     linerange (fp=fp, range_list=range_list, line_numbering=line_numbering, max_char_line=max_char_line)
 
 def head (fp, n=10, line_numbering=False, ignore_comment_line=False, comment_char="#", max_char_line=150, **kwargs):
@@ -730,6 +730,25 @@ def _mkdir (fp):
     else:
         print ("Creating {}".format(fp))
         os.mkdir(fp)
+
+def dir_walk (fp):
+    """
+    Print a directory arborescence 
+    """
+    if os.path.exists(fp) and os.path.isdir(fp):
+        if fp.endswith(os.sep):
+            fp = fp[:-1]
+        
+        fp_len = len(fp.split(os.sep))
+        for root, dirs, file_list in os.walk(fp):
+            cur_path_len = len(root.split(os.sep)) - fp_len
+            print((cur_path_len) * '-', os.path.basename(root))
+            
+            if file_list:
+                file_list.sort()
+                for f in file_list:
+                    print((cur_path_len)*' ' + "-", f)
+
 
 #~~~~~~~ SHELL MANIPULATION ~~~~~~~#
 
@@ -1681,14 +1700,15 @@ def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
 
 ##~~~~~~~ DNA SEQUENCE TOOLS ~~~~~~~#
 
-def base_generator (bases = ["A","T","C","G"], weights = [0.56,0.56,0.44,0.44], **kwargs):
+def base_generator (bases = ["A","T","C","G"], weights = [0.280788,0.281691,0.193973,0.194773], **kwargs):
     """
     Generator returning DNA/RNA bases according to a probability weightning
     * bases: list (default ["A","T","C","G"])
-        DNA RNA bases allowed in the
-    * weights: list (default [0.56,0.56,0.44,0.44])
+        DNA RNA bases allowed
+    * weights: list (default [0.280788,0.281691,0.193973,0.194773])
         Probability of each base to be returned. Should match the index of bases. The sum does not need to be equal to 1.
-        If the list is empty bases will be returned with a flat probability. The default values are the average found in human genes.
+        If the list is empty bases will be returned with a flat probability. The default values represent the frequency in the human
+        genome (excluding N).
     """
     # If weights is provided create weighted generator
     if weights:
@@ -1711,14 +1731,15 @@ def base_generator (bases = ["A","T","C","G"], weights = [0.56,0.56,0.44,0.44], 
         while True:
             yield random.choice(bases)
                 
-def make_sequence (bases = ["A","T","C","G"], weights = [0.56,0.56,0.44,0.44], length=1000, **kwargs):
+def make_sequence (bases = ["A","T","C","G"], weights = [0.280788,0.281691,0.193973,0.194773], length=1000, **kwargs):
     """
     return a sequence of DNA/RNA bases according to a probability weightning
     * bases: list (default ["A","T","C","G"])
-        DNA RNA bases allowed in the
-    * weights: list (default [0.56,0.56,0.44,0.44])
+        DNA RNA bases allowed in the sequence
+    * weights: list (default [0.280788,0.281691,0.193973,0.194773])
         Probability of each base to be returned. Should match the index of bases. The sum does not need to be equal to 1.
-        If the list is empty bases will be returned with a flat probability. The default values are the average found in human genes.
+        If the list is empty bases will be returned with a flat probability. The default values represent the frequency in the human
+        genome (excluding N).
     * length: int (default 1000)
         length of the sequence to be returned
     """
