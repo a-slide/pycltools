@@ -32,12 +32,12 @@ def jhelp(function, full=False, **kwargs):
         warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
         help(function)
         return
-                
+
     if isfunction(function) or ismethod(function):
         name = function.__name__.strip()
         sig = str(signature(function)).strip()
         display(HTML ("<b>{}</b> {}".format(name, sig)))
-        
+
         if function.__doc__:
             for line in function.__doc__.split("\n"):
                 line = line.strip()
@@ -56,16 +56,16 @@ def jprint(*args, **kwargs):
     * **kwargs
         Formatting options to tweak the html rendering
         Boolean options : bold, italic, highlight, underlined, striked, subscripted, superscripted
-        String oprions: font, color, size, align, background_color, line_height 
+        String oprions: font, color, size, align, background_color, line_height
     """
-    # Function specific third party import    
+    # Function specific third party import
     try:
-        from IPython.core.display import display, HTML    
+        from IPython.core.display import display, HTML
     except (NameError, ImportError) as E:
         warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
         print(args)
         return
-    
+
     # Join the different elements together and cast in string
     s =  " ".join([str(i) for i in args])
 
@@ -88,7 +88,11 @@ def jprint(*args, **kwargs):
     if "size" in kwargs and kwargs["size"]: style+= "font-size:{}%;".format(kwargs["size"])
     if "align" in kwargs and kwargs["align"]: style+= "text-align:{};".format(kwargs["align"])
     if "background_color" in kwargs and kwargs["background_color"]: style+= "background-color:{};".format(kwargs["background_color"])
-    if "line_height" in kwargs and kwargs["line_height"]: style+= "line-height:{}px;".format(kwargs["line_height"])
+    if "line_height" in kwargs and kwargs["line_height"]:
+        line_height = kwargs["line_height"]
+    else:
+        line_height=20
+    style+= "line-height:{}px;".format(line_height)
 
     # Format final string
     if style: s = "<p style=\"{}\">{}</p>".format(style,s)
@@ -99,11 +103,12 @@ def jprint(*args, **kwargs):
 def toogle_code(**kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
-    Hide code with a clickable link in a jupyter notebook
+    Hide code with a clickable link in a j
+    upyter notebook
     """
-    # Function specific third party import    
+    # Function specific third party import
     try:
-        from IPython.core.display import display, HTML    
+        from IPython.core.display import display, HTML
     except (NameError, ImportError) as E:
         warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
         return
@@ -130,15 +135,39 @@ def larger_display (percent=100, **kwargs):
     Resize the area of the screen containing the notebook according to a given percentage of the available width
     *  percent percentage of the width of the screen to use [DEFAULT:100]
     """
-    # Function specific third party import    
+    # Function specific third party import
     try:
-        from IPython.core.display import display, HTML    
+        from IPython.core.display import display, HTML
     except (NameError, ImportError) as E:
         warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
         return
 
     # resizing
     display(HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent)))
+
+def hide_traceback ():
+    """
+    FOR JUPYTER NOTEBOOK ONLY
+    Remove the traceback of exception and return only the Exception message and type
+    """
+    ipython = get_ipython()
+    ipython.showtraceback = _hide_traceback
+
+def _hide_traceback (
+    exc_tuple=None,
+    filename=None,
+    tb_offset=None,
+    exception_only=False,
+    running_compiled_code=False):
+    """
+    Private helper function for hide_traceback
+    """
+    ipython = get_ipython()
+    etype, value, tb = sys.exc_info()
+    return ipython._showtraceback(
+        etype,
+        value,
+        ipython.InteractiveTB.get_exception_only (etype, value))
 
 #~~~~~~~ PREDICATES ~~~~~~~#
 
@@ -179,9 +208,9 @@ def has_extension (fp, ext, pos=-1, raise_exception=False, **kwargs):
             return False
     else:
         return True
-    
+
 #~~~~~~~ PATH MANIPULATION ~~~~~~~#
-    
+
 def file_basename (fp, **kwargs):
     """
     Return the basename of a file without folder location and extension
@@ -359,14 +388,14 @@ def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwar
     if not range_list:
         n_line = fastcount(fp)
         range_list=[[0,2],[n_line-3, n_line-1]]
-    
+
     if is_gziped(fp):
         open_fun = gzip.open
         open_mode =  "rt"
     else:
         open_fun = open
         open_mode =  "r"
-        
+
     with open_fun(fp, open_mode) as f:
         previous_line_empty = False
         for n, line in enumerate(f):
@@ -377,12 +406,12 @@ def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwar
                         l = "{}\t{}".format(n, line.strip())
                     else:
                         l = line.strip()
-                        
+
                     if len(l) > max_char_line:
                         jprint (l[0:max_char_line]+"...", line_height=10)
                     else:
                         jprint (l, line_height=10)
-                        
+
                     line_print = True
                     previous_line_empty = False
                     break
@@ -417,7 +446,7 @@ def tail (fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
     * fp
         Path to the file to be parsed
     * n
-        Number of lines to print starting from the end of the file 
+        Number of lines to print starting from the end of the file
     * line_numbering
         If True the number of the line will be indicated in front of the line
     * max_char_line
@@ -453,7 +482,7 @@ def head (fp, n=10, line_numbering=False, ignore_comment_line=False, comment_cha
     else:
         open_fun = open
         open_mode =  "r"
-        
+
     with open_fun(fp, open_mode) as fh:
 
         line_num = 0
@@ -487,7 +516,7 @@ def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwarg
         Maximal number of character to print per line
     """
     n_lines_origin = fastcount(fp)
-    
+
     # Take into account the situation in which there are less lines in the file than requested.
     if n_lines >= n_lines_origin:
         if verbose:
@@ -495,7 +524,7 @@ def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwarg
         index_list = list(range(0, n_lines_origin-1))
     else:
         index_list = sorted(random.sample(range(0, n_lines_origin-1), n_lines))
-    
+
     # Sample lines in input file according to the list of random line numbers
     if is_gziped(fp):
         open_fun = gzip.open
@@ -535,15 +564,15 @@ def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="
     * sep
         Character or list of characters to use in order to split the lines. Exemple ["\t",";"]. DEFAULT="\t"
     """
-    
-    # Function specific third party import    
+
+    # Function specific third party import
     try:
-        import pandas as pd    
+        import pandas as pd
     except (NameError, ImportError) as E:
         print (E)
         print ("pandas is required to use this function. Please verify your dependencies")
         sys.exit()
-    
+
     # Transform separator in regular expression if needed
     if type (sep) == list:
         sep = "[{}]".format("".join(sep))
@@ -733,17 +762,17 @@ def _mkdir (fp):
 
 def dir_walk (fp):
     """
-    Print a directory arborescence 
+    Print a directory arborescence
     """
     if os.path.exists(fp) and os.path.isdir(fp):
         if fp.endswith(os.sep):
             fp = fp[:-1]
-        
+
         fp_len = len(fp.split(os.sep))
         for root, dirs, file_list in os.walk(fp):
             cur_path_len = len(root.split(os.sep)) - fp_len
             print((cur_path_len) * '-', os.path.basename(root))
-            
+
             if file_list:
                 file_list.sort()
                 for f in file_list:
@@ -887,9 +916,9 @@ def bash_update(cmd, update_freq=1, **kwargs):
         The frequency of output updating in seconds [DEFAULT: 1]
     """
 
-    # imports    
+    # imports
     try:
-        from IPython.core.display import clear_output   
+        from IPython.core.display import clear_output
     except (NameError, ImportError) as E:
         print (E)
         print ("jupyter notebook is required to use this function. Please verify your dependencies")
@@ -1147,10 +1176,10 @@ def reformat_table(
 
     # Init an empty panda dataframe if required
     if return_df:
-        
-    # Function specific third party import    
+
+    # Function specific third party import
         try:
-            import pandas as pd    
+            import pandas as pd
         except (NameError, ImportError) as E:
             print (E)
             print ("pandas is required to use this option. Please verify your dependencies")
@@ -1378,9 +1407,9 @@ def url_exist (url, **kwargs):
     Predicate verifying if an url exist without downloading all the link
     """
 
-    # Function specific third party import    
+    # Function specific third party import
     try:
-        import httplib2  
+        import httplib2
     except (NameError, ImportError) as E:
         print (E)
         print ("httplib2 is required to use this function. Please verify your dependencies")
@@ -1488,7 +1517,7 @@ def print_arg(**kwargs):
 
     # Function specific standard lib imports
     from inspect import getargvalues, stack
-    
+
     # Parse all arg
     posname, kwname, args = getargvalues(stack()[1][0])[-3:]
     # For enumerated named arguments
@@ -1510,7 +1539,7 @@ def print_arg(**kwargs):
 
 ##~~~~~~~ SSH TOOLS ~~~~~~~#
 
-def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, ssh_config="~/.ssh/config", **kwargs):
+def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, ssh_config="~/.ssh/config", verbose=False, **kwargs):
     """
     Copy a file over ssh in a target remote directory
     * hostname
@@ -1526,7 +1555,7 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
     * ssh_config
         use as an alternative method instead of giving the username and rsa_private_key. Will fetch them from the config file directly
     """
-    # Function specific third party import    
+    # Function specific third party import
     try:
         import paramiko
     except (NameError, ImportError) as E:
@@ -1535,7 +1564,7 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
         sys.exit()
 
     if not username or not rsa_private_key:
-        print ("Parse the ssh config file")
+        if verbose: print ("Parse the ssh config file")
         ssh_config = os.path.expanduser(ssh_config)
         # Find host in the host list of the ssh config file
         with open (ssh_config) as conf:
@@ -1561,17 +1590,17 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
             raise
 
     # now, connect and use paramiko Transport to negotiate SSH2 across the connection
-    print ('Establishing SSH connection to: {} ...'.format(hostname))
+    if verbose: print ('Establishing SSH connection to: {} ...'.format(hostname))
     with paramiko.Transport(hostname) as t:
         t.start_client()
 
         try:
             key = paramiko.RSAKey.from_private_key_file(rsa_private_key)
             t.auth_publickey(username, key)
-            print ('... Success!')
+            if verbose: print ('... Success!')
 
         except Exception as e:
-            print ('... Failed loading {}'.format(rsa_private_key))
+            if verbose: print ('... Failed loading {}'.format(rsa_private_key))
 
         assert t.is_authenticated(), 'RSA key auth failed!'
 
@@ -1583,21 +1612,21 @@ def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, 
 
         try:
             sftp.mkdir(remote_dir)
-            print ('Create directory {}'.format(remote_dir))
+            if verbose: print ('Create directory {}'.format(remote_dir))
         except IOError as e:
-            print ('Assuming {} exists'.format(remote_dir))
+            if verbose: print ('Assuming {} exists'.format(remote_dir))
 
         remote_file = remote_dir + '/' + os.path.basename(local_file)
 
-        print ('Copying local file from {} to {}:{}'.format(local_file, hostname, remote_file))
+        if verbose: print ('Copying local file from {} to {}:{}'.format(local_file, hostname, remote_file))
         sftp.put(local_file, remote_file)
-        print ('All operations complete!')
+        if verbose: print ('All operations complete!')
 
 ##~~~~~~~ PACKAGE TOOLS ~~~~~~~#
 
 def get_package_file (package, fp="", **kwargs):
     """
-    Verify the existence of a file from the package data and return a file path 
+    Verify the existence of a file from the package data and return a file path
     * package
         Name of the package
     * fp
@@ -1611,10 +1640,10 @@ def get_package_file (package, fp="", **kwargs):
     except (NameError, ImportError, DistributionNotFound) as E:
         warnings.warn(str(E))
         return
-        
+
     # if the path exists
     if os.path.exists(fp):
-        
+
         # In case no fp is given or if the path is a directory list the package files, print the arborescence
         if os.path.isdir(fp):
             for root, dirs, files in os.walk(fp):
@@ -1623,11 +1652,11 @@ def get_package_file (package, fp="", **kwargs):
                 for file in files:
                     print(len(path) * '-', file)
             return fp
-        
+
         # If file exist and is readable
         if os.access(fp, os.R_OK):
             return fp
-    
+
     else:
         warnings.warn("File does not exist or is not readeable")
         return
@@ -1642,15 +1671,15 @@ def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
     * fp_out
         Path to the output file in .bam/.sam/.cram (the format will be infered from extension)
     * n_reads
-        number of reads to sample        
+        number of reads to sample
     """
-    # Function specific third party import    
+    # Function specific third party import
     try:
         import pysam as ps
     except (NameError, ImportError) as E:
         warnings.warn ("pysam is required to use this function. Please verify your dependencies")
         return
-    
+
     # Define opening mode
     if has_extension(fp_in, "bam"):
         mode_in = "rb"
@@ -1670,13 +1699,13 @@ def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
     else:
         warnings.warn ("Invalid output file format (.bam/.sam/.cram)")
         return
-    
+
     # Count the reads and define a list of random lines to sample
     with ps.AlignmentFile(fp_in, mode_in) as fh_in:
         n_read_origin = fh_in.count()
         if verbose:
             print("Found {} reads in input file".format(n_read_origin))
-        
+
         # Take into account the situation in which there are less lines in the file than requested.
         if n_reads >= n_read_origin:
             if verbose:
@@ -1684,7 +1713,7 @@ def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
             index_list = list(range(0, n_read_origin-1))
         else:
             index_list = sorted(random.sample(range(0, n_read_origin-1), n_reads))
-    
+
     # Sample lines in input file according to the list of random line numbers
     with ps.AlignmentFile(fp_in, mode_in) as fh_in:
         with ps.AlignmentFile(fp_out, mode_out, header=fh_in.header) as fh_out:
@@ -1712,11 +1741,11 @@ def base_generator (bases = ["A","T","C","G"], weights = [0.280788,0.281691,0.19
     """
     # If weights is provided create weighted generator
     if weights:
-        
+
         # Verify that the 2 lists are the same size
         if len(bases) != len(weights):
             raise ValueError ("weights is not the same length as bases.")
-            
+
         # Calculate cumulated weights
         cum_weights = list(itertools.accumulate(weights))
 
@@ -1725,12 +1754,12 @@ def base_generator (bases = ["A","T","C","G"], weights = [0.280788,0.281691,0.19
             p = random.uniform(0, cum_weights[-1])
             # Use bisect to retun the corresponding base
             yield bases[bisect.bisect(cum_weights, p)]
-            
+
     # If not weight if required, will return each base with the same probability
     else:
         while True:
             yield random.choice(bases)
-                
+
 def make_sequence (bases = ["A","T","C","G"], weights = [0.280788,0.281691,0.193973,0.194773], length=1000, **kwargs):
     """
     return a sequence of DNA/RNA bases according to a probability weightning
