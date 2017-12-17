@@ -847,6 +847,7 @@ def bash_basic(
 
 def bash(
     cmd,
+    virtualenv=None,
     live="stdout",
     print_stdout=True,
     ret_stdout=False,
@@ -861,6 +862,8 @@ def bash(
     tuple will be returned and if both are False None will be returned
     * cmd
         A command line string formatted as a string
+    * virtualenv
+        If specified will try to load a virtualenvwrapper environment before runing the command
     * print_stdout
         If True the standard output will be LIVE printed through the system standard output stream
     * ret_stdout
@@ -873,8 +876,6 @@ def bash(
         If True the standard error will be returned as a string
     * log_stderr
         If a filename is given, the standard error will logged in this file
-    * virtualenv
-        If specified will try to load a virtualenvwrapper environment before runing the command
     """
     if virtualenv:
         cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(virtualenv, cmd)
@@ -1825,9 +1826,9 @@ def base_generator (
             yield random.choice(bases)
 
 def make_sequence (
-    bases = ["A","T","C","G"], 
-    weights = [0.280788,0.281691,0.193973,0.194773], 
-    length=1000, 
+    bases = ["A","T","C","G"],
+    weights = [0.280788,0.281691,0.193973,0.194773],
+    length=1000,
     **kwargs):
     """
     return a sequence of DNA/RNA bases according to a probability weightning
