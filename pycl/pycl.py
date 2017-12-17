@@ -18,7 +18,8 @@ import itertools
 
 def jhelp(function, full=False, **kwargs):
     """
-    Print a nice looking help string based on the name of a declared function. By default print the function definition and description
+    Print a nice looking help string based on the name of a declared function. By default print the function
+    definition and description
     * function
         Name of a declared function or class method
     * full
@@ -50,7 +51,8 @@ def jhelp(function, full=False, **kwargs):
 def jprint(*args, **kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
-    Format a string in HTML and print the output. Equivalent of print, but highly customizable. Many options can be passed to the function.
+    Format a string in HTML and print the output. Equivalent of print, but highly customizable. Many options can be
+    passed to the function.
     * *args
         One or several objects that can be cast in str
     * **kwargs
@@ -598,7 +600,14 @@ def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="
 
     return df.groupby(colnum).size().sort_values(ascending=False)
 
-def colsum (fp, colrange=None, separator="", header=False, ignore_hashtag_line=False, max_items=10, ret_type="md", **kwargs):
+def colsum (fp,
+    colrange=None,
+    separator="",
+    header=False,
+    ignore_hashtag_line=False,
+    max_items=10,
+    ret_type="md",
+    **kwargs):
     """
     Create a summary of selected columns of a file
     * fp
@@ -738,7 +747,8 @@ def mkdir(fp, level=1, **kwargs):
     * fp
         path name where the folder should be created
     * level
-        level in the path where to start to create the directories. Used by the program for the recursive creation of directories
+        level in the path where to start to create the directories. Used by the program for the recursive creation of
+        directories
     """
 
     # Extract the path corresponding to the current level of subdirectory and create it if needed
@@ -781,15 +791,20 @@ def dir_walk (fp):
 
 #~~~~~~~ SHELL MANIPULATION ~~~~~~~#
 
-def make_cmd_str(prog_name, opt_dict={}, opt_list=[], **kwargs):
+def make_cmd_str(
+    prog_name,
+    opt_dict={},
+    opt_list=[],
+    **kwargs):
     """
     Create a Unix like command line string from the prog name, a dict named arguments and a list of unmammed arguments
     exemple make_cmd_str("bwa", {"b":None, t":6, "i":"../idx/seq.fa"}, ["../read1", "../read2"])
     * prog_name
         Name (if added to the system path) or path of the program
     * opt_dict
-        Dictionary of option arguments such as "-t 5". The option flag have to be the key (without "-") and the the option value in the
-        dictionary value. If no value is requested after the option flag "None" had to be assigned to the value field.
+        Dictionary of option arguments such as "-t 5". The option flag have to be the key (without "-") and the the
+        option value in the dictionary value. If no value is requested after the option flag "None" had to be assigned
+        to the value field.
     * opt_list
         List of simple command line arguments
     """
@@ -812,19 +827,38 @@ def make_cmd_str(prog_name, opt_dict={}, opt_list=[], **kwargs):
 
     return cmd
 
-def bash_basic(cmd, **kwargs):
-    """Sent basic bash command"""
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-    stdout, stderr = process.communicate()
-    print (stdout.decode())
-    print (stderr.decode())
-
-def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=None, print_stderr=True, ret_stderr=False, log_stderr=None,
+def bash_basic(
+    cmd,
+    virtualenv=None,
     **kwargs):
     """
-    More advanced version of bash calling with live printing of the standard output and possibilities to log the redirect
-    the output and error as a string return or directly in files. If ret_stderr and ret_stdout are True a tuple will be returned and if
-    both are False None will be returned
+    Sent basic bash command
+    * cmd
+        A command line string formatted as a string
+    * virtualenv
+        If specified will try to load a virtualenvwrapper environment before runing the command
+    """
+    if virtualenv:
+        cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(virtualenv, cmd)
+    with Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True) as proc:
+        stdout, stderr = proc.communicate()
+        print (stdout.decode())
+        print (stderr.decode())
+
+def bash(
+    cmd,
+    live="stdout",
+    print_stdout=True,
+    ret_stdout=False,
+    log_stdout=None,
+    print_stderr=True,
+    ret_stderr=False,
+    log_stderr=None,
+    **kwargs):
+    """
+    More advanced version of bash calling with live printing of the standard output and possibilities to log the
+    redirect the output and error as a string return or directly in files. If ret_stderr and ret_stdout are True a
+    tuple will be returned and if both are False None will be returned
     * cmd
         A command line string formatted as a string
     * print_stdout
@@ -839,62 +873,66 @@ def bash(cmd, live="stdout", print_stdout=True, ret_stdout=False, log_stdout=Non
         If True the standard error will be returned as a string
     * log_stderr
         If a filename is given, the standard error will logged in this file
+    * virtualenv
+        If specified will try to load a virtualenvwrapper environment before runing the command
     """
+    if virtualenv:
+        cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(virtualenv, cmd)
 
     #empty str buffer
     stdout_str = ""
     stderr_str = ""
 
     # First execute the command parse the output
-    proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+    with Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE) as proc:
 
-    # Only 1 standard stream can be output at the time stdout or stderr
-    while proc.poll() is None:
+        # Only 1 standard stream can be output at the time stdout or stderr
+        while proc.poll() is None:
 
-        # Live parse stdout
-        if live == "stdout":
+            # Live parse stdout
+            if live == "stdout":
+                for line in iter(proc.stdout.readline, b''):
+                    if print_stdout:
+                        sys.stdout.write(line)
+                    if ret_stdout or log_stdout:
+                        stdout_str += line.decode()
+
+            # Live parse stderr
+            elif live == "stderr":
+                for line in iter(proc.stderr.readline, b''):
+                    if print_stderr:
+                        sys.stderr.write(line)
+                    if ret_stderr or log_stderr:
+                        stderr_str += line.decode()
+
+        # Verify that the command was successful and if not print error message and raise an exception
+        if proc.returncode >= 1:
+            sys.stderr.write("Error code #{} during execution of the command : {}\n".format(proc.returncode, cmd))
+            sys.stderr.write(proc.stderr.read())
+            return None
+
+        if live != "stdout" and (print_stdout or ret_stdout or log_stdout):
             for line in iter(proc.stdout.readline, b''):
                 if print_stdout:
                     sys.stdout.write(line)
                 if ret_stdout or log_stdout:
                     stdout_str += line.decode()
 
-        # Live parse stderr
-        elif live == "stderr":
+        if live != "stderr" and (print_stderr or ret_stderr or log_stderr):
             for line in iter(proc.stderr.readline, b''):
                 if print_stderr:
                     sys.stderr.write(line)
                 if ret_stderr or log_stderr:
                     stderr_str += line.decode()
 
-    # Verify that the command was successful and if not print error message and raise an exception
-    if proc.returncode >= 1:
-        sys.stderr.write("Error code #{} during execution of the command : {}\n".format(proc.returncode, cmd))
-        sys.stderr.write(proc.stderr.read())
-        return None
+        # Write log in file if requested
+        if log_stdout:
+            with open (log_stdout, "w") as fp:
+                fp.write(stdout_str)
 
-    if live != "stdout" and (print_stdout or ret_stdout or log_stdout):
-        for line in iter(proc.stdout.readline, b''):
-            if print_stdout:
-                sys.stdout.write(line)
-            if ret_stdout or log_stdout:
-                stdout_str += line.decode()
-
-    if live != "stderr" and (print_stderr or ret_stderr or log_stderr):
-        for line in iter(proc.stderr.readline, b''):
-            if print_stderr:
-                sys.stderr.write(line)
-            if ret_stderr or log_stderr:
-                stderr_str += line.decode()
-
-    # Write log in file if requested
-    if log_stdout:
-        with open (log_stdout, "w") as fp:
-            fp.write(stdout_str)
-
-    if log_stderr:
-        with open (log_stderr, "w") as fp:
-            fp.write(stderr_str)
+        if log_stderr:
+            with open (log_stderr, "w") as fp:
+                fp.write(stderr_str)
 
     # Return standard output and err if requested
     if ret_stdout and ret_stderr:
@@ -945,7 +983,15 @@ def bash_update(cmd, update_freq=1, **kwargs):
 
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
 
-def dict_to_md (d, key_label="", value_label="", transpose=False, sort_by_key=False, sort_by_val=True, max_items=None, **kwargs):
+def dict_to_md (
+    d,
+    key_label="",
+    value_label="",
+    transpose=False,
+    sort_by_key=False,
+    sort_by_val=True,
+    max_items=None,
+    **kwargs):
     """
     Transform a dict into a markdown formated table
     """
@@ -987,7 +1033,14 @@ def dict_to_md (d, key_label="", value_label="", transpose=False, sort_by_key=Fa
 
     return buffer
 
-def dict_to_report (d, tab="\t", ntab=0, sep=":", sort_dict=True, max_items=None, **kwargs):
+def dict_to_report (
+    d,
+    tab="\t",
+    ntab=0,
+    sep=":",
+    sort_dict=True,
+    max_items=None,
+    **kwargs):
     """
     Recursive function to return a text report from nested dict or OrderedDict objects
     """
@@ -1057,19 +1110,19 @@ def reformat_table(
     *  output_file
         A file path to output the reformatted table (if empty will not write in a file)
     *  return_df
-        If true will return a pandas dataframe containing the reformated table (Third party pandas package required) by default the columns
-        will be names after the final template [DEFAULT:False]
+        If true will return a pandas dataframe containing the reformated table (Third party pandas package required)
+        by default the columns will be names after the final template [DEFAULT:False]
     *  init_template
         A list of indexes and separators describing the structure of the input file
             Example initial line = "chr1    631539    631540    Squires|id1    0    +"
             Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
-            Alternatively, instead of the numbers, string indexes can be used, but they need to be enclosed in curly brackets to
-            differentiate them from the separators. This greatly simplify the writing of the final template.
+            Alternatively, instead of the numbers, string indexes can be used, but they need to be enclosed in curly
+            brackets to differentiate them from the separators. This greatly simplify the writing of the final template.
             Example initial line = "chr1    631539    631540    Squires|id1    0    +"
             Initial template = ["{chrom}","\t","{start}","\t","{end}","|","{name}","\t","{score}","\t","{strand}"]
     *  final_template
-        A list of indexes and separators describing the required structure of the output file. Name indexes need to match indexes of the
-        init_template and have to follow the same synthax  [DEFAULT:Same that init template]
+        A list of indexes and separators describing the required structure of the output file. Name indexes need to
+        match indexes of the init_template and have to follow the same synthax  [DEFAULT:Same that init template]
             Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
             Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
     *  header
@@ -1539,7 +1592,15 @@ def print_arg(**kwargs):
 
 ##~~~~~~~ SSH TOOLS ~~~~~~~#
 
-def scp (hostname, local_file, remote_dir, username=None, rsa_private_key=None, ssh_config="~/.ssh/config", verbose=False, **kwargs):
+def scp (
+    hostname,
+    local_file,
+    remote_dir,
+    username=None,
+    rsa_private_key=None,
+    ssh_config="~/.ssh/config",
+    verbose=False,
+    **kwargs):
     """
     Copy a file over ssh in a target remote directory
     * hostname
@@ -1729,7 +1790,10 @@ def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
 
 ##~~~~~~~ DNA SEQUENCE TOOLS ~~~~~~~#
 
-def base_generator (bases = ["A","T","C","G"], weights = [0.280788,0.281691,0.193973,0.194773], **kwargs):
+def base_generator (
+    bases = ["A","T","C","G"],
+    weights = [0.280788,0.281691,0.193973,0.194773],
+    **kwargs):
     """
     Generator returning DNA/RNA bases according to a probability weightning
     * bases: list (default ["A","T","C","G"])
@@ -1760,7 +1824,11 @@ def base_generator (bases = ["A","T","C","G"], weights = [0.280788,0.281691,0.19
         while True:
             yield random.choice(bases)
 
-def make_sequence (bases = ["A","T","C","G"], weights = [0.280788,0.281691,0.193973,0.194773], length=1000, **kwargs):
+def make_sequence (
+    bases = ["A","T","C","G"], 
+    weights = [0.280788,0.281691,0.193973,0.194773], 
+    length=1000, 
+    **kwargs):
     """
     return a sequence of DNA/RNA bases according to a probability weightning
     * bases: list (default ["A","T","C","G"])
