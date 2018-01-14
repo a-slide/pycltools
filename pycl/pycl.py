@@ -48,7 +48,7 @@ def jhelp(function, full=False, **kwargs):
     else:
         jprint("{} is not a function".format(function))
 
-def jprint(*args, **kwargs):
+def jprint (*args, **kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
     Format a string in HTML and print the output. Equivalent of print, but highly customizable. Many options can be
@@ -101,6 +101,15 @@ def jprint(*args, **kwargs):
     else: s = "<p>{}</p>".format(s)
 
     display(HTML(s))
+
+def stdout_print (*args):
+    """
+    Emulate print but uses sys stdout instead. It could sometimes be useful in specific situations where print
+    is in is not behaving optimaly (like with tqdm for example)
+    """
+    s =  " ".join([str(i) for i in args])
+    sys.stdout.write(s)
+    sys.stdout.flush()
 
 def toogle_code(**kwargs):
     """
@@ -1655,7 +1664,7 @@ def scp (
     if verbose: print ('Establishing SSH connection to: {} ...'.format(hostname))
     with paramiko.Transport(hostname) as t:
         t.start_client()
-
+get_package_file
         try:
             key = paramiko.RSAKey.from_private_key_file(rsa_private_key)
             t.auth_publickey(username, key)
@@ -1844,3 +1853,11 @@ def make_sequence (
     bgen = base_generator(bases=bases, weights=weights)
     seq_list = [next(bgen) for _ in range (length)]
     return "".join(seq_list)
+def stdout_print (*args):
+    """
+    Emulate print but uses sys stdout instead. It could sometimes be useful in specific situations where print
+    is in is not behaving optimaly (like with tqdm for example)
+    """
+    s =  " ".join([str(i) for i in args])
+    sys.stdout.write(s)
+    sys.stdout.flush()
