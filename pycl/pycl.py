@@ -991,6 +991,44 @@ def bash_update(cmd, update_freq=1, **kwargs):
     except KeyboardInterrupt:
         print("Stop monitoring\n")
 
+
+def bjobs_lock (update_freq=2, final_delay=5):
+    """
+    FOR JUPYTER NOTEBOOK IN LSF environment
+    Check if bjobs has running or pending jobs until all are done
+    * update_freq
+        The frequency of output updating in seconds [DEFAULT: 2]
+    * final_delay
+        Final delay in seconds at the end of all jobs to prevent IO errors [DEFAULT: 5]
+    """
+    # Loop and update the line is something changes
+    try:
+        while True:
+            time.sleep(update_freq)
+            stdout = bash("bjobs", ret_stderr=False, ret_stdout=True, print_stderr=False, print_stdout=False)
+
+            # Summarize active jobs
+            pend = run = 0
+            for s in stdout.split ("\n"):
+                if s[:1].isdigit():
+                    status = s.split()[2]
+                    if status == "PEND":
+                        pend+=1
+                    elif status == "RUN":
+                        run+=1
+            stdout_print ("Running jobs:{} Pending jobs:{}\r".format(run, pend))
+
+            if not stdout:
+                stdout_print("All jobs done"+" "*30+"\n")
+                stdout_print("Wait {}s for jobs to terminate\n".format(final_delay))
+                time.sleep (final_delay)
+                break
+
+    except KeyboardInterrupt:
+        stdout_print("User interuption"+" "*30+"\n")
+        time.sleep (final_delay)
+
+
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
 
 def dict_to_md (
