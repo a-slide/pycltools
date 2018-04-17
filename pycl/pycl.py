@@ -301,6 +301,23 @@ def rm_blank (name, replace="", **kwargs):
 
 #~~~~~~~ FILE MANIPULATION ~~~~~~~#
 
+def concatenate (src_list, dest, **kwargs):
+    """
+    Concatenate a list of scr files in a single output file. Handle gziped files (mixed input and output)
+    """
+    if is_gziped (dest):
+        open_fun_dest, open_mode_dest = gzip.open, "wt"
+    else:
+        open_fun_dest, open_mode_dest = open, "w"
+    with open_fun_dest (dest, open_mode_dest) as fh_dest:
+        for src in src_list:
+            if is_gziped (src):
+                open_fun_src, open_mode_src = gzip.open, "rt"
+            else:
+                open_fun_src, open_mode_src = open, "r"
+            with open_fun_src (src, open_mode_src) as fh_src:
+                shutil.copyfileobj (fh_src, fh_dest)
+
 def copyFile(src, dest, **kwargs):
     """
     Copy a single file to a destination file or folder (with error handling/reporting)
