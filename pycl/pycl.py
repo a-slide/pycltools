@@ -1008,6 +1008,44 @@ def bash_update(cmd, update_freq=1, **kwargs):
     except KeyboardInterrupt:
         print("Stop monitoring\n")
 
+def bsub (
+    prog_cmd,
+    virtualenv=None,
+    mem=None,
+    threads=None,
+    queue=None,
+    wait_jobid=None,
+    stdout_fp=None,
+    stderr_fp=None,
+    send_email=False,
+    **kwargs):
+    """
+    FOR JUPYTER NOTEBOOK IN LSF environment
+    Send an LSF bsub command through bash and return the JOBID
+    For more information read the bsub documentation
+    """
+    bsub_cmd = "bsub "
+    if mem:
+        bsub_cmd += "-M {0} -R 'rusage[mem={0}]' ".format(mem)
+    if threads:
+        bsub_cmd += "-n {0} ".format (threads)
+    if queue:
+        bsub_cmd += "-q {0} ".format (queue)
+    if stdout_fp:
+        bsub_cmd += "-oo {0} ".format (stdout_fp)
+    if stderr_fp:
+        bsub_cmd += "-eo {0} ".format (stderr_fp)
+    if send_email:
+        bsub_cmd += "-N ".format (queue)
+    if wait_jobid:
+        bsub_cmd += "-w 'post_done({0})' ".format (wait_jobid)
+
+    cmd = f"{bsub_cmd} \"{prog_cmd}\""
+    print (cmd)
+
+    stdout = bash (virtualenv=virtualenv, cmd=f"{bsub_cmd} \"{prog_cmd}\"", ret_stdout=True)
+    jobid = stdout.split("<")[1].split(">")[0]
+    return jobid
 
 def bjobs_lock (update_freq=2, final_delay=5):
     """
