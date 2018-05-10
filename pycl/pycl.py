@@ -1019,6 +1019,7 @@ def bsub (
     stderr_fp=None,
     send_email=False,
     print_full_cmd=True,
+    dry=False,
     **kwargs):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
@@ -1042,8 +1043,6 @@ def bsub (
         Path of the file where to write the standard error of the command (-eo)
     * send_email
         If True, will force LSF to send an email even if stdout_fp and/or stderr_fp is given
-    * print_full_cmd
-        If True, the full command (bsub + program command) will be printed before execution
     """
     bsub_cmd = "bsub "
     if mem:
@@ -1068,11 +1067,13 @@ def bsub (
 
     cmd = f"{bsub_cmd} \"{prog_cmd}\""
 
-    print (cmd)
+    if print_full_cmd:
+        print (cmd)
 
-    stdout = bash (virtualenv=virtualenv, cmd=f"{bsub_cmd} \"{prog_cmd}\"", ret_stdout=True)
-    jobid = stdout.split("<")[1].split(">")[0]
-    return jobid
+    if not dry:
+        stdout = bash (virtualenv=virtualenv, cmd=f"{bsub_cmd} \"{prog_cmd}\"", ret_stdout=True)
+        jobid = stdout.split("<")[1].split(">")[0]
+        return jobid
 
 def bjobs_lock (update_freq=2, final_delay=5):
     """
