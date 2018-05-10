@@ -1067,12 +1067,13 @@ def bsub (
 
     if print_full_cmd:
         print (cmd)
-        return random.randint(1000000, 9999999)
 
     if not dry:
         stdout = bash (virtualenv=virtualenv, cmd=cmd, ret_stdout=True)
         jobid = stdout.split("<")[1].split(">")[0]
         return jobid
+    else:
+        return random.randint(0, 100)
 
 def bjobs_lock (update_freq=2, final_delay=5):
     """
