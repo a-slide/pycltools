@@ -1067,6 +1067,7 @@ def bsub (
 
     if print_full_cmd:
         print (cmd)
+        return True
 
     if not dry:
         stdout = bash (virtualenv=virtualenv, cmd=cmd, ret_stdout=True)
