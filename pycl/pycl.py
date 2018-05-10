@@ -1018,11 +1018,32 @@ def bsub (
     stdout_fp=None,
     stderr_fp=None,
     send_email=False,
+    print_full_cmd=True,
     **kwargs):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
     Send an LSF bsub command through bash and return the JOBID
     For more information read the bsub documentation
+    * prog_cmd
+        A command line string formatted as a string
+    * virtualenv
+        If specified will try to load a virtualenvwrapper environment before runing the command
+    * mem
+        Memory to reserve (-M and -R 'rusage[mem=])
+    * threads
+        Number of thread to reserve (-n)
+    * queue
+        Name of the LSF queue to be used (-q)
+    * wait_jobid
+        jobid of list of jobid to wait before executing this command(-w 'post_done(jobid))
+    * stdout_fp
+        Path of the file where to write the standard output of the command (-oo)
+    * stderr_fp
+        Path of the file where to write the standard error of the command (-eo)
+    * send_email
+        If True, will force LSF to send an email even if stdout_fp and/or stderr_fp is given
+    * print_full_cmd
+        If True, the full command (bsub + program command) will be printed before execution
     """
     bsub_cmd = "bsub "
     if mem:
@@ -1038,9 +1059,15 @@ def bsub (
     if send_email:
         bsub_cmd += "-N ".format (queue)
     if wait_jobid:
-        bsub_cmd += "-w 'post_done({0})' ".format (wait_jobid)
+        if type(wait_jobid) in (list, set, tuple):
+            jobid_list = ["post_done({0})".format (jobid) for jobid in wait_jobid]
+            jobid_str = "&&".join(jobid_list)
+            bsub_cmd += "-w '{0}' ".format (jobid_str)
+        else:
+            bsub_cmd += "-w 'post_done({0})' ".format (wait_jobid)
 
     cmd = f"{bsub_cmd} \"{prog_cmd}\""
+
     print (cmd)
 
     stdout = bash (virtualenv=virtualenv, cmd=f"{bsub_cmd} \"{prog_cmd}\"", ret_stdout=True)
