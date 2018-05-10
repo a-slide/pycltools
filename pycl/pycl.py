@@ -1067,7 +1067,7 @@ def bsub (
 
     if print_full_cmd:
         print (cmd)
-        return True
+        return random.randint(1000000, 9999999)
 
     if not dry:
         stdout = bash (virtualenv=virtualenv, cmd=cmd, ret_stdout=True)
