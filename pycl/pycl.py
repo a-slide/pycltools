@@ -1058,12 +1058,10 @@ def bsub (
     if send_email:
         bsub_cmd += "-N ".format (queue)
     if wait_jobid:
-        if type(wait_jobid) in (list, set, tuple):
-            jobid_list = ["post_done({0})".format (jobid) for jobid in wait_jobid]
-            jobid_str = "&&".join(jobid_list)
-            bsub_cmd += "-w '{0}' ".format (jobid_str)
-        else:
-            bsub_cmd += "-w 'post_done({0})' ".format (wait_jobid)
+        if not type(wait_jobid) in (list, set, tuple):
+            wait_jobid = [wait_jobid]
+        jobid_str = "&&".join(["post_done({0})".format (jobid) for jobid in wait_jobid])
+        bsub_cmd += "-w '{0}' ".format (jobid_str)
 
     cmd = f"{bsub_cmd} \"{prog_cmd}\""
 
@@ -1071,7 +1069,7 @@ def bsub (
         print (cmd)
 
     if not dry:
-        stdout = bash (virtualenv=virtualenv, cmd=f"{bsub_cmd} \"{prog_cmd}\"", ret_stdout=True)
+        stdout = bash (virtualenv=virtualenv, cmd=cmd, ret_stdout=True)
         jobid = stdout.split("<")[1].split(">")[0]
         return jobid
 
