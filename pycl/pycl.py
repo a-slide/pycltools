@@ -1027,7 +1027,7 @@ def bash_update(cmd, update_freq=1, **kwargs):
         print("Stop monitoring\n")
 
 def bsub (
-    prog_cmd,
+    cmd,
     virtualenv=None,
     mem=None,
     threads=None,
@@ -1043,7 +1043,7 @@ def bsub (
     FOR JUPYTER NOTEBOOK IN LSF environment
     Send an LSF bsub command through bash and return the JOBID
     For more information read the bsub documentation
-    * prog_cmd
+    * cmd
         A command line string formatted as a string
     * virtualenv
         If specified will try to load a virtualenvwrapper environment before runing the command
@@ -1062,6 +1062,10 @@ def bsub (
     * send_email
         If True, will force LSF to send an email even if stdout_fp and/or stderr_fp is given
     """
+    # Deprecated option for retro compatibility
+    if "prog_cmd" in kwargs:
+        cmd = kwargs["prog_cmd"]
+
     bsub_cmd = "bsub "
     if mem:
         bsub_cmd += "-M {0} -R 'rusage[mem={0}]' ".format(mem)
@@ -1081,13 +1085,13 @@ def bsub (
         jobid_str = "&&".join(["post_done({0})".format (jobid) for jobid in wait_jobid])
         bsub_cmd += "-w '{0}' ".format (jobid_str)
 
-    cmd = "{} \"{}\"".format (bsub_cmd, prog_cmd)
+    full_cmd = "{} \"{}\"".format (bsub_cmd, cmd)
 
     if print_full_cmd:
-        print (cmd)
+        print (full_cmd)
 
     if not dry:
-        stdout = bash (virtualenv=virtualenv, cmd=cmd, ret_stdout=True)
+        stdout = bash (virtualenv=virtualenv, cmd=full_cmd, ret_stdout=True)
         jobid = stdout.split("<")[1].split(">")[0]
         return jobid
     else:
