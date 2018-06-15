@@ -1027,7 +1027,7 @@ def bash_update(cmd, update_freq=1, **kwargs):
         print("Stop monitoring\n")
 
 def bsub (
-    cmd,
+    cmd=None,
     virtualenv=None,
     mem=None,
     threads=None,
@@ -1063,8 +1063,11 @@ def bsub (
         If True, will force LSF to send an email even if stdout_fp and/or stderr_fp is given
     """
     # Deprecated option for retro compatibility
-    if "prog_cmd" in kwargs:
-        cmd = kwargs["prog_cmd"]
+    if not cmd:
+        if "prog_cmd" in kwargs:
+            cmd = kwargs["prog_cmd"]
+        else:
+            raise TypeError ("bsub() missing 1 required positional argument: 'cmd'")
 
     bsub_cmd = "bsub "
     if mem:
@@ -1131,7 +1134,6 @@ def bjobs_lock (update_freq=2, final_delay=5):
 
     except KeyboardInterrupt:
         stdout_print("User interuption"+" "*30+"\n")
-
 
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
 
