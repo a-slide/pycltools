@@ -490,20 +490,39 @@ def tail (fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
 
 def head (fp, n=10, line_numbering=False, ignore_comment_line=False, comment_char="#", max_char_line=150, **kwargs):
     """
-    Emulate linux head cmd. Handle gziped files
+    Emulate linux head cmd. Handle gziped files and bam files
     * fp
-        Path to the file to be parsed
+        Path to the file to be parsed. Works with text, gunziped and binary bam files
     * n
         Number of lines to print starting from the begining of the file (Default 10)
     * line_numbering
         If True the number of the line will be indicated in front of the line (Default False)
     * ignore_comment_line
-        Skip initial lines starting with a specific character (Default False)
+        Skip initial lines starting with a specific character. Pointless for bam files(Default False)
     * comment_char
         Character or string for ignore_comment_line argument (Default "#")
     * max_char_line
         Maximal number of character to print per line (Default 150)
     """
+
+    # For bam files
+    if has_extension (fp=fp, ext="bam"):
+        import pysam
+        with pysam.AlignmentFile(fp, "rb") as f:
+
+            for line_num, read in enumerate(f):
+                if line_num >= n:
+                    break
+                l = read.to_string()
+                if line_numbering:
+                    l = "{}\t{}".format(line_num, l)
+                if len(l) > max_char_line:
+                    jprint (l[0:max_char_line]+"...", line_height=10)
+                else:
+                    jprint (l, line_height=10)
+        return
+
+    # For text files
     if is_gziped(fp):
         open_fun = gzip.open
         open_mode =  "rt"
@@ -512,7 +531,6 @@ def head (fp, n=10, line_numbering=False, ignore_comment_line=False, comment_cha
         open_mode =  "r"
 
     with open_fun(fp, open_mode) as fh:
-
         line_num = 0
         while (line_num < n):
             try:
@@ -1063,7 +1081,7 @@ def bsub (
         jobid_str = "&&".join(["post_done({0})".format (jobid) for jobid in wait_jobid])
         bsub_cmd += "-w '{0}' ".format (jobid_str)
 
-    cmd = f"{bsub_cmd} \"{prog_cmd}\""
+    cmd = "{} \"{}\"".format (bsub_cmd, prog_cmd)
 
     if print_full_cmd:
         print (cmd)
