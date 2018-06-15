@@ -46,7 +46,7 @@ def jhelp(function, full=False, **kwargs):
                     break
                 display(Markdown(line.strip()))
     else:
-        jprint("{} is not a function".format(function))
+        print("{} is not a function".format(function))
 
 def stdout_print (*args):
     """
@@ -435,10 +435,10 @@ def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwar
                     else:
                         l = line.strip()
 
-                    if len(l) > max_char_line:
-                        jprint (l[0:max_char_line]+"...", line_height=10)
+                    if max_char_line and len(l) > max_char_line:
+                        print (l[0:max_char_line]+"...")
                     else:
-                        jprint (l, line_height=10)
+                        print (l)
 
                     line_print = True
                     previous_line_empty = False
@@ -446,7 +446,7 @@ def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwar
 
             if not line_print:
                 if not previous_line_empty:
-                    jprint("...", line_height=10)
+                    print("...")
                     previous_line_empty = True
 
 def cat (fp, max_lines=100, line_numbering=False, max_char_line=150, **kwargs):
@@ -483,7 +483,7 @@ def tail (fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
     n_line = fastcount(fp)
     if n_line <= n:
         range_list = [[0, n_line]]
-        jprint ("Only {} lines in the file".format(n_line))
+        print ("Only {} lines in the file".format(n_line))
     else:
         range_list=[[n_line-n+1, n_line]]
     linerange (fp=fp, range_list=range_list, line_numbering=line_numbering, max_char_line=max_char_line)
@@ -516,10 +516,10 @@ def head (fp, n=10, line_numbering=False, ignore_comment_line=False, comment_cha
                 l = read.to_string()
                 if line_numbering:
                     l = "{}\t{}".format(line_num, l)
-                if len(l) > max_char_line:
-                    jprint (l[0:max_char_line]+"...", line_height=10)
+                if max_char_line and len(l) > max_char_line:
+                    print (l[0:max_char_line]+"...")
                 else:
-                    jprint (l, line_height=10)
+                    print (l)
         return
 
     # For text files
@@ -539,14 +539,14 @@ def head (fp, n=10, line_numbering=False, ignore_comment_line=False, comment_cha
                     continue
                 if line_numbering:
                     l = "{}\t{}".format(line_num, l)
-                if len(l) > max_char_line:
-                    jprint (l[0:max_char_line]+"...", line_height=10)
+                if max_char_line and len(l) > max_char_line:
+                    print (l[0:max_char_line]+"...")
                 else:
-                    jprint (l, line_height=10)
+                    print (l)
                 line_num+=1
 
             except StopIteration:
-                jprint ("Only {} lines in the file".format(line_num))
+                print ("Only {} lines in the file".format(line_num))
                 break
 
 def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwargs):
@@ -587,11 +587,11 @@ def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwarg
             if i == index_list[j]:
                 j+=1
                 l = l.strip()
-                if len(l) > max_char_line:
+                if max_char_line and len(l) > max_char_line:
                         l = l[0:max_char_line]+"..."
                 if line_numbering:
                     l = "{}\t{}".format(i, l)
-                jprint (l, line_height=10)
+                print (l)
 
 def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="#", sep="\t", **kwargs):
     """
