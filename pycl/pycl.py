@@ -1131,7 +1131,6 @@ def bjobs_lock (update_freq=2, final_delay=5):
 
     except KeyboardInterrupt:
         stdout_print("User interuption"+" "*30+"\n")
-        time.sleep (final_delay)
 
 
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
