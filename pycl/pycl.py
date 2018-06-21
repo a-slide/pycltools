@@ -1100,40 +1100,79 @@ def bsub (
     else:
         return random.randint(0, 100)
 
-def bjobs_lock (update_freq=2, final_delay=5):
+def bjobs ():
+    """
+    FOR JUPYTER NOTEBOOK IN LSF environment
+    Emulate LSF bjobs command. Return a Dataframe of jobs
+    """
+    # Init collection
+    col = []"JobID","User","Status","Queue", "Job_cmd", "Submit_time"]
+    job_info = namedtuple ("job_info", col)
+    l = []
+
+    # Get long job desriptions from bjobs
+    stdout = bash("bjobs -w", ret_stdout=True, print_stdout=False)
+
+    if not stdout:
+        pd.DataFrame ()
+
+    # Parse bjobs output
+    for line in stdout.split("\n"):
+        if line[:1].isdigit():
+            ls = line.split()
+            l.append (job_info(
+                JobID = ls [0],
+                User = ls [1],
+                Status = ls [2],
+                Queue = ls [3],
+                Job_cmd = " ".join(ls[6:-3]),
+                Submit_time = " ".join(ls [-3:])))
+
+    # Cast to Dataframe
+    return pd.DataFrame (l)
+
+def bjobs_lock (jobid=None, update_freq=2, final_delay=2):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
     Check if bjobs has running or pending jobs until all are done
+    * jobid
+        List of jobid to Check
     * update_freq
         The frequency of output updating in seconds [DEFAULT: 2]
     * final_delay
         Final delay in seconds at the end of all jobs to prevent IO errors [DEFAULT: 5]
     """
-    # Loop and update the line is something changes
+
+    # Homogenize types to list of str
+    if type(jobid) in [int, str]:
+        jobid = [str(jobid)]
+    elif type(jobid) in [list, set, tuple]:
+        jobid = [str(j) for j in jobid]
+
     try:
         while True:
+            df = bjobs()
+
+            if df.empty:
+                raise StopIteration
+
+            # if a jobid list was provided Check if at least one of the jobs is still in the list
+            if jobid:
+                if not df["JobID"].isin(jobid).any():
+                    raise StopIteration
+
+            s = []
+            for i, j in df["Status"].value_counts().items():
+                s.append ("{}:{}".format(i,j))
+            stdout_print ("Jobs Status {}\r".format("\t".join(s)))
+
             time.sleep(update_freq)
-            stdout = bash("bjobs", ret_stderr=False, ret_stdout=True, print_stderr=False, print_stdout=False)
-
-            # Summarize active jobs
-            pend = run = 0
-            for s in stdout.split ("\n"):
-                if s[:1].isdigit():
-                    status = s.split()[2]
-                    if status == "PEND":
-                        pend+=1
-                    elif status == "RUN":
-                        run+=1
-            stdout_print ("Running jobs:{} Pending jobs:{}\r".format(run, pend))
-
-            if not stdout:
-                stdout_print("All jobs done"+" "*30+"\n")
-                stdout_print("Wait {}s for jobs to terminate\n".format(final_delay))
-                time.sleep (final_delay)
-                break
 
     except KeyboardInterrupt:
-        stdout_print("User interuption"+" "*30+"\n")
+        stdout_print("\rUser interuption"+" "*30+"\n")
+    except StopIteration:
+        time.sleep (final_delay)
+        stdout_print("All jobs done"+" "*30+"\n")
 
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
 
