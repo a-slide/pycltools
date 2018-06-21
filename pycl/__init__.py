@@ -23,13 +23,11 @@ __extras_require__ = {
     'larger_display':  ["notebook"],
     'jprint':  ["notebook"],
     'jhelp':  ["notebook"],
-    'count_uniq':  ["pandas"],
     'bash_update':  ["notebook"],
-    'reformat_table':  ["pandas"],
     'url_exist':  ["httplib2"],
     'scp':  ["paramiko"],
     }
-
+__install_requires__ = ['pysam>=0.14.0', 'pandas>=0.23.0']
 __package_data__ =  ['test_pycl.ipynb', 'data/*']
 __python_requires__='>=3'
 __description__= "pycl is a package written in python3 containing a collection of generic functions and classes for file parsing, manipulation..."
@@ -53,7 +51,7 @@ pycl contains many functions organized in several categories:
 
 Many of the function replicate bash commands in pure python.
 
-Please be aware that pycl is an experimental package that is still under development. It was tested under Linux Ubuntu 16.04 and in an HPC 
+Please be aware that pycl is an experimental package that is still under development. It was tested under Linux Ubuntu 16.04 and in an HPC
 environment running under Red Hat Enterprise 7.1. You are welcome to raise issues, contribute to the development and submit patches or
 updates.
 """
@@ -69,6 +67,7 @@ setup_dict = {
     "author_email":__email__,
     "license":__licence__,
     "classifiers": __classifiers__,
+    "install_requires": __install_requires__,
     "extras_require": __extras_require__,
     "packages":[__name__],
     "package_dir":{__name__: __name__},

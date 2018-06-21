@@ -14,6 +14,10 @@ from subprocess import Popen, PIPE
 import bisect
 import itertools
 
+# Third party imports
+import pandas as pd
+import pysam as ps
+
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
 
 def jhelp(function, full=False, **kwargs):
@@ -610,15 +614,6 @@ def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="
     * sep
         Character or list of characters to use in order to split the lines. Exemple ["\t",";"]. DEFAULT="\t"
     """
-
-    # Function specific third party import
-    try:
-        import pandas as pd
-    except (NameError, ImportError) as E:
-        print (E)
-        print ("pandas is required to use this function. Please verify your dependencies")
-        sys.exit()
-
     # Transform separator in regular expression if needed
     if type (sep) == list:
         sep = "[{}]".format("".join(sep))
@@ -1421,14 +1416,6 @@ def reformat_table(
 
     # Init an empty panda dataframe if required
     if return_df:
-
-    # Function specific third party import
-        try:
-            import pandas as pd
-        except (NameError, ImportError) as E:
-            print (E)
-            print ("pandas is required to use this option. Please verify your dependencies")
-            sys.exit()
         df = pd.DataFrame(columns = _template_to_list(final_template))
 
     # init empty handlers
@@ -1926,13 +1913,6 @@ def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
     * n_reads
         number of reads to sample
     """
-    # Function specific third party import
-    try:
-        import pysam as ps
-    except (NameError, ImportError) as E:
-        warnings.warn ("pysam is required to use this function. Please verify your dependencies")
-        return
-
     # Define opening mode
     if has_extension(fp_in, "bam"):
         mode_in = "rb"
