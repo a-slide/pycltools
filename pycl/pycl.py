@@ -1106,8 +1106,7 @@ def bjobs ():
     Emulate LSF bjobs command. Return a Dataframe of jobs
     """
     # Init collection
-    col = []"JobID","User","Status","Queue", "Job_cmd", "Submit_time"]
-    job_info = namedtuple ("job_info", col)
+    job_info = namedtuple ("job_info", ["JobID","User","Status","Queue", "Job_cmd", "Submit_time"])
     l = []
 
     # Get long job desriptions from bjobs
