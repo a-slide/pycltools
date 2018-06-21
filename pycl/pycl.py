@@ -9,7 +9,7 @@ import gzip
 import warnings
 import time
 import random
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from subprocess import Popen, PIPE
 import bisect
 import itertools
