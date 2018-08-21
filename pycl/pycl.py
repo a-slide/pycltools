@@ -1125,6 +1125,36 @@ def bjobs ():
     # Cast to Dataframe
     return pd.DataFrame (l)
 
+def bjobs_update (update_freq = 5):
+    """
+    FOR JUPYTER NOTEBOOK IN LSF environment
+    Emulate LSF bjobs command but update the cell every x seconds
+    Cell is locked
+    """
+    from time import sleep
+
+    try:
+        from IPython.core.display import display, clear_output
+    except (NameError, ImportError) as E:
+        print (E)
+        print ("jupyter notebook is required to use this function. Please verify your dependencies")
+        sys.exit()
+
+    try:
+        while True:
+            df = bjobs ()
+            if df.empty:
+                raise StopIteration
+            sleep (5)
+            clear_output ()
+
+    except KeyboardInterrupt:
+        clear_output ()
+        display (bjobs ())
+
+    except StopIteration:
+        print ("All jobs done")
+
 def bjobs_lock (jobid=None, update_freq=2, final_delay=2):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
