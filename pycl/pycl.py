@@ -1145,6 +1145,7 @@ def bjobs_update (update_freq = 5):
             df = bjobs ()
             if df.empty:
                 raise StopIteration
+            display (df)
             sleep (5)
             clear_output ()
 
