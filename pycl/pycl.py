@@ -20,7 +20,7 @@ import pysam as ps
 
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
 
-def jhelp(function, full=False, **kwargs):
+def jhelp (function, full=False, **kwargs):
     """
     Print a nice looking help string based on the name of a declared function. By default print the function
     definition and description
@@ -61,7 +61,7 @@ def stdout_print (*args):
     sys.stdout.write(s)
     sys.stdout.flush()
 
-def jprint(*args, **kwargs):
+def jprint (*args, **kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
     Format a string in HTML and print the output. Equivalent of print, but highly customizable. Many options can be
@@ -492,15 +492,13 @@ def tail (fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
         range_list=[[n_line-n+1, n_line]]
     linerange (fp=fp, range_list=range_list, line_numbering=line_numbering, max_char_line=max_char_line)
 
-def head (fp, n=10, line_numbering=False, ignore_comment_line=False, comment_char="#", max_char_line=150, **kwargs):
+def head (fp, n=10, ignore_comment_line=False, comment_char="#", max_char_line=200, sep="\t", max_char_col=50, **kwargs):
     """
     Emulate linux head cmd. Handle gziped files and bam files
     * fp
-        Path to the file to be parsed. Works with text, gunziped and binary bam files
+        Path to the file to be parsed. Works with text, gunziped and binary bam/sam files
     * n
         Number of lines to print starting from the begining of the file (Default 10)
-    * line_numbering
-        If True the number of the line will be indicated in front of the line (Default False)
     * ignore_comment_line
         Skip initial lines starting with a specific character. Pointless for bam files(Default False)
     * comment_char
@@ -508,50 +506,82 @@ def head (fp, n=10, line_numbering=False, ignore_comment_line=False, comment_cha
     * max_char_line
         Maximal number of character to print per line (Default 150)
     """
+    line_list = []
 
     # For bam files
-    if has_extension (fp=fp, ext="bam"):
+    if has_extension (fp=fp, ext=["bam", "sam"]):
         import pysam
-        with pysam.AlignmentFile(fp, "rb") as f:
+        with pysam.AlignmentFile(fp) as f:
 
             for line_num, read in enumerate(f):
                 if line_num >= n:
                     break
                 l = read.to_string()
-                if line_numbering:
-                    l = "{}\t{}".format(line_num, l)
-                if max_char_line and len(l) > max_char_line:
-                    print (l[0:max_char_line]+"...")
+                if sep:
+                    line_list.append (l.split(sep)[0:11])
                 else:
-                    print (l)
-        return
-
-    # For text files
-    if is_gziped(fp):
-        open_fun = gzip.open
-        open_mode =  "rt"
-    else:
-        open_fun = open
-        open_mode =  "r"
-
-    with open_fun(fp, open_mode) as fh:
-        line_num = 0
-        while (line_num < n):
-            try:
-                l= next(fh).strip()
-                if ignore_comment_line and l.startswith(comment_char):
-                    continue
-                if line_numbering:
-                    l = "{}\t{}".format(line_num, l)
-                if max_char_line and len(l) > max_char_line:
-                    print (l[0:max_char_line]+"...")
-                else:
-                    print (l)
+                    line_list.append (l)
                 line_num+=1
 
-            except StopIteration:
-                print ("Only {} lines in the file".format(line_num))
-                break
+    # Not bam file
+    else:
+        # For text files
+        if is_gziped(fp):
+            open_fun = gzip.open
+            open_mode =  "rt"
+        else:
+            open_fun = open
+            open_mode =  "r"
+
+        try:
+            with open_fun(fp, open_mode) as fh:
+                line_num = 0
+                while (line_num < n):
+                    l= next(fh).strip()
+                    if ignore_comment_line and l.startswith(comment_char):
+                        continue
+                    if sep:
+                        line_list.append (l.split(sep))
+                    else:
+                        line_list.append (l)
+                    line_num+=1
+
+        except StopIteration:
+            print ("Only {} lines in the file".format(line_num))
+
+    # Print lines
+    if sep:
+        try:
+            # Find longest elem per col
+            col_len_list = [0 for _ in range (len(line_list[0]))]
+            for ls in line_list:
+                for i in range (len(ls)):
+                    len_col = len(ls[i])
+                    if len_col > max_char_col:
+                        col_len_list[i] = max_char_col
+                    elif len_col > col_len_list[i]:
+                        col_len_list[i] = len_col
+
+            line_list_tab = []
+            for ls in line_list:
+                s = ""
+                for i in range (len(ls)):
+                    len_col = col_len_list[i]
+                    len_cur_col = len(ls[i])
+                    s += ls[i][0:len_col] + " "*(len_col-len_cur_col)+" "
+                line_list_tab.append(s)
+            line_list = line_list_tab
+
+        # Fall back to none tabulated display
+        except IndexError:
+            return head (fp=fp, n=n, ignore_comment_line=ignore_comment_line, comment_char=comment_char, max_char_line=max_char_line, sep=None)
+
+    for l in line_list:
+        if max_char_line and len(l) > max_char_line:
+            print (l[0:max_char_line]+"...")
+        else:
+            print (l)
+    print()
 
 def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwargs):
     """
@@ -894,6 +924,8 @@ def bash(
     print_stderr=True,
     ret_stderr=False,
     log_stderr=None,
+    print_cmd=False,
+    dry=False,
     **kwargs):
     """
     More advanced version of bash calling with live printing of the standard output and possibilities to log the
@@ -916,15 +948,21 @@ def bash(
     * log_stderr
         If a filename is given, the standard error will logged in this file
     """
+    if print_cmd:
+        print(cmd)
+
+    if dry:
+        return
+
     if virtualenv:
         cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(virtualenv, cmd)
 
-    #empty str buffer
+    # empty str buffer
     stdout_str = ""
     stderr_str = ""
 
     # First execute the command parse the output
-    with Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE) as proc:
+    with Popen (cmd, shell=True, stdout=PIPE, stderr=PIPE, executable="bash") as proc:
 
         # Only 1 standard stream can be output at the time stdout or stderr
         while proc.poll() is None:
@@ -1031,7 +1069,7 @@ def bsub (
     stdout_fp=None,
     stderr_fp=None,
     send_email=False,
-    print_full_cmd=True,
+    print_cmd=True,
     dry=False,
     **kwargs):
     """
@@ -1085,15 +1123,13 @@ def bsub (
 
     full_cmd = "{} \"{}\"".format (bsub_cmd, cmd)
 
-    if print_full_cmd:
-        print (full_cmd)
 
     if not dry:
-        stdout = bash (virtualenv=virtualenv, cmd=full_cmd, ret_stdout=True)
+        stdout = bash (virtualenv=virtualenv, cmd=full_cmd, ret_stdout=True, print_cmd=print_cmd)
         jobid = stdout.split("<")[1].split(">")[0]
         return jobid
     else:
-        return random.randint(0, 100)
+        return random.randint(0, 10000)
 
 def bjobs ():
     """
