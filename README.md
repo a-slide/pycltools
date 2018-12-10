@@ -1,5 +1,8 @@
 # pycltools package documentation
 
+[![GitHub license](https://img.shields.io/github/license/a-slide/pycltools.svg)](https://github.com/a-slide/pycltools/blob/master/LICENSE)
+[![PyPI version](https://badge.fury.io/py/pycltools.svg)](https://badge.fury.io/py/pycltools)
+
 ---
 
 **pycltools is a package written in python3 containing a collection of generic functions and classes for file parsing, manipulation...**
@@ -22,11 +25,9 @@ pycltools contains many functions organized in several categories:
 * functions tools
 * ssh tools
 
-Many of the function replicate bash commands in pure python.
+Many of the function replicate bash commands in pure python 3.
 
-Please be aware that pycltools is an experimental package that is still under development. It was tested under Linux Ubuntu 16.04 and in an HPC
-environment running under Red Hat Enterprise 7.1. You are welcome to raise issues, contribute to the development and submit patches or
-updates
+Please be aware that pycltools is an experimental package that is still under development. It was tested under Linux Ubuntu 16.04 and in an HPC environment running under Red Hat Enterprise 7.1. You are welcome to raise issues, contribute to the development and submit patches or updates
 
 ## Installation
 
