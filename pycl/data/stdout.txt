@@ -1,6 +1,0 @@
-data
-__init__.py
-__pycache__
-pycl.py
-pycl.pyc
-test_pycl.ipynb

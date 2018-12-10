@@ -20,7 +20,7 @@ import pysam as ps
 
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
 
-def jhelp (function, full=False, **kwargs):
+def jhelp (function, full=True, print_private=False, **kwargs):
     """
     Print a nice looking help string based on the name of a declared function. By default print the function
     definition and description
@@ -38,19 +38,15 @@ def jhelp (function, full=False, **kwargs):
         help(function)
         return
 
-    if isfunction(function) or ismethod(function):
-        name = function.__name__.strip()
-        sig = str(signature(function)).strip()
-        display(HTML ("<b>{}</b> {}".format(name, sig)))
 
-        if function.__doc__:
-            for line in function.__doc__.split("\n"):
-                line = line.strip()
-                if not full and line.startswith("*"):
-                    break
-                display(Markdown(line.strip()))
-    else:
-        print("{} is not a function".format(function))
+    if isfunction(function) or ismethod(function):
+        # skip private functions
+        if not print_private and function.__name__.startswith("_"):
+            return
+        if full:
+            jprint ("<b>{}</b> {}\n{}".format(function.__name__, signature(function), function.__doc__))
+        else:
+            jprint ("<b>{}</b> {}".format(function.__name__, signature(function)))
 
 def stdout_print (*args):
     """
@@ -106,7 +102,7 @@ def jprint (*args, **kwargs):
     if "line_height" in kwargs and kwargs["line_height"]:
         line_height = kwargs["line_height"]
     else:
-        line_height=20
+        line_height=15
     style+= "line-height:{}px;".format(line_height)
 
     # Format final string
@@ -115,7 +111,7 @@ def jprint (*args, **kwargs):
 
     display(HTML(s))
 
-def toogle_code(**kwargs):
+def toogle_code (**kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
     Hide code with a clickable link in a j
@@ -322,7 +318,7 @@ def concatenate (src_list, dest, **kwargs):
             with open_fun_src (src, open_mode_src) as fh_src:
                 shutil.copyfileobj (fh_src, fh_dest)
 
-def copyFile(src, dest, **kwargs):
+def copyFile (src, dest, **kwargs):
     """
     Copy a single file to a destination file or folder (with error handling/reporting)
     * src
@@ -402,6 +398,16 @@ def gunzip_file (fpin, fpout=None, **kwargs):
                 os.remove (fpout)
             except OSError:
                 print ("Can't remove {}".format(fpout))
+
+def remove_file (fp, exception_if_exist=False):
+    """
+    Try to remove a file from disk.
+    """
+    try:
+        os.remove(filename)
+    except OSError as E:
+        if exception_if_exist:
+            raise E
 
 #~~~~~~~ FILE INFORMATION/PARSING ~~~~~~~#
 
@@ -763,7 +769,7 @@ def colsum (fp,
     else:
         print ("Invalid return type")
 
-def fastcount(fp, **kwargs):
+def fastcount (fp, **kwargs):
     """
     Efficient way to count the number of lines in a file. Handle gziped files
     """
@@ -786,7 +792,7 @@ def fastcount(fp, **kwargs):
 
     return lines
 
-def simplecount(fp, ignore_hashtag_line=False, **kwargs):
+def simplecount (fp, ignore_hashtag_line=False, **kwargs):
     """
     Simple way to count the number of lines in a file with more options
     """
@@ -808,7 +814,7 @@ def simplecount(fp, ignore_hashtag_line=False, **kwargs):
 
 #~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
 
-def mkdir(fp, level=1, **kwargs):
+def mkdir (fp, level=1, **kwargs):
     """
     Reproduce the ability of UNIX "mkdir -p" command
     (ie if the path already exits no exception will be raised).
@@ -860,11 +866,7 @@ def dir_walk (fp):
 
 #~~~~~~~ SHELL MANIPULATION ~~~~~~~#
 
-def make_cmd_str(
-    prog_name,
-    opt_dict={},
-    opt_list=[],
-    **kwargs):
+def make_cmd_str (prog_name, opt_dict={}, opt_list=[], **kwargs):
     """
     Create a Unix like command line string from the prog name, a dict named arguments and a list of unmammed arguments
     exemple make_cmd_str("bwa", {"b":None, t":6, "i":"../idx/seq.fa"}, ["../read1", "../read2"])
@@ -896,10 +898,7 @@ def make_cmd_str(
 
     return cmd
 
-def bash_basic(
-    cmd,
-    virtualenv=None,
-    **kwargs):
+def bash_basic (cmd, virtualenv=None, **kwargs):
     """
     Sent basic bash command
     * cmd
@@ -914,7 +913,7 @@ def bash_basic(
         print (stdout.decode())
         print (stderr.decode())
 
-def bash(
+def bash (
     cmd,
     virtualenv=None,
     live="stdout",
@@ -1021,7 +1020,7 @@ def bash(
         return stderr_str
     return None
 
-def bash_update(cmd, update_freq=1, **kwargs):
+def bash_update (cmd, update_freq=1, **kwargs):
     """
     FOR JUPYTER NOTEBOOK
     Run a bash command and print the output in the cell. The output is updated each time until the output is None.
@@ -1338,7 +1337,7 @@ def dict_to_report (
 
 ##~~~~~~~ TABLE FORMATTING ~~~~~~~#
 
-def reformat_table(
+def reformat_table (
     input_file,
     output_file="",
     return_df=False,
@@ -1566,7 +1565,7 @@ def _is_str_key (element):
 def _is_str_sep (element):
     return type(element)==str and (element[0]!="{" or element[-1]!="}")
 
-def _template_to_str(template):
+def _template_to_str (template):
     l=[]
     for element in template:
         if _is_str_sep(element):
@@ -1577,7 +1576,7 @@ def _template_to_str(template):
             l.append(str(element))
     return "".join(l)
 
-def _template_to_list(template):
+def _template_to_list (template):
     l=[]
     for element in template:
         if _is_str_key(element):
@@ -1586,7 +1585,7 @@ def _template_to_list(template):
             l.append(str(element))
     return l
 
-def _decompose_line(line, template):
+def _decompose_line (line, template):
     """Helper function for reformat_table. Decompose a line in a dictionnary and extract the values given a template list"""
 
     val_dict = OrderedDict()
@@ -1723,7 +1722,7 @@ def url_exist (url, **kwargs):
     except:
         return False
 
-def wget(url, out_name="", progress_block=100000000, **kwargs):
+def wget (url, out_name="", progress_block=100000000, **kwargs):
     """
     Download a file from an URL to a local storage.
     *  url
@@ -1809,7 +1808,7 @@ def wget(url, out_name="", progress_block=100000000, **kwargs):
 
 ##~~~~~~~ FUNCTIONS TOOLS ~~~~~~~#
 
-def print_arg(**kwargs):
+def print_arg (**kwargs):
     """
     Print calling function named and unnamed arguments
     """
@@ -1970,7 +1969,7 @@ def get_package_file (package, fp="", **kwargs):
 
 ##~~~~~~~ SAM/BAM TOOLS ~~~~~~~#
 
-def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
+def bam_sample (fp_in, fp_out, n_reads, verbose=False, **kwargs):
     """
     Sample reads from a SAM/BAM file and write in a new file
     * fp_in
