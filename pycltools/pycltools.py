@@ -949,7 +949,6 @@ def bash (
     """
     if print_cmd:
         print(cmd)
-
     if dry:
         return
 
@@ -1059,7 +1058,7 @@ def bash_update (cmd, update_freq=1, **kwargs):
         print("Stop monitoring\n")
 
 def bsub (
-    cmd=None,
+    cmd,
     virtualenv=None,
     mem=None,
     threads=None,
@@ -1094,13 +1093,6 @@ def bsub (
     * send_email
         If True, will force LSF to send an email even if stdout_fp and/or stderr_fp is given
     """
-    # Deprecated option for retro compatibility
-    if not cmd:
-        if "prog_cmd" in kwargs:
-            cmd = kwargs["prog_cmd"]
-        else:
-            raise TypeError ("bsub() missing 1 required positional argument: 'cmd'")
-
     bsub_cmd = "bsub "
     if mem:
         bsub_cmd += "-M {0} -R 'rusage[mem={0}]' ".format(mem)
@@ -1121,12 +1113,9 @@ def bsub (
         bsub_cmd += "-w '{0}' ".format (jobid_str)
 
     full_cmd = "{} \"{}\"".format (bsub_cmd, cmd)
-
-
+    stdout = bash (virtualenv=virtualenv, cmd=full_cmd, ret_stdout=True, print_cmd=print_cmd, dry=dry)
     if not dry:
-        stdout = bash (virtualenv=virtualenv, cmd=full_cmd, ret_stdout=True, print_cmd=print_cmd)
-        jobid = stdout.split("<")[1].split(">")[0]
-        return jobid
+        return stdout.split("<")[1].split(">")[0]
     else:
         return random.randint(0, 10000)
 
