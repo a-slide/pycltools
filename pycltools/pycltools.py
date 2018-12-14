@@ -15,6 +15,7 @@ import bisect
 import itertools
 import zipfile
 import tempfile
+import glob
 
 # Third party imports
 import pandas as pd
@@ -2116,7 +2117,7 @@ def fastqc_summary (
         'Kmer Content':"kmer_profiles.png",
         'Adapter Content':'adapter_content.png'}
 
-    for fp in glob(fastqc_res_dir+"/*_fastqc.zip"):
+    for fp in glob.glob(fastqc_res_dir+"/*_fastqc.zip"):
         display(HTML("<hr></hr>"))
         display(HTML("<font size=\"4\"><b>{}</b></font>".format(fp.rpartition("/")[2])))
 
@@ -2124,7 +2125,7 @@ def fastqc_summary (
         with tempfile.TemporaryDirectory() as tmpdirname:
             zfile = zipfile.ZipFile(fp)
             zfile.extractall(tmpdirname)
-            base_dir = glob(tmpdirname+"/*/")[0]
+            base_dir = glob.glob(tmpdirname+"/*/")[0]
 
             # Iterate over the fastqdata file
             with open(base_dir+"fastqc_data.txt", "r") as fastqc_data:
