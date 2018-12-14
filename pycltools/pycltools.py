@@ -13,10 +13,14 @@ from collections import OrderedDict, namedtuple
 from subprocess import Popen, PIPE
 import bisect
 import itertools
+import zipfile
+import tempfile
 
 # Third party imports
 import pandas as pd
 import pysam as ps
+from IPython.core.display import Image, display, HTML
+import pandas as pd
 
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
 
@@ -2070,3 +2074,96 @@ def make_sequence (
     bgen = base_generator(bases=bases, weights=weights)
     seq_list = [next(bgen) for _ in range (length)]
     return "".join(seq_list)
+
+##~~~~~~~ FASTQ SEQUENCE TOOLS ~~~~~~~#
+
+def fastqc_summary (
+    fastqc_res_dir,
+    max_table_row=10,
+    plot_width=500,
+    table_module_list=[
+       "Basic Statistics",
+       "Overrepresented sequences",
+       "Kmer Content"],
+   plot_module_list = [
+       'Per base sequence quality','Per tile sequence quality','Per sequence quality scores',
+       'Per base sequence content', 'Per sequence GC content', 'Per base N content', 'Sequence Length Distribution',
+       'Sequence Duplication Levels','Kmer Content','Adapter Content']):
+
+    """
+    Summarize and display fastqc results in IPYTHON/JUPYTER. Don't try to use in another interface or in terminal
+    Works directly from the zipped results obtained by FastQC v0.11.5+
+    * fastqc_res_dir
+        Directory containing the zipped folders obtained with fastQC
+    * max_table_row
+        Maximal number of row for the tables [DEFAULT 10]
+    * table_module_list
+        List of the table modules to include. Default = All
+    * plot_module_list
+        List of the plot modules to include. Default = All
+    """
+
+    # Convert pictures names to module names
+    all_plot_modules = {
+        'Per base sequence quality': 'per_base_quality.png',
+        'Per tile sequence quality':'per_tile_quality.png',
+        'Per sequence quality scores':'per_sequence_quality.png',
+        'Per base sequence content':'per_base_sequence_content.png',
+        'Per sequence GC content':'per_sequence_gc_content.png',
+        'Per base N content':'per_base_n_content.png',
+        'Sequence Length Distribution':'sequence_length_distribution.png',
+        'Sequence Duplication Levels':'duplication_levels.png',
+        'Kmer Content':"kmer_profiles.png",
+        'Adapter Content':'adapter_content.png'}
+
+    for fp in glob(fastqc_res_dir+"/*_fastqc.zip"):
+        display(HTML("<hr></hr>"))
+        display(HTML("<font size=\"4\"><b>{}</b></font>".format(fp.rpartition("/")[2])))
+
+        # Extract the zip file in a temporary folder
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            zfile = zipfile.ZipFile(fp)
+            zfile.extractall(tmpdirname)
+            base_dir = glob(tmpdirname+"/*/")[0]
+
+            # Iterate over the fastqdata file
+            with open(base_dir+"fastqc_data.txt", "r") as fastqc_data:
+                # Set bool flag to false
+                found_module = found_header = False
+
+                # Parse the file
+                for line in fastqc_data:
+                    line = line.strip()
+
+                    # If End of section a table section can be rendered
+                    if line.startswith(">>END_MODULE"):
+                        if found_module and found_header:
+                            df_html = df.head(max_table_row).to_html()
+                            display(HTML('<font size=2>'+df_html+'</font>'))
+                            found_module = found_header = False
+
+                    # Detect the start of a module section
+                    elif line.startswith(">>"):
+                        ls = line[2:].split("\t")
+                        module_name = ls[0]
+                        module_status = ls[1]
+
+                        # Detect the start of a table section
+                        if module_name in table_module_list:
+                            display(HTML("<font size=\"3\"><b>{} : {}</b></font>".format(module_name, module_status)))
+                            found_module=True
+
+                        # Detect the header of a plot section
+                        if module_name in plot_module_list:
+                            display(HTML("<font size=\"3\"><b>{} : {}</b></font>".format(module_name, module_status)))
+                            image = "{}Images/{}".format(base_dir, all_plot_modules[module_name])
+                            display(Image(image, width=plot_width))
+
+                    # Fill a dataframe if a table section was found
+                    elif found_module:
+                        if not found_header:
+                            df = pd.DataFrame(columns=line.split("\t")[1:])
+                            found_header = True
+                        else:
+                            ls = line.split("\t")
+                            df.loc[ls[0]] = ls[1:]
