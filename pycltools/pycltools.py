@@ -16,6 +16,7 @@ import itertools
 import zipfile
 import tempfile
 import glob
+import re
 
 # Third party imports
 import pandas as pd
@@ -593,6 +594,36 @@ def head (fp, n=10, ignore_comment_line=False, comment_char="#", max_char_line=2
         else:
             print (l)
     print()
+
+def grep (fp, regex, max_lines=None):
+    """
+    Emulate linux head cmd. Handle gziped files and bam files
+    * fp
+        Path to the file to be parsed. Works with text, gunziped and binary bam/sam files
+    * regex
+        Linux style regular expression (https://docs.python.org/3.6/howto/regex.html#regex-howto)
+    * max_lines
+        Maximal number of line to print (Default None)
+    """
+    # Compile regular expression
+    regex = re.compile(regex)
+
+    # For text files
+    if is_gziped(fp):
+        open_fun = gzip.open
+        open_mode =  "rt"
+    else:
+        open_fun = open
+        open_mode =  "r"
+
+    with open_fun(fp, open_mode) as fh:
+        found = 0
+        for line in fh:
+            if regex.search(line):
+                print (line.strip())
+                found+=1
+                if max_lines and found == max_lines:
+                    break
 
 def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwargs):
     """
