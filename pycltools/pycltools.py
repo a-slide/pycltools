@@ -2220,11 +2220,7 @@ def bam_align_summary (fp, min_mapq=30):
         jprint ("Parse bam file {}".format(label), bold=True)
 
         with ps.AlignmentFile(bam, "rb") as f:
-<<<<<<< HEAD
             for read in f:
-=======
-            for read in tqdm(f):
->>>>>>> 35ffe871b33c68a895b0b3e303a1f7291c8950fa
                 if read.is_unmapped:
                     counter_dict[label]["unmapped"] += 1
                 elif read.is_secondary:
