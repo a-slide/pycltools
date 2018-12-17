@@ -522,8 +522,7 @@ def head (fp, n=10, ignore_comment_line=False, comment_char="#", max_char_line=2
 
     # For bam files
     if has_extension (fp=fp, ext=["bam", "sam"]):
-        import pysam
-        with pysam.AlignmentFile(fp) as f:
+        with ps.AlignmentFile(fp) as f:
 
             for line_num, read in enumerate(f):
                 if line_num >= n:
@@ -2220,7 +2219,7 @@ def bam_align_summary (fp, min_mapq=30):
         label = bam.split("/")[-1].split(".")[0]
         jprint ("Parse bam file {}".format(label), bold=True)
 
-        with pysam.AlignmentFile(bam, "rb") as f:
+        with ps.AlignmentFile(bam, "rb") as f:
             for read in tqdm(f):
                 if read.is_unmapped:
                     counter_dict[label]["unmapped"] += 1
