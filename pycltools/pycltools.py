@@ -9,7 +9,7 @@ import gzip
 import warnings
 import time
 import random
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, namedtuple, defaultdict, Counter
 from subprocess import Popen, PIPE
 import bisect
 import itertools
@@ -522,8 +522,7 @@ def head (fp, n=10, ignore_comment_line=False, comment_char="#", max_char_line=2
 
     # For bam files
     if has_extension (fp=fp, ext=["bam", "sam"]):
-        import pysam
-        with pysam.AlignmentFile(fp) as f:
+        with ps.AlignmentFile(fp) as f:
 
             for line_num, read in enumerate(f):
                 if line_num >= n:
@@ -2205,3 +2204,33 @@ def fastqc_summary (
                         else:
                             ls = line.split("\t")
                             df.loc[ls[0]] = ls[1:]
+
+def bam_align_summary (fp, min_mapq=30):
+    """
+    Parse bam files and return a summary dataframe
+    * fp
+        file path to a bam file or regular expression matching multiple files
+    * min_mapq
+        minimal score to be considered high mapq
+    """
+    counter_dict = defaultdict (Counter)
+    for bam in glob.glob (fp):
+
+        label = bam.split("/")[-1].split(".")[0]
+        jprint ("Parse bam file {}".format(label), bold=True)
+
+        with ps.AlignmentFile(bam, "rb") as f:
+            for read in f:
+                if read.is_unmapped:
+                    counter_dict[label]["unmapped"] += 1
+                elif read.is_secondary:
+                    counter_dict[label]["secondary"] += 1
+                elif read.is_supplementary:
+                    counter_dict[label]["supplementary"] += 1
+                else:
+                    counter_dict[label]["primary"] += 1
+                    counter_dict[label]["primary bases"] += read.infer_read_length()
+                    if read.mapping_quality>=min_mapq:
+                        counter_dict[label]["primary high mapq"] += 1
+
+    return pd.DataFrame(counter_dict)
