@@ -2205,3 +2205,33 @@ def fastqc_summary (
                         else:
                             ls = line.split("\t")
                             df.loc[ls[0]] = ls[1:]
+
+def bam_align_summary (fp, min_mapq=30):
+    """
+    Parse bam files and return a summary dataframe
+    * fp
+        file path to a bam file or regular expression matching multiple files
+    * min_mapq
+        minimal score to be considered high mapq
+    """
+    counter_dict = defaultdict (Counter)
+    for bam in glob.glob (fp):
+
+        label = bam.split("/")[-1].split(".")[0]
+        jprint ("Parse bam file {}".format(label), bold=True)
+
+        with pysam.AlignmentFile(bam, "rb") as f:
+            for read in tqdm(f):
+                if read.is_unmapped:
+                    counter_dict[label]["unmapped"] += 1
+                elif read.is_secondary:
+                    counter_dict[label]["secondary"] += 1
+                elif read.is_supplementary:
+                    counter_dict[label]["supplementary"] += 1
+                else:
+                    counter_dict[label]["primary"] += 1
+                    counter_dict[label]["primary bases"] += read.infer_read_length()
+                    if read.mapping_quality>=min_mapq:
+                        counter_dict[label]["primary high mapq"] += 1
+
+    return pd.DataFrame(counter_dict)
