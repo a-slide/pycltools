@@ -602,11 +602,15 @@ def grep (fp, regex, max_lines=None):
         Path to the file to be parsed. Works with text, gunziped and binary bam/sam files
     * regex
         Linux style regular expression (https://docs.python.org/3.6/howto/regex.html#regex-howto)
+        can also be a list, set or tuple of regex
     * max_lines
         Maximal number of line to print (Default None)
     """
     # Compile regular expression
-    regex = re.compile(regex)
+    if not type(regex) in (list, set, tuple):
+        regex_list = [re.compile(regex)]
+    else:
+        regex_list = [re.compile(r) for r in regex]
 
     # For text files
     if is_gziped(fp):
@@ -619,10 +623,12 @@ def grep (fp, regex, max_lines=None):
     with open_fun(fp, open_mode) as fh:
         found = 0
         for line in fh:
-            if regex.search(line):
-                print (line.strip())
-                found+=1
-                if max_lines and found == max_lines:
+            if max_lines and found == max_lines:
+                break
+            for r in regex_list:
+                if r.search(line):
+                    print (line.strip())
+                    found+=1
                     break
 
 def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwargs):
