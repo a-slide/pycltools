@@ -2209,6 +2209,8 @@ def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, h
     for i, j in cc.most_common():
         print ("kmer counts {} / Occurences: {:,}".format(i,j))
 
+    if n_seq == 1:
+        return seq_l[0]
     return seq_l
 
 ##~~~~~~~ FASTQ SEQUENCE TOOLS ~~~~~~~#
