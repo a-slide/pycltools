@@ -21,8 +21,9 @@ import re
 # Third party imports
 import pandas as pd
 import pysam as ps
+from tqdm import tqdm, trange
+import numpy as np
 from IPython.core.display import Image, display, HTML
-import pandas as pd
 
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
 
@@ -2082,7 +2083,7 @@ def base_generator (
         cum_weights = list(itertools.accumulate(weights))
 
         while True:
-            # Emit a uniform probability between 0 and the max value of the cumulative weigths
+            # Emit a uniform probability between 0 and the max value of the cumulative weights
             p = random.uniform(0, cum_weights[-1])
             # Use bisect to retun the corresponding base
             yield bases[bisect.bisect(cum_weights, p)]
@@ -2092,7 +2093,7 @@ def base_generator (
         while True:
             yield random.choice(bases)
 
-def make_sequence (
+def make_random_sequence (
     bases = ["A","T","C","G"],
     weights = [0.280788,0.281691,0.193973,0.194773],
     length=1000,
@@ -2111,6 +2112,104 @@ def make_sequence (
     bgen = base_generator(bases=bases, weights=weights)
     seq_list = [next(bgen) for _ in range (length)]
     return "".join(seq_list)
+
+def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, hp_max=3, seq_len=100, n_seq=10, seed=None):
+    """
+    Generate a list of sequences with an optimized kmer content.
+    * how
+        min = Always choose the kmer with the lower kmer count in the previous sequence. Random in case of ties
+        weights = Bases are randomly picked based on a probability invertly corelated to the kmer counts in the prvious sequence
+    * bases = ["A","T","C","G"],
+        DNA RNA bases allowed in the sequence
+    * kmer_len: int (default 3)
+        Length of kmer to optimize the distribution
+    * hp_max: int (default 3)
+        Maximal length of homopolymers
+    * seq_len: int (default 100)
+        Length of each sequence to be generated
+    * n_seq: int (default 10)
+        Overall number of sequences to be generated
+    * seed: None or int
+        If given the random generator will behave in a deterministic way
+    """
+    # Set seed if needed
+    random.seed(seed)
+    np.random.seed(seed)
+
+    kmer_c = Counter()
+    seq_l = []
+
+    for _ in trange(n_seq):
+        seq = []
+
+        # First base
+        hp = 1
+        seq.append(random.choice(bases))
+
+        # Extend seed to length kmer_len
+        for i in range(kmer_len-1):
+            # Reduce choice if max homopolymer reached
+            choices = [i for i in bases if i!=seq[-1]] if hp >= hp_max else bases
+            # Sample from available choices
+            seq.append(random.choice(choices))
+            # Check if homopolymers extends
+            hp = hp+1 if seq[-2] == seq[-1] else 1
+        kmer_c["".join(seq)] += 1
+
+        # Extend sequence
+        for _ in range (seq_len-kmer_len):
+
+            # Reduce choice if max homopolymer reached
+            choices = [i for i in bases if i!=seq[-1]] if hp >= hp_max else bases
+            prev = seq[-kmer_len+1:]
+
+            if how == "min":
+                count_d = defaultdict(list)
+                # Collect count for each possible kmers
+                for b in choices:
+                    kmer = "".join(prev+[b])
+                    if not kmer in kmer_c:
+                        count_d[0].append(b)
+                    else:
+                        count_d[kmer_c[kmer]].append(b)
+                # Choose randomly fron base kmer with lower count
+                b = random.choice(count_d[min(count_d.keys())])
+
+            elif how == "weights":
+                p = []
+                # Collect count per kmer
+                for b in choices:
+                    kmer = "".join(prev+[b])
+                    if not kmer in kmer_c:
+                        p.append(0)
+                    else:
+                        p.append(kmer_c[kmer])
+                # transform counts in inverted frequency weights
+                p = np.array(p)
+                p = 1/(p-p.min()+1)
+                p = p/p.sum()
+                # Choose randomly using weight matrix
+                b = np.random.choice(choices, p=p)
+            else:
+                raise ValueError("how must be 'min' or 'weights'")
+
+            # extend current sequence
+            seq.append(b)
+            # Update kmer counter
+            kmer_c["".join(prev+[b])] += 1
+            # Check if homopolymers extends
+            hp = hp+1 if seq[-2]==seq[-1] else 1
+
+        # Append to list
+        seq_l.append("".join(seq))
+
+    cc = Counter()
+    for i in kmer_c.values():
+        cc[i]+=1
+    for i, j in cc.most_common():
+        print ("kmer counts {} / Occurences: {:,}".format(i,j))
+
+    return seq_l
 
 ##~~~~~~~ FASTQ SEQUENCE TOOLS ~~~~~~~#
 
@@ -2217,7 +2316,7 @@ def bam_align_summary (fp, min_mapq=30):
     for bam in glob.glob (fp):
 
         label = bam.split("/")[-1].split(".")[0]
-        jprint ("Parse bam file {}".format(label), bold=True)
+        jprint ("Parse bam {}".format(label), bold=True)
 
         with ps.AlignmentFile(bam, "rb") as f:
             for read in f:
