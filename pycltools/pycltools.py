@@ -2113,7 +2113,7 @@ def make_random_sequence (
     seq_list = [next(bgen) for _ in range (length)]
     return "".join(seq_list)
 
-def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, hp_max=3, seq_len=100, n_seq=10, seed=None):
+def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, hp_max=3, seq_len=100, n_seq=10, seed=None, verbose=True):
     """
     Generate a list of sequences with an optimized kmer content.
     * how
@@ -2139,7 +2139,7 @@ def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, h
     kmer_c = Counter()
     seq_l = []
 
-    for _ in trange(n_seq):
+    for _ in trange(n_seq, disable= not verbose):
         seq = []
 
         # First base
@@ -2203,11 +2203,12 @@ def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, h
         # Append to list
         seq_l.append("".join(seq))
 
-    cc = Counter()
-    for i in kmer_c.values():
-        cc[i]+=1
-    for i, j in cc.most_common():
-        print ("kmer counts {} / Occurences: {:,}".format(i,j))
+    if verbose:
+        cc = Counter()
+        for i in kmer_c.values():
+            cc[i]+=1
+        for i, j in cc.most_common():
+            print ("kmer counts {} / Occurences: {:,}".format(i,j))
 
     if n_seq == 1:
         return seq_l[0]
