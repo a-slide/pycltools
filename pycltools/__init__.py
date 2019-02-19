@@ -14,7 +14,7 @@ __classifiers__ = [
     'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
     'Programming Language :: Python :: 3']
 
-__install_requires__ = ['pysam>=0.14.0', 'pandas>=0.23.0', "numpy>=1.14.0", "notebook>=5.6.0", "tqdm>=4.23.4", "httplib2", "paramiko"]
+__install_requires__ = ['pysam>=0.14.0', 'pandas>=0.23.0', "numpy>=1.14.0", "notebook>=5.6.0", "tqdm>=4.23.4", "httplib2", "paramiko", "matplotlib>=3.0.0"]
 __python_requires__='>=3'
 __description__= "pycltools is a package written in python3 containing a collection of generic functions and classes for file parsing, manipulation..."
 

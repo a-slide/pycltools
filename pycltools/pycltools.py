@@ -24,6 +24,7 @@ import pysam as ps
 from tqdm import tqdm, trange
 import numpy as np
 from IPython.core.display import Image, display, HTML
+from matplotlib import pyplot as pl
 
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
 
@@ -2213,6 +2214,50 @@ def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, h
     if n_seq == 1:
         return seq_l[0]
     return seq_l
+
+def kmer_content (seq_list, min_kmer=3, max_kmer=9, figsize=(10,2), yscale="log"):
+    """
+    Plot kmer content information from a list of DNA/RNA sequences
+    * seq_list
+        List a sequences or single sequence
+    * min_kmer
+        Minimal kmer size
+    * max_kmer
+        Maximal kmer size
+    """
+    # Cast to list if single seq
+    if type(seq_list)== str:
+        seq_list = [seq_list]
+
+    # Collect kmer info in several passses
+    for kmer_len in range (min_kmer,max_kmer+1):
+        jprint ("Kmer of length {}".format(kmer_len), bold=True)
+        c = Counter()
+
+        # Count each kmer occurence
+        for seq in seq_list:
+            for i in range(0, len(seq)-kmer_len+1):
+                c[seq[i:i+kmer_len]]+=1
+        print ("Found {:,} kmers out of {:,} possibilities".format(len(c), pow(4,kmer_len)))
+
+        # Compute Stats
+        l = []
+        for i in c.values():
+            l.append(i)
+        print ("Median occurences: {:,}, Min occurences: {:,}, Max occurences: {:,}".format(int(np.median(l)),np.min(l),np.max(l)))
+
+        # Bin kmer occurence counts
+        cc = Counter()
+        for i in c.values():
+            cc[i]+=1
+
+        # plot distribution
+        with pl.style.context("ggplot"):
+            fig, ax = pl.subplots(figsize=figsize)
+            ax.bar(list(cc.keys()), list(cc.values()))
+            ax.set_yscale(yscale)
+            ax.set_xlabel("Occurences count")
+            pl.show()
 
 ##~~~~~~~ FASTQ SEQUENCE TOOLS ~~~~~~~#
 
