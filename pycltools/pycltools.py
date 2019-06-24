@@ -959,6 +959,7 @@ def bash_basic (cmd, virtualenv=None, **kwargs):
 def bash (
     cmd,
     virtualenv=None,
+    conda=None,
     live="stdout",
     print_stdout=True,
     ret_stdout=False,
@@ -977,6 +978,8 @@ def bash (
         A command line string formatted as a string
     * virtualenv
         If specified will try to load a virtualenvwrapper environment before runing the command
+    * conda
+        If specified will try to load a conda environment before runing the command
     * print_stdout
         If True the standard output will be LIVE printed through the system standard output stream
     * ret_stdout
@@ -997,6 +1000,8 @@ def bash (
 
     if virtualenv:
         cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(virtualenv, cmd)
+    elif conda:
+        cmd = "source ~/.bashrc && conda activate {} && {} && conda deactivate".format(virtualenv, cmd)
 
     # empty str buffer
     stdout_str = ""
@@ -1103,6 +1108,7 @@ def bash_update (cmd, update_freq=1, **kwargs):
 def bsub (
     cmd,
     virtualenv=None,
+    conda=None,
     mem=None,
     threads=None,
     queue=None,
@@ -1121,6 +1127,8 @@ def bsub (
         A command line string formatted as a string
     * virtualenv
         If specified will try to load a virtualenvwrapper environment before runing the command
+    * conda
+        If specified will try to load a conda environment before runing the command
     * mem
         Memory to reserve (-M and -R 'rusage[mem=])
     * threads
@@ -1148,7 +1156,7 @@ def bsub (
     if stderr_fp:
         bsub_cmd += "-eo {0} ".format (stderr_fp)
     if send_email:
-        bsub_cmd += "-N ".format (queue)
+        bsub_cmd += "-N "
     if wait_jobid:
         if not type(wait_jobid) in (list, set, tuple):
             wait_jobid = [wait_jobid]
@@ -1156,7 +1164,7 @@ def bsub (
         bsub_cmd += "-w '{0}' ".format (jobid_str)
 
     full_cmd = "{} \"{}\"".format (bsub_cmd, cmd)
-    stdout = bash (virtualenv=virtualenv, cmd=full_cmd, ret_stdout=True, print_cmd=print_cmd, dry=dry)
+    stdout = bash (virtualenv=virtualenv, conda=conda, cmd=full_cmd, ret_stdout=True, print_cmd=print_cmd, dry=dry)
     if not dry:
         return stdout.split("<")[1].split(">")[0]
     else:
