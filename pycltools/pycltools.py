@@ -1001,7 +1001,7 @@ def bash (
     if virtualenv:
         cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(virtualenv, cmd)
     elif conda:
-        cmd = "source ~/.bashrc && conda activate {} && {} && conda deactivate".format(virtualenv, cmd)
+        cmd = "source ~/.bashrc && conda activate {} && {} && conda deactivate".format(conda, cmd)
 
     # empty str buffer
     stdout_str = ""
