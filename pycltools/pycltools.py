@@ -1067,7 +1067,7 @@ def bash (
         return stderr_str
     return None
 
-def bash_update (cmd, update_freq=1, **kwargs):
+def bash_update (cmd, job update_freq=1, **kwargs):
     """
     FOR JUPYTER NOTEBOOK
     Run a bash command and print the output in the cell. The output is updated each time until the output is None.
@@ -1170,17 +1170,17 @@ def bsub (
     else:
         return random.randint(0, 10000)
 
-def bjobs ():
+def bjobs (jobid=None, user=None, status=None, queue=None, cmd=None):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
     Emulate LSF bjobs command. Return a Dataframe of jobs
     """
     # Init collection
-    job_info = namedtuple ("job_info", ["JobID","User","Status","Queue", "Job_cmd", "Submit_time"])
+    job_info = namedtuple ("job_info", ['jobid', 'user', 'status', 'queue', 'cmd', 'cpu_used', 'mem', 'swap', 'submit_time', 'start_time'])
     l = []
 
     # Get long job desriptions from bjobs
-    stdout = bash("bjobs -w", ret_stdout=True, print_stdout=False)
+    stdout = bash("bjobs -W", ret_stdout=True, print_stdout=False)
 
     if not stdout:
         pd.DataFrame ()
@@ -1189,18 +1189,26 @@ def bjobs ():
     for line in stdout.split("\n"):
         if line[:1].isdigit():
             ls = line.split()
-            l.append (job_info(
-                JobID = ls [0],
-                User = ls [1],
-                Status = ls [2],
-                Queue = ls [3],
-                Job_cmd = " ".join(ls[6:-3]),
-                Submit_time = " ".join(ls [-3:])))
+            l.append (job_info(ls [0], ls [1], ls [2], ls [3], " ".join(ls[6:-8]), ls[-6], ls[-5], ls[-4], ls[-8], ls[-2]))
 
     # Cast to Dataframe
-    return pd.DataFrame (l)
+    df =  pd.DataFrame (l)
 
-def bjobs_update (update_freq = 5):
+    # filter if needed
+    if jobid:
+        df = df[df["jobid"].str.match(jobid)]
+    if user:
+        df = df[df["user"].str.match(user)]
+    if status:
+        df = df[df["status"].str.match(status)]
+    if queue:
+        df = df[df["queue"].str.match(queue)]
+    if cmd:
+        df = df[df["cmd"].str.match(cmd)]
+
+    return df
+
+def bjobs_update (update_freq=5, jobid=None, user=None, status=None, queue=None, cmd=None):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
     Emulate LSF bjobs command but update the cell every x seconds
@@ -1217,16 +1225,16 @@ def bjobs_update (update_freq = 5):
 
     try:
         while True:
-            df = bjobs ()
+            df = bjobs (jobid=None, user=None, status=None, queue=None, cmd=None)
             if df.empty:
                 raise StopIteration
             display (df)
-            sleep (5)
+            sleep (update_freq)
             clear_output ()
 
     except KeyboardInterrupt:
         clear_output ()
-        display (bjobs ())
+        display (bjobs (jobid=None, user=None, status=None, queue=None, cmd=None))
 
     except StopIteration:
         print ("All jobs done")
