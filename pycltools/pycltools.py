@@ -1225,7 +1225,7 @@ def bjobs_update (update_freq=5, jobid=None, user=None, status=None, queue=None,
 
     try:
         while True:
-            df = bjobs (jobid=None, user=None, status=None, queue=None, cmd=None)
+            df = bjobs (jobid=jobid, user=user, status=status, queue=queue, cmd=cmd)
             if df.empty:
                 raise StopIteration
             display (df)
@@ -1234,7 +1234,7 @@ def bjobs_update (update_freq=5, jobid=None, user=None, status=None, queue=None,
 
     except KeyboardInterrupt:
         clear_output ()
-        display (bjobs (jobid=None, user=None, status=None, queue=None, cmd=None))
+        display (bjobs (jobid=jobid, user=user, status=status, queue=queue, cmd=cmd))
 
     except StopIteration:
         print ("All jobs done")
