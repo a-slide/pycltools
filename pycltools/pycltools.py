@@ -1067,7 +1067,7 @@ def bash (
         return stderr_str
     return None
 
-def bash_update (cmd, job update_freq=1, **kwargs):
+def bash_update (cmd, update_freq=1, **kwargs):
     """
     FOR JUPYTER NOTEBOOK
     Run a bash command and print the output in the cell. The output is updated each time until the output is None.
