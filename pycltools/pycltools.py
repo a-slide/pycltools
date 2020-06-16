@@ -1118,6 +1118,8 @@ def bsub (
     send_email=False,
     print_cmd=True,
     dry=False,
+    job_name=None,
+    other_options=None,
     **kwargs):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
@@ -1143,8 +1145,12 @@ def bsub (
         Path of the file where to write the standard error of the command (-eo)
     * send_email
         If True, will force LSF to send an email even if stdout_fp and/or stderr_fp is given
+    * job_name
+
     """
     bsub_cmd = "bsub "
+    if job_name:
+        bsub_cmd += "-J {} ".format(job_name)
     if mem:
         bsub_cmd += "-M {0} -R 'rusage[mem={0}]' ".format(mem)
     if threads:
@@ -1162,13 +1168,18 @@ def bsub (
             wait_jobid = [wait_jobid]
         jobid_str = "&&".join(["post_done({0})".format (jobid) for jobid in wait_jobid])
         bsub_cmd += "-w '{0}' ".format (jobid_str)
+    if other_options:
+        bsub_cmd += "{} ".format(other_options)
 
     full_cmd = "{} \"{}\"".format (bsub_cmd, cmd)
-    stdout = bash (virtualenv=virtualenv, conda=conda, cmd=full_cmd, ret_stdout=True, print_cmd=print_cmd, dry=dry)
-    if not dry:
-        return stdout.split("<")[1].split(">")[0]
+
+    if print_cmd:
+        print(full_cmd)
+    if dry:
+        return random.randint(0, 100000)
     else:
-        return random.randint(0, 10000)
+        stdout = bash (virtualenv=virtualenv, conda=conda, cmd=full_cmd, ret_stdout=True)
+        return stdout.split("<")[1].split(">")[0]
 
 def bjobs (jobid=None, user=None, status=None, queue=None, cmd=None):
     """
