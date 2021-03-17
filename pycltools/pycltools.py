@@ -28,7 +28,8 @@ from matplotlib import pyplot as pl
 
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
 
-def jhelp (function, full=True, print_private=False, **kwargs):
+
+def jhelp(function, full=True, print_private=False, **kwargs):
     """
     Print a nice looking help string based on the name of a declared function. By default print the function
     definition and description
@@ -42,30 +43,37 @@ def jhelp (function, full=True, print_private=False, **kwargs):
         from IPython.core.display import display, HTML, Markdown
         from inspect import signature, isfunction, ismethod
     except (NameError, ImportError) as E:
-        warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
+        warnings.warn(
+            "jupyter notebook is required to use this function. Please verify your dependencies"
+        )
         help(function)
         return
-
 
     if isfunction(function) or ismethod(function):
         # skip private functions
         if not print_private and function.__name__.startswith("_"):
             return
         if full:
-            jprint ("<b>{}</b> {}\n{}".format(function.__name__, signature(function), function.__doc__))
+            jprint(
+                "<b>{}</b> {}\n{}".format(
+                    function.__name__, signature(function), function.__doc__
+                )
+            )
         else:
-            jprint ("<b>{}</b> {}".format(function.__name__, signature(function)))
+            jprint("<b>{}</b> {}".format(function.__name__, signature(function)))
 
-def stdout_print (*args):
+
+def stdout_print(*args):
     """
     Emulate print but uses sys stdout instead. It could sometimes be useful in specific situations where print
     is in is not behaving optimaly (like with tqdm for example)
     """
-    s =  " ".join([str(i) for i in args])
+    s = " ".join([str(i) for i in args])
     sys.stdout.write(s)
     sys.stdout.flush()
 
-def jprint (*args, **kwargs):
+
+def jprint(*args, **kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
     Format a string in HTML and print the output. Equivalent of print, but highly customizable. Many options can be
@@ -81,45 +89,62 @@ def jprint (*args, **kwargs):
     try:
         from IPython.core.display import display, HTML
     except (NameError, ImportError) as E:
-        warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
+        warnings.warn(
+            "jupyter notebook is required to use this function. Please verify your dependencies"
+        )
         print(args)
         return
 
     # Join the different elements together and cast in string
-    s =  " ".join([str(i) for i in args])
+    s = " ".join([str(i) for i in args])
 
     # Replace new lines and tab by their html equivalent
     s = s.replace("\n", "<br>").replace("\t", "&emsp;")
 
     # For boolean options
-    if "bold" in kwargs and kwargs["bold"]: s = "<b>{}</b>".format(s)
-    if "italic" in kwargs and kwargs["italic"]: s = "<i>{}</i>".format(s)
-    if "highlight" in kwargs and kwargs["highlight"]: s = "<mark>{}</mark>".format(s)
-    if "underlined" in kwargs and kwargs["underlined"]: s = "<ins>{}</ins>".format(s)
-    if "striked" in kwargs and kwargs["striked"]: s = "<del>{}</del>".format(s)
-    if "subscripted" in kwargs and kwargs["subscripted"]: s = "<sub>{}</sub>".format(s)
-    if "superscripted" in kwargs and kwargs["superscripted"]: s = "<sup>{}</sup>".format(s)
+    if "bold" in kwargs and kwargs["bold"]:
+        s = "<b>{}</b>".format(s)
+    if "italic" in kwargs and kwargs["italic"]:
+        s = "<i>{}</i>".format(s)
+    if "highlight" in kwargs and kwargs["highlight"]:
+        s = "<mark>{}</mark>".format(s)
+    if "underlined" in kwargs and kwargs["underlined"]:
+        s = "<ins>{}</ins>".format(s)
+    if "striked" in kwargs and kwargs["striked"]:
+        s = "<del>{}</del>".format(s)
+    if "subscripted" in kwargs and kwargs["subscripted"]:
+        s = "<sub>{}</sub>".format(s)
+    if "superscripted" in kwargs and kwargs["superscripted"]:
+        s = "<sup>{}</sup>".format(s)
 
     # for style options
-    style=""
-    if "font" in kwargs and kwargs["font"]: style+= "font-family:{};".format(kwargs["font"])
-    if "color" in kwargs and kwargs["color"]: style+= "color:{};".format(kwargs["color"])
-    if "size" in kwargs and kwargs["size"]: style+= "font-size:{}%;".format(kwargs["size"])
-    if "align" in kwargs and kwargs["align"]: style+= "text-align:{};".format(kwargs["align"])
-    if "background_color" in kwargs and kwargs["background_color"]: style+= "background-color:{};".format(kwargs["background_color"])
+    style = ""
+    if "font" in kwargs and kwargs["font"]:
+        style += "font-family:{};".format(kwargs["font"])
+    if "color" in kwargs and kwargs["color"]:
+        style += "color:{};".format(kwargs["color"])
+    if "size" in kwargs and kwargs["size"]:
+        style += "font-size:{}%;".format(kwargs["size"])
+    if "align" in kwargs and kwargs["align"]:
+        style += "text-align:{};".format(kwargs["align"])
+    if "background_color" in kwargs and kwargs["background_color"]:
+        style += "background-color:{};".format(kwargs["background_color"])
     if "line_height" in kwargs and kwargs["line_height"]:
         line_height = kwargs["line_height"]
     else:
-        line_height=15
-    style+= "line-height:{}px;".format(line_height)
+        line_height = 15
+    style += "line-height:{}px;".format(line_height)
 
     # Format final string
-    if style: s = "<p style=\"{}\">{}</p>".format(style,s)
-    else: s = "<p>{}</p>".format(s)
+    if style:
+        s = '<p style="{}">{}</p>'.format(style, s)
+    else:
+        s = "<p>{}</p>".format(s)
 
     display(HTML(s))
 
-def toogle_code (**kwargs):
+
+def toogle_code(**kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
     Hide code with a clickable link in a j
@@ -129,11 +154,14 @@ def toogle_code (**kwargs):
     try:
         from IPython.core.display import display, HTML
     except (NameError, ImportError) as E:
-        warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
+        warnings.warn(
+            "jupyter notebook is required to use this function. Please verify your dependencies"
+        )
         return
 
-    display(HTML(
-    '''<script>
+    display(
+        HTML(
+            """<script>
     code_show=true;
     function code_toggle() {
      if (code_show){
@@ -145,10 +173,12 @@ def toogle_code (**kwargs):
     }
     $( document ).ready(code_toggle);
     </script>
-    <b><a href="javascript:code_toggle()">Toggle on/off the raw code</a></b>''')
+    <b><a href="javascript:code_toggle()">Toggle on/off the raw code</a></b>"""
+        )
     )
 
-def larger_display (percent=100, **kwargs):
+
+def larger_display(percent=100, **kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
     Resize the area of the screen containing the notebook according to a given percentage of the available width
@@ -158,13 +188,18 @@ def larger_display (percent=100, **kwargs):
     try:
         from IPython.core.display import display, HTML
     except (NameError, ImportError) as E:
-        warnings.warn ("jupyter notebook is required to use this function. Please verify your dependencies")
+        warnings.warn(
+            "jupyter notebook is required to use this function. Please verify your dependencies"
+        )
         return
 
     # resizing
-    display(HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent)))
+    display(
+        HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent))
+    )
 
-def hide_traceback ():
+
+def hide_traceback():
     """
     FOR JUPYTER NOTEBOOK ONLY
     Remove the traceback of exception and return only the Exception message and type
@@ -172,43 +207,48 @@ def hide_traceback ():
     ipython = get_ipython()
     ipython.showtraceback = _hide_traceback
 
-def _hide_traceback (
+
+def _hide_traceback(
     exc_tuple=None,
     filename=None,
     tb_offset=None,
     exception_only=False,
-    running_compiled_code=False):
+    running_compiled_code=False,
+):
     """
     Private helper function for hide_traceback
     """
     ipython = get_ipython()
     etype, value, tb = sys.exc_info()
     return ipython._showtraceback(
-        etype,
-        value,
-        ipython.InteractiveTB.get_exception_only (etype, value))
+        etype, value, ipython.InteractiveTB.get_exception_only(etype, value)
+    )
 
-#~~~~~~~ PREDICATES ~~~~~~~#
 
-def is_readable_file (fp, raise_exception=True, **kwargs):
+# ~~~~~~~ PREDICATES ~~~~~~~#
+
+
+def is_readable_file(fp, raise_exception=True, **kwargs):
     """
     Verify the readability of a file or list of file
     """
     if not os.access(fp, os.R_OK):
         if raise_exception:
-            raise IOError ("{} is not a valid file".format(fp))
+            raise IOError("{} is not a valid file".format(fp))
         else:
             return False
     else:
         return True
 
-def is_gziped (fp, **kwargs):
+
+def is_gziped(fp, **kwargs):
     """
     Return True if the file is Gziped else False
     """
     return fp[-2:].lower() == "gz"
 
-def has_extension (fp, ext, pos=-1, raise_exception=False, **kwargs):
+
+def has_extension(fp, ext, pos=-1, raise_exception=False, **kwargs):
     """
     Test presence of extension in a file path
     * ext
@@ -222,73 +262,86 @@ def has_extension (fp, ext, pos=-1, raise_exception=False, **kwargs):
     # Test ext presence
     if not fp.split(".")[pos].lower() in ext:
         if raise_exception:
-            raise ValueError ("Invalid extension for file {}. Valid extensions: {}".format(fp, "/".join(ext)))
+            raise ValueError(
+                "Invalid extension for file {}. Valid extensions: {}".format(
+                    fp, "/".join(ext)
+                )
+            )
         else:
             return False
     else:
         return True
 
-#~~~~~~~ PATH MANIPULATION ~~~~~~~#
 
-def file_basename (fp, **kwargs):
+# ~~~~~~~ PATH MANIPULATION ~~~~~~~#
+
+
+def file_basename(fp, **kwargs):
     """
     Return the basename of a file without folder location and extension
     """
-    return fp.rpartition('/')[2].partition('.')[0]
+    return fp.rpartition("/")[2].partition(".")[0]
 
-def extensions (fp, comp_ext_list=["gz", "tgz", "zip", "xz", "bz2"], **kwargs):
+
+def extensions(fp, comp_ext_list=["gz", "tgz", "zip", "xz", "bz2"], **kwargs):
     """
     Return The extension of a file in lower-case. If archived file ("gz", "tgz", "zip", "xz", "bz2")
     the method will output the base extension + the archive extension as a string
     """
     split_name = fp.split("/")[-1].split(".")
     # No extension ?
-    if len (split_name) == 1:
+    if len(split_name) == 1:
         return ""
     # Manage compressed files
-    elif len (split_name) > 2 and split_name[-1].lower() in comp_ext_list:
+    elif len(split_name) > 2 and split_name[-1].lower() in comp_ext_list:
         return ".{}.{}".format(split_name[-2], split_name[-1]).lower()
     # Normal situation = return the last element of the list
     else:
         return ".{}".format(split_name[-1]).lower()
 
-def extensions_list (fp, comp_ext_list=["gz", "tgz", "zip", "xz", "bz2"], **kwargs):
+
+def extensions_list(fp, comp_ext_list=["gz", "tgz", "zip", "xz", "bz2"], **kwargs):
     """
     Return The extension of a file in lower-case. If archived file ("gz", "tgz", "zip", "xz", "bz2")
     the method will output the base extension + the archive extension as a list
     """
     split_name = fp.split("/")[-1].split(".")
     # No extension ?
-    if len (split_name) == 1:
+    if len(split_name) == 1:
         return []
     # Manage compressed files
-    elif len (split_name) > 2 and split_name[-1].lower() in comp_ext_list:
+    elif len(split_name) > 2 and split_name[-1].lower() in comp_ext_list:
         return [split_name[-2].lower(), split_name[-1].lower()]
     # Normal situation = return the last element of the list
     else:
         return [split_name[-1].lower()]
 
-def file_name (fp, **kwargs):
+
+def file_name(fp, **kwargs):
     """
     Return The complete name of a file with the extension but without folder location
     """
     return fp.rpartition("/")[2]
 
-def dir_name (fp, **kwargs):
+
+def dir_name(fp, **kwargs):
     """
     Return the name of the directory where the file is located
     """
     return fp.rpartition("/")[0].rpartition("/")[2]
 
-def dir_path (fp, **kwargs):
+
+def dir_path(fp, **kwargs):
     """
     Return the directory path of a file
     """
     return fp.rpartition("/")[0]
 
+
 ##~~~~~~~ STRING FORMATTING ~~~~~~~#
 
-def supersplit (string, separator="", **kwargs):
+
+def supersplit(string, separator="", **kwargs):
     """
     like split but can take a list of separators instead of a simple separator
     """
@@ -302,31 +355,35 @@ def supersplit (string, separator="", **kwargs):
         string = string.replace(sep, "#")
     return string.split("#")
 
-def rm_blank (name, replace="", **kwargs):
-    """ Replace blank spaces in a name by a given character (default = remove)
-    Blanks at extremities are always removed and nor replaced """
+
+def rm_blank(name, replace="", **kwargs):
+    """Replace blank spaces in a name by a given character (default = remove)
+    Blanks at extremities are always removed and nor replaced"""
     return replace.join(name.split())
 
-#~~~~~~~ FILE MANIPULATION ~~~~~~~#
 
-def concatenate (src_list, dest, **kwargs):
+# ~~~~~~~ FILE MANIPULATION ~~~~~~~#
+
+
+def concatenate(src_list, dest, **kwargs):
     """
     Concatenate a list of scr files in a single output file. Handle gziped files (mixed input and output)
     """
-    if is_gziped (dest):
+    if is_gziped(dest):
         open_fun_dest, open_mode_dest = gzip.open, "wt"
     else:
         open_fun_dest, open_mode_dest = open, "w"
-    with open_fun_dest (dest, open_mode_dest) as fh_dest:
+    with open_fun_dest(dest, open_mode_dest) as fh_dest:
         for src in src_list:
-            if is_gziped (src):
+            if is_gziped(src):
                 open_fun_src, open_mode_src = gzip.open, "rt"
             else:
                 open_fun_src, open_mode_src = open, "r"
-            with open_fun_src (src, open_mode_src) as fh_src:
-                shutil.copyfileobj (fh_src, fh_dest)
+            with open_fun_src(src, open_mode_src) as fh_src:
+                shutil.copyfileobj(fh_src, fh_dest)
 
-def copyFile (src, dest, **kwargs):
+
+def copyFile(src, dest, **kwargs):
     """
     Copy a single file to a destination file or folder (with error handling/reporting)
     * src
@@ -338,12 +395,13 @@ def copyFile (src, dest, **kwargs):
         shutil.copy(src, dest)
     # eg. src and dest are the same file
     except shutil.Error as E:
-        print('Error: %s' % E)
+        print("Error: %s" % E)
     # eg. source or destination doesn't exist
     except IOError as E:
-        print('Error: %s' % E.strerror)
+        print("Error: %s" % E.strerror)
 
-def gzip_file (fpin, fpout=None, **kwargs):
+
+def gzip_file(fpin, fpout=None, **kwargs):
     """
     gzip a file
     * fpin
@@ -353,15 +411,15 @@ def gzip_file (fpin, fpout=None, **kwargs):
     """
     # Generate a automatic name if none is given
     if not fpout:
-        fpout = fpin +".gz"
+        fpout = fpin + ".gz"
 
     # Try to initialize handle for
     try:
         in_handle = open(fpin, "rb")
         out_handle = gzip.open(fpout, "wb")
         # Write input file in output file
-        print ("Compressing {}".format(fpin))
-        out_handle.write (in_handle.read())
+        print("Compressing {}".format(fpin))
+        out_handle.write(in_handle.read())
         # Close both files
         in_handle.close()
         out_handle.close()
@@ -369,13 +427,14 @@ def gzip_file (fpin, fpout=None, **kwargs):
 
     except IOError as E:
         print(E)
-        if os.path.isfile (fpout):
+        if os.path.isfile(fpout):
             try:
-                os.remove (fpout)
+                os.remove(fpout)
             except OSError:
-                print ("Can't remove {}".format(fpout))
+                print("Can't remove {}".format(fpout))
 
-def gunzip_file (fpin, fpout=None, **kwargs):
+
+def gunzip_file(fpin, fpout=None, **kwargs):
     """
     ungzip a file
     * fpin
@@ -389,11 +448,11 @@ def gunzip_file (fpin, fpout=None, **kwargs):
 
     try:
         # Try to initialize handle for
-        in_handle = gzip.GzipFile(fpin, 'rb')
+        in_handle = gzip.GzipFile(fpin, "rb")
         out_handle = open(fpout, "wb")
         # Write input file in output file
-        print ("Uncompressing {}".format(fpin))
-        out_handle.write (in_handle.read())
+        print("Uncompressing {}".format(fpin))
+        out_handle.write(in_handle.read())
         # Close both files
         out_handle.close()
         in_handle.close()
@@ -401,13 +460,14 @@ def gunzip_file (fpin, fpout=None, **kwargs):
 
     except IOError as E:
         print(E)
-        if os.path.isfile (fpout):
+        if os.path.isfile(fpout):
             try:
-                os.remove (fpout)
+                os.remove(fpout)
             except OSError:
-                print ("Can't remove {}".format(fpout))
+                print("Can't remove {}".format(fpout))
 
-def remove_file (fp, exception_if_exist=False):
+
+def remove_file(fp, exception_if_exist=False):
     """
     Try to remove a file from disk.
     """
@@ -417,9 +477,11 @@ def remove_file (fp, exception_if_exist=False):
         if exception_if_exist:
             raise E
 
-#~~~~~~~ FILE INFORMATION/PARSING ~~~~~~~#
 
-def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwargs):
+# ~~~~~~~ FILE INFORMATION/PARSING ~~~~~~~#
+
+
+def linerange(fp, range_list=[], line_numbering=True, max_char_line=150, **kwargs):
     """
     Print a range of lines in a file according to a list of start end lists. Handle gziped files
     * fp
@@ -433,14 +495,14 @@ def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwar
     """
     if not range_list:
         n_line = fastcount(fp)
-        range_list=[[0,2],[n_line-3, n_line-1]]
+        range_list = [[0, 2], [n_line - 3, n_line - 1]]
 
     if is_gziped(fp):
         open_fun = gzip.open
-        open_mode =  "rt"
+        open_mode = "rt"
     else:
         open_fun = open
-        open_mode =  "r"
+        open_mode = "r"
 
     with open_fun(fp, open_mode) as f:
         previous_line_empty = False
@@ -454,9 +516,9 @@ def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwar
                         l = line.strip()
 
                     if max_char_line and len(l) > max_char_line:
-                        print (l[0:max_char_line]+"...")
+                        print(l[0:max_char_line] + "...")
                     else:
-                        print (l)
+                        print(l)
 
                     line_print = True
                     previous_line_empty = False
@@ -467,7 +529,8 @@ def linerange (fp, range_list=[], line_numbering=True, max_char_line=150, **kwar
                     print("...")
                     previous_line_empty = True
 
-def cat (fp, max_lines=100, line_numbering=False, max_char_line=150, **kwargs):
+
+def cat(fp, max_lines=100, line_numbering=False, max_char_line=150, **kwargs):
     """
     Emulate linux cat cmd but with line cap protection. Handle gziped files
     * fp
@@ -481,12 +544,18 @@ def cat (fp, max_lines=100, line_numbering=False, max_char_line=150, **kwargs):
     """
     n_line = fastcount(fp)
     if n_line <= max_lines:
-        range_list = [[0, n_line-1]]
+        range_list = [[0, n_line - 1]]
     else:
-        range_list=[[0, max_lines/2-1],[n_line-max_lines/2, n_line]]
-    linerange (fp=fp, range_list=range_list, line_numbering=line_numbering, max_char_line=max_char_line)
+        range_list = [[0, max_lines / 2 - 1], [n_line - max_lines / 2, n_line]]
+    linerange(
+        fp=fp,
+        range_list=range_list,
+        line_numbering=line_numbering,
+        max_char_line=max_char_line,
+    )
 
-def tail (fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
+
+def tail(fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
     """
     Emulate linux tail cmd. Handle gziped files
     * fp
@@ -501,12 +570,27 @@ def tail (fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
     n_line = fastcount(fp)
     if n_line <= n:
         range_list = [[0, n_line]]
-        print ("Only {} lines in the file".format(n_line))
+        print("Only {} lines in the file".format(n_line))
     else:
-        range_list=[[n_line-n+1, n_line]]
-    linerange (fp=fp, range_list=range_list, line_numbering=line_numbering, max_char_line=max_char_line)
+        range_list = [[n_line - n + 1, n_line]]
+    linerange(
+        fp=fp,
+        range_list=range_list,
+        line_numbering=line_numbering,
+        max_char_line=max_char_line,
+    )
 
-def head (fp, n=10, ignore_comment_line=False, comment_char="#", max_char_line=200, sep="\t", max_char_col=50, **kwargs):
+
+def head(
+    fp,
+    n=10,
+    ignore_comment_line=False,
+    comment_char="#",
+    max_char_line=200,
+    sep="\t",
+    max_char_col=50,
+    **kwargs,
+):
     """
     Emulate linux head cmd. Handle gziped files and bam files
     * fp
@@ -523,7 +607,7 @@ def head (fp, n=10, ignore_comment_line=False, comment_char="#", max_char_line=2
     line_list = []
 
     # For bam files
-    if has_extension (fp=fp, ext=["bam", "sam"]):
+    if has_extension(fp=fp, ext=["bam", "sam"]):
         with ps.AlignmentFile(fp) as f:
 
             for line_num, read in enumerate(f):
@@ -531,44 +615,44 @@ def head (fp, n=10, ignore_comment_line=False, comment_char="#", max_char_line=2
                     break
                 l = read.to_string()
                 if sep:
-                    line_list.append (l.split(sep)[0:11])
+                    line_list.append(l.split(sep)[0:11])
                 else:
-                    line_list.append (l)
-                line_num+=1
+                    line_list.append(l)
+                line_num += 1
 
     # Not bam file
     else:
         # For text files
         if is_gziped(fp):
             open_fun = gzip.open
-            open_mode =  "rt"
+            open_mode = "rt"
         else:
             open_fun = open
-            open_mode =  "r"
+            open_mode = "r"
 
         try:
             with open_fun(fp, open_mode) as fh:
                 line_num = 0
-                while (line_num < n):
-                    l= next(fh).strip()
+                while line_num < n:
+                    l = next(fh).strip()
                     if ignore_comment_line and l.startswith(comment_char):
                         continue
                     if sep:
-                        line_list.append (l.split(sep))
+                        line_list.append(l.split(sep))
                     else:
-                        line_list.append (l)
-                    line_num+=1
+                        line_list.append(l)
+                    line_num += 1
 
         except StopIteration:
-            print ("Only {} lines in the file".format(line_num))
+            print("Only {} lines in the file".format(line_num))
 
     # Print lines
     if sep:
         try:
             # Find longest elem per col
-            col_len_list = [0 for _ in range (len(line_list[0]))]
+            col_len_list = [0 for _ in range(len(line_list[0]))]
             for ls in line_list:
-                for i in range (len(ls)):
+                for i in range(len(ls)):
                     len_col = len(ls[i])
                     if len_col > max_char_col:
                         col_len_list[i] = max_char_col
@@ -578,25 +662,33 @@ def head (fp, n=10, ignore_comment_line=False, comment_char="#", max_char_line=2
             line_list_tab = []
             for ls in line_list:
                 s = ""
-                for i in range (len(ls)):
+                for i in range(len(ls)):
                     len_col = col_len_list[i]
                     len_cur_col = len(ls[i])
-                    s += ls[i][0:len_col] + " "*(len_col-len_cur_col)+" "
+                    s += ls[i][0:len_col] + " " * (len_col - len_cur_col) + " "
                 line_list_tab.append(s)
             line_list = line_list_tab
 
         # Fall back to none tabulated display
         except IndexError:
-            return head (fp=fp, n=n, ignore_comment_line=ignore_comment_line, comment_char=comment_char, max_char_line=max_char_line, sep=None)
+            return head(
+                fp=fp,
+                n=n,
+                ignore_comment_line=ignore_comment_line,
+                comment_char=comment_char,
+                max_char_line=max_char_line,
+                sep=None,
+            )
 
     for l in line_list:
         if max_char_line and len(l) > max_char_line:
-            print (l[0:max_char_line]+"...")
+            print(l[0:max_char_line] + "...")
         else:
-            print (l)
+            print(l)
     print()
 
-def grep (fp, regex, max_lines=None):
+
+def grep(fp, regex, max_lines=None):
     """
     Emulate linux head cmd. Handle gziped files and bam files
     * fp
@@ -616,10 +708,10 @@ def grep (fp, regex, max_lines=None):
     # For text files
     if is_gziped(fp):
         open_fun = gzip.open
-        open_mode =  "rt"
+        open_mode = "rt"
     else:
         open_fun = open
-        open_mode =  "r"
+        open_mode = "r"
 
     with open_fun(fp, open_mode) as fh:
         found = 0
@@ -628,11 +720,12 @@ def grep (fp, regex, max_lines=None):
                 break
             for r in regex_list:
                 if r.search(line):
-                    print (line.strip())
-                    found+=1
+                    print(line.strip())
+                    found += 1
                     break
 
-def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwargs):
+
+def linesample(fp, n_lines=100, line_numbering=True, max_char_line=150, **kwargs):
     """
     Randomly sample lines in a file and print them. Handle gziped files
     * fp
@@ -649,18 +742,20 @@ def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwarg
     # Take into account the situation in which there are less lines in the file than requested.
     if n_lines >= n_lines_origin:
         if verbose:
-            print("Not enough lines in source file. Writing all reads in the output file")
-        index_list = list(range(0, n_lines_origin-1))
+            print(
+                "Not enough lines in source file. Writing all reads in the output file"
+            )
+        index_list = list(range(0, n_lines_origin - 1))
     else:
-        index_list = sorted(random.sample(range(0, n_lines_origin-1), n_lines))
+        index_list = sorted(random.sample(range(0, n_lines_origin - 1), n_lines))
 
     # Sample lines in input file according to the list of random line numbers
     if is_gziped(fp):
         open_fun = gzip.open
-        open_mode =  "rt"
+        open_mode = "rt"
     else:
         open_fun = open
-        open_mode =  "r"
+        open_mode = "r"
 
     with open_fun(fp, open_mode) as fh:
         j = 0
@@ -668,15 +763,24 @@ def linesample (fp, n_lines=100, line_numbering=True, max_char_line=150, **kwarg
             if j >= n_lines:
                 break
             if i == index_list[j]:
-                j+=1
+                j += 1
                 l = l.strip()
                 if max_char_line and len(l) > max_char_line:
-                        l = l[0:max_char_line]+"..."
+                    l = l[0:max_char_line] + "..."
                 if line_numbering:
                     l = "{}\t{}".format(i, l)
-                print (l)
+                print(l)
 
-def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="#", sep="\t", **kwargs):
+
+def count_uniq(
+    fp,
+    colnum,
+    select_values=None,
+    drop_values=None,
+    skip_comment="#",
+    sep="\t",
+    **kwargs,
+):
     """
     Count unique occurences in a specific column of a tabulated file
     * fp
@@ -694,13 +798,15 @@ def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="
         Character or list of characters to use in order to split the lines. Exemple ["\t",";"]. DEFAULT="\t"
     """
     # Transform separator in regular expression if needed
-    if type (sep) == list:
+    if type(sep) == list:
         sep = "[{}]".format("".join(sep))
-        engine='python'
+        engine = "python"
     else:
-        engine='c'
+        engine = "c"
 
-    df = pd.read_csv(fp, sep=sep, index_col=False, header=None, comment=skip_comment, engine=engine)
+    df = pd.read_csv(
+        fp, sep=sep, index_col=False, header=None, comment=skip_comment, engine=engine
+    )
 
     if select_values:
         for i, j in select_values.items():
@@ -718,14 +824,17 @@ def count_uniq (fp, colnum, select_values=None, drop_values=None, skip_comment="
 
     return df.groupby(colnum).size().sort_values(ascending=False)
 
-def colsum (fp,
+
+def colsum(
+    fp,
     colrange=None,
     separator="",
     header=False,
     ignore_hashtag_line=False,
     max_items=10,
     ret_type="md",
-    **kwargs):
+    **kwargs,
+):
     """
     Create a summary of selected columns of a file
     * fp
@@ -764,22 +873,22 @@ def colsum (fp,
             if header and not header_found:
                 header_dict = {}
                 for colnum, val in enumerate(ls):
-                    header_dict[colnum]= val
+                    header_dict[colnum] = val
                 header_found = True
-                #print("Header found")
+                # print("Header found")
                 continue
 
             # Get the number of col if not given and handle the first line
             if not colrange:
                 colrange = [i for i in range(len(ls))]
-                #print("Found {} colums".format(len(ls)))
+                # print("Found {} colums".format(len(ls)))
 
             # Manage the first valid line
-            #print("First line found")
+            # print("First line found")
             for colnum in colrange:
                 res_dict[colnum] = OrderedDict()
                 val = ls[colnum].strip()
-                res_dict[colnum][val]=1
+                res_dict[colnum][val] = 1
             first_line = True
 
         # Continue to read and parse the lines
@@ -789,7 +898,7 @@ def colsum (fp,
                 val = ls[colnum].strip()
                 if val not in res_dict[colnum]:
                     res_dict[colnum][val] = 0
-                res_dict[colnum][val]+=1
+                res_dict[colnum][val] += 1
 
     # Return directly the whole dict
     if ret_type == "dict":
@@ -797,54 +906,72 @@ def colsum (fp,
 
     # Return an indented text report
     if ret_type == "report":
-        return dict_to_report(res_dict, tab="\t", sep="\t", sort_dict=True, max_items=max_items)
+        return dict_to_report(
+            res_dict, tab="\t", sep="\t", sort_dict=True, max_items=max_items
+        )
 
     # Create a Markdown table output per colums
     elif ret_type == "md":
-        buffer=""
+        buffer = ""
         for colnum, col_dict in res_dict.items():
             if header:
-                buffer+= dict_to_md(col_dict, header_dict[colnum], "Count", transpose=True, sort_by_val=True, max_items=max_items)
+                buffer += dict_to_md(
+                    col_dict,
+                    header_dict[colnum],
+                    "Count",
+                    transpose=True,
+                    sort_by_val=True,
+                    max_items=max_items,
+                )
             else:
-                buffer+= dict_to_md(col_dict, colnum, "Count", transpose=True, sort_by_val=True, max_items=max_items)
-            buffer+='\n'
+                buffer += dict_to_md(
+                    col_dict,
+                    colnum,
+                    "Count",
+                    transpose=True,
+                    sort_by_val=True,
+                    max_items=max_items,
+                )
+            buffer += "\n"
         return buffer
     else:
-        print ("Invalid return type")
+        print("Invalid return type")
 
-def fastcount (fp, **kwargs):
+
+def fastcount(fp, **kwargs):
     """
     Efficient way to count the number of lines in a file. Handle gziped files
     """
     if is_gziped(fp):
         open_fun = gzip.open
-        open_mode =  "rt"
+        open_mode = "rt"
     else:
         open_fun = open
-        open_mode =  "r"
+        open_mode = "r"
 
     with open_fun(fp, open_mode) as fh:
         lines = 0
         buf_size = 1024 * 1024
-        read_f = fh.read # loop optimization
+        read_f = fh.read  # loop optimization
 
         buf = read_f(buf_size)
         while buf:
-            lines += buf.count('\n')
+            lines += buf.count("\n")
             buf = read_f(buf_size)
 
     return lines
 
-def simplecount (fp, ignore_hashtag_line=False, **kwargs):
+
+def simplecount(fp, ignore_hashtag_line=False, **kwargs):
     """
     Simple way to count the number of lines in a file with more options
     """
     if is_gziped(fp):
         open_fun = gzip.open
-        open_mode =  "rt"
+        open_mode = "rt"
     else:
         open_fun = open
-        open_mode =  "r"
+        open_mode = "r"
 
     with open_fun(fp, open_mode) as fh:
         lines = 0
@@ -855,9 +982,11 @@ def simplecount (fp, ignore_hashtag_line=False, **kwargs):
 
     return lines
 
-#~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
 
-def mkdir (fp, level=1, **kwargs):
+# ~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
+
+
+def mkdir(fp, level=1, **kwargs):
     """
     Reproduce the ability of UNIX "mkdir -p" command
     (ie if the path already exits no exception will be raised).
@@ -872,23 +1001,25 @@ def mkdir (fp, level=1, **kwargs):
     # Extract the path corresponding to the current level of subdirectory and create it if needed
     fp = os.path.abspath(fp)
     split_path = fp.split("/")
-    cur_level = split_path[level-1]
+    cur_level = split_path[level - 1]
     cur_path = "/".join(split_path[0:level])
     if cur_path:
         _mkdir(cur_path)
 
     # If the path is longer than the current level continue to call mkdir recursively
     if len(fp.split("/")) > level:
-        mkdir(fp, level=level+1)
+        mkdir(fp, level=level + 1)
 
-def _mkdir (fp):
+
+def _mkdir(fp):
     if os.path.exists(fp) and os.path.isdir(fp):
         pass
     else:
-        print ("Creating {}".format(fp))
+        print("Creating {}".format(fp))
         os.mkdir(fp)
 
-def dir_walk (fp):
+
+def dir_walk(fp):
     """
     Print a directory arborescence
     """
@@ -899,17 +1030,18 @@ def dir_walk (fp):
         fp_len = len(fp.split(os.sep))
         for root, dirs, file_list in os.walk(fp):
             cur_path_len = len(root.split(os.sep)) - fp_len
-            print((cur_path_len) * '-', os.path.basename(root))
+            print((cur_path_len) * "-", os.path.basename(root))
 
             if file_list:
                 file_list.sort()
                 for f in file_list:
-                    print((cur_path_len)*' ' + "-", f)
+                    print((cur_path_len) * " " + "-", f)
 
 
-#~~~~~~~ SHELL MANIPULATION ~~~~~~~#
+# ~~~~~~~ SHELL MANIPULATION ~~~~~~~#
 
-def make_cmd_str (prog_name, opt_dict={}, opt_list=[], **kwargs):
+
+def make_cmd_str(prog_name, opt_dict={}, opt_list=[], **kwargs):
     """
     Create a Unix like command line string from the prog name, a dict named arguments and a list of unmammed arguments
     exemple make_cmd_str("bwa", {"b":None, t":6, "i":"../idx/seq.fa"}, ["../read1", "../read2"])
@@ -941,7 +1073,8 @@ def make_cmd_str (prog_name, opt_dict={}, opt_list=[], **kwargs):
 
     return cmd
 
-def bash_basic (cmd, virtualenv=None, **kwargs):
+
+def bash_basic(cmd, virtualenv=None, **kwargs):
     """
     Sent basic bash command
     * cmd
@@ -950,13 +1083,16 @@ def bash_basic (cmd, virtualenv=None, **kwargs):
         If specified will try to load a virtualenvwrapper environment before runing the command
     """
     if virtualenv:
-        cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(virtualenv, cmd)
+        cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(
+            virtualenv, cmd
+        )
     with Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True) as proc:
         stdout, stderr = proc.communicate()
-        print (stdout.decode())
-        print (stderr.decode())
+        print(stdout.decode())
+        print(stderr.decode())
 
-def bash (
+
+def bash(
     cmd,
     virtualenv=None,
     conda=None,
@@ -969,7 +1105,8 @@ def bash (
     log_stderr=None,
     print_cmd=False,
     dry=False,
-    **kwargs):
+    **kwargs,
+):
     """
     More advanced version of bash calling with live printing of the standard output and possibilities to log the
     redirect the output and error as a string return or directly in files. If ret_stderr and ret_stdout are True a
@@ -999,23 +1136,27 @@ def bash (
         return
 
     if virtualenv:
-        cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(virtualenv, cmd)
+        cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(
+            virtualenv, cmd
+        )
     elif conda:
-        cmd = "source ~/.bashrc && conda activate {} && {} && conda deactivate".format(conda, cmd)
+        cmd = "source ~/.bashrc && conda activate {} && {} && conda deactivate".format(
+            conda, cmd
+        )
 
     # empty str buffer
     stdout_str = ""
     stderr_str = ""
 
     # First execute the command parse the output
-    with Popen (cmd, shell=True, stdout=PIPE, stderr=PIPE, executable="bash") as proc:
+    with Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, executable="bash") as proc:
 
         # Only 1 standard stream can be output at the time stdout or stderr
         while proc.poll() is None:
 
             # Live parse stdout
             if live == "stdout":
-                for line in iter(proc.stdout.readline, b''):
+                for line in iter(proc.stdout.readline, b""):
                     if print_stdout:
                         sys.stdout.write(line)
                     if ret_stdout or log_stdout:
@@ -1023,7 +1164,7 @@ def bash (
 
             # Live parse stderr
             elif live == "stderr":
-                for line in iter(proc.stderr.readline, b''):
+                for line in iter(proc.stderr.readline, b""):
                     if print_stderr:
                         sys.stderr.write(line)
                     if ret_stderr or log_stderr:
@@ -1031,19 +1172,23 @@ def bash (
 
         # Verify that the command was successful and if not print error message and raise an exception
         if proc.returncode >= 1:
-            sys.stderr.write("Error code #{} during execution of the command : {}\n".format(proc.returncode, cmd))
+            sys.stderr.write(
+                "Error code #{} during execution of the command : {}\n".format(
+                    proc.returncode, cmd
+                )
+            )
             sys.stderr.write(proc.stderr.read())
             return None
 
         if live != "stdout" and (print_stdout or ret_stdout or log_stdout):
-            for line in iter(proc.stdout.readline, b''):
+            for line in iter(proc.stdout.readline, b""):
                 if print_stdout:
                     sys.stdout.write(line)
                 if ret_stdout or log_stdout:
                     stdout_str += line.decode()
 
         if live != "stderr" and (print_stderr or ret_stderr or log_stderr):
-            for line in iter(proc.stderr.readline, b''):
+            for line in iter(proc.stderr.readline, b""):
                 if print_stderr:
                     sys.stderr.write(line)
                 if ret_stderr or log_stderr:
@@ -1051,11 +1196,11 @@ def bash (
 
         # Write log in file if requested
         if log_stdout:
-            with open (log_stdout, "w") as fp:
+            with open(log_stdout, "w") as fp:
                 fp.write(stdout_str)
 
         if log_stderr:
-            with open (log_stderr, "w") as fp:
+            with open(log_stderr, "w") as fp:
                 fp.write(stderr_str)
 
     # Return standard output and err if requested
@@ -1067,7 +1212,8 @@ def bash (
         return stderr_str
     return None
 
-def bash_update (cmd, update_freq=1, **kwargs):
+
+def bash_update(cmd, update_freq=1, **kwargs):
     """
     FOR JUPYTER NOTEBOOK
     Run a bash command and print the output in the cell. The output is updated each time until the output is None.
@@ -1082,20 +1228,28 @@ def bash_update (cmd, update_freq=1, **kwargs):
     try:
         from IPython.core.display import clear_output
     except (NameError, ImportError) as E:
-        print (E)
-        print ("jupyter notebook is required to use this function. Please verify your dependencies")
+        print(E)
+        print(
+            "jupyter notebook is required to use this function. Please verify your dependencies"
+        )
         sys.exit()
 
     # Init stdout buffer
-    stdout_prev= ""
+    stdout_prev = ""
 
     # Loop and update the line is something changes
     try:
         while True:
-            stdout = bash(cmd, ret_stderr=False, ret_stdout=True, print_stderr=False, print_stdout=False)
+            stdout = bash(
+                cmd,
+                ret_stderr=False,
+                ret_stdout=True,
+                print_stderr=False,
+                print_stdout=False,
+            )
             if stdout != stdout_prev:
                 clear_output()
-                print (stdout)
+                print(stdout)
                 stdout_prev = stdout
             if not stdout:
                 print("All done")
@@ -1105,7 +1259,77 @@ def bash_update (cmd, update_freq=1, **kwargs):
     except KeyboardInterrupt:
         print("Stop monitoring\n")
 
-def bsub (
+
+def qsub(
+    cmd_list,
+    mem="1G",
+    threads=1,
+    gpu=False,
+    queue="algo",
+    project="research",
+    node="bowhead001",
+    job_name=None,
+    print_script=False,
+    dry=False,
+    shell="/bin/bash",
+    stdout_fn="qsub_stdout.txt",
+    stderr_fn="qsub_stderr.txt",
+    script_fn="qsub_script.sh",
+):
+
+    # Remove existing log files
+    if os.path.isfile(stdout_fn):
+        os.remove(stdout_fn)
+    if os.path.isfile(stderr_fn):
+        os.remove(stderr_fn)
+
+    with open(script_fn, "w") as fp:
+        fp.write(f"#! {shell}\n")
+        fp.write(f"#$ -S {shell}\n")
+        fp.write("#$ -cwd\n")
+
+        if job_name:
+            fp.write(f"#$ -N {job_name}\n")
+        if project:
+            fp.write(f"#$ -P {project}\n")
+        if threads:
+            fp.write(f"#$ -pe mt {threads}\n")
+        if gpu:
+            fp.write(f"#$ -l gpu=1\n")
+        if node:
+            fp.write(f"#$ -l h={node}\n")
+        if mem:
+            fp.write(f"#$ -l m_mem_free={mem}\n")
+        if queue:
+            if queue == "algo":
+                fp.write(f"#$ -l algo=1\n")
+            else:
+                fp.write(f"#$ -q {job_name}\n")
+        if stdout_fn:
+            fp.write(f"#$ -o {stdout_fn}\n")
+        if stderr_fn:
+            fp.write(f"#$ -e {stderr_fn}\n")
+        fp.write("\n")
+
+        if type(cmd_list) == str:
+            cmd_list = [cmd_list]
+
+        fp.write(f"source ~/.bashrc\n")
+        for cmd in cmd_list:
+            fp.write(f"{cmd}\n")
+
+    if print_script:
+        with open(script_fn, "r") as fp:
+            print(fp.read())
+
+    if dry:
+        return random.randint(0, 100000)
+    else:
+        stdout = bash(cmd=f"qsub {script_fn}", ret_stdout=True, print_stdout=False)
+        return stdout.split(" ")[2]
+
+
+def bsub(
     cmd,
     virtualenv=None,
     conda=None,
@@ -1120,7 +1344,8 @@ def bsub (
     dry=False,
     job_name=None,
     other_options=None,
-    **kwargs):
+    **kwargs,
+):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
     Send an LSF bsub command through bash and return the JOBID
@@ -1154,56 +1379,84 @@ def bsub (
     if mem:
         bsub_cmd += "-M {0} -R 'rusage[mem={0}]' ".format(mem)
     if threads:
-        bsub_cmd += "-n {0} ".format (threads)
+        bsub_cmd += "-n {0} ".format(threads)
     if queue:
-        bsub_cmd += "-q {0} ".format (queue)
+        bsub_cmd += "-q {0} ".format(queue)
     if stdout_fp:
-        bsub_cmd += "-oo {0} ".format (stdout_fp)
+        bsub_cmd += "-oo {0} ".format(stdout_fp)
     if stderr_fp:
-        bsub_cmd += "-eo {0} ".format (stderr_fp)
+        bsub_cmd += "-eo {0} ".format(stderr_fp)
     if send_email:
         bsub_cmd += "-N "
     if wait_jobid:
         if not type(wait_jobid) in (list, set, tuple):
             wait_jobid = [wait_jobid]
-        jobid_str = "&&".join(["post_done({0})".format (jobid) for jobid in wait_jobid])
-        bsub_cmd += "-w '{0}' ".format (jobid_str)
+        jobid_str = "&&".join(["post_done({0})".format(jobid) for jobid in wait_jobid])
+        bsub_cmd += "-w '{0}' ".format(jobid_str)
     if other_options:
         bsub_cmd += "{} ".format(other_options)
 
-    full_cmd = "{} \"{}\"".format (bsub_cmd, cmd)
+    full_cmd = '{} "{}"'.format(bsub_cmd, cmd)
 
     if print_cmd:
         print(full_cmd)
     if dry:
         return random.randint(0, 100000)
     else:
-        stdout = bash (virtualenv=virtualenv, conda=conda, cmd=full_cmd, ret_stdout=True)
+        stdout = bash(virtualenv=virtualenv, conda=conda, cmd=full_cmd, ret_stdout=True)
         return stdout.split("<")[1].split(">")[0]
 
-def bjobs (jobid=None, user=None, status=None, queue=None, cmd=None):
+
+def bjobs(jobid=None, user=None, status=None, queue=None, cmd=None):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
     Emulate LSF bjobs command. Return a Dataframe of jobs
     """
     # Init collection
-    job_info = namedtuple ("job_info", ['jobid', 'user', 'status', 'queue', 'cmd', 'cpu_used', 'mem', 'swap', 'submit_time', 'start_time'])
+    job_info = namedtuple(
+        "job_info",
+        [
+            "jobid",
+            "user",
+            "status",
+            "queue",
+            "cmd",
+            "cpu_used",
+            "mem",
+            "swap",
+            "submit_time",
+            "start_time",
+        ],
+    )
     l = []
 
     # Get long job desriptions from bjobs
     stdout = bash("bjobs -W", ret_stdout=True, print_stdout=False)
 
     if not stdout:
-        pd.DataFrame ()
+        pd.DataFrame()
 
     # Parse bjobs output
     for line in stdout.split("\n"):
         if line[:1].isdigit():
             ls = line.split()
-            l.append (job_info(ls [0], ls [1], ls [2], ls [3], " ".join(ls[6:-8]), ls[-6], ls[-5], ls[-4], ls[-8], ls[-2]))
+            l.append(
+                job_info(
+                    ls[0],
+                    ls[1],
+                    ls[2],
+                    ls[3],
+                    " ".join(ls[6:-8]),
+                    ls[-6],
+                    ls[-5],
+                    ls[-4],
+                    ls[-8],
+                    ls[-2],
+                )
+            )
 
     # Cast to Dataframe
-    df =  pd.DataFrame (l)
+    df = pd.DataFrame(l)
 
     # filter if needed
     if jobid:
@@ -1219,7 +1472,10 @@ def bjobs (jobid=None, user=None, status=None, queue=None, cmd=None):
 
     return df
 
-def bjobs_update (update_freq=5, jobid=None, user=None, status=None, queue=None, cmd=None):
+
+def bjobs_update(
+    update_freq=5, jobid=None, user=None, status=None, queue=None, cmd=None
+):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
     Emulate LSF bjobs command but update the cell every x seconds
@@ -1230,27 +1486,30 @@ def bjobs_update (update_freq=5, jobid=None, user=None, status=None, queue=None,
     try:
         from IPython.core.display import display, clear_output
     except (NameError, ImportError) as E:
-        print (E)
-        print ("jupyter notebook is required to use this function. Please verify your dependencies")
+        print(E)
+        print(
+            "jupyter notebook is required to use this function. Please verify your dependencies"
+        )
         sys.exit()
 
     try:
         while True:
-            df = bjobs (jobid=jobid, user=user, status=status, queue=queue, cmd=cmd)
+            df = bjobs(jobid=jobid, user=user, status=status, queue=queue, cmd=cmd)
             if df.empty:
                 raise StopIteration
-            display (df)
-            sleep (update_freq)
-            clear_output ()
+            display(df)
+            sleep(update_freq)
+            clear_output()
 
     except KeyboardInterrupt:
-        clear_output ()
-        display (bjobs (jobid=jobid, user=user, status=status, queue=queue, cmd=cmd))
+        clear_output()
+        display(bjobs(jobid=jobid, user=user, status=status, queue=queue, cmd=cmd))
 
     except StopIteration:
-        print ("All jobs done")
+        print("All jobs done")
 
-def bjobs_lock (jobid=None, update_freq=2, final_delay=2):
+
+def bjobs_lock(jobid=None, update_freq=2, final_delay=2):
     """
     FOR JUPYTER NOTEBOOK IN LSF environment
     Check if bjobs has running or pending jobs until all are done
@@ -1282,20 +1541,22 @@ def bjobs_lock (jobid=None, update_freq=2, final_delay=2):
 
             s = []
             for i, j in df["Status"].value_counts().items():
-                s.append ("{}:{}".format(i,j))
-            stdout_print ("Jobs Status {}\r".format("\t".join(s)))
+                s.append("{}:{}".format(i, j))
+            stdout_print("Jobs Status {}\r".format("\t".join(s)))
 
             time.sleep(update_freq)
 
     except KeyboardInterrupt:
-        stdout_print("\rUser interuption"+" "*30+"\n")
+        stdout_print("\rUser interuption" + " " * 30 + "\n")
     except StopIteration:
-        time.sleep (final_delay)
-        stdout_print("All jobs done"+" "*30+"\n")
+        time.sleep(final_delay)
+        stdout_print("All jobs done" + " " * 30 + "\n")
+
 
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
 
-def dict_to_md (
+
+def dict_to_md(
     d,
     key_label="",
     value_label="",
@@ -1303,7 +1564,8 @@ def dict_to_md (
     sort_by_key=False,
     sort_by_val=True,
     max_items=None,
-    **kwargs):
+    **kwargs,
+):
     """
     Transform a dict into a markdown formated table
     """
@@ -1314,16 +1576,16 @@ def dict_to_md (
     if sort_by_val:
         d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
 
-    if max_items and len(d)>max_items:
+    if max_items and len(d) > max_items:
         d2 = OrderedDict()
         n = 0
         for key, value in d.items():
-            d2[key]=value
-            n+=1
+            d2[key] = value
+            n += 1
             if n >= max_items:
                 break
-        d2["..."]="..."
-        d=d2
+        d2["..."] = "..."
+        d = d2
 
     # Prepare output
     if transpose:
@@ -1345,14 +1607,10 @@ def dict_to_md (
 
     return buffer
 
-def dict_to_report (
-    d,
-    tab="\t",
-    ntab=0,
-    sep=":",
-    sort_dict=True,
-    max_items=None,
-    **kwargs):
+
+def dict_to_report(
+    d, tab="\t", ntab=0, sep=":", sort_dict=True, max_items=None, **kwargs
+):
     """
     Recursive function to return a text report from nested dict or OrderedDict objects
     """
@@ -1369,16 +1627,16 @@ def dict_to_report (
         if all_num:
             d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
 
-            if max_items and len(d)>max_items:
+            if max_items and len(d) > max_items:
                 d2 = OrderedDict()
-                n=0
+                n = 0
                 for key, value in d.items():
-                    d2[key]=value
-                    n+=1
+                    d2[key] = value
+                    n += 1
                     if n >= max_items:
                         break
-                d2["..."]="..."
-                d=d2
+                d2["..."] = "..."
+                d = d2
 
         # Else sort alphabeticaly by key
         else:
@@ -1388,31 +1646,41 @@ def dict_to_report (
     report = ""
     for name, value in d.items():
         if type(value) == OrderedDict or type(value) == dict:
-            report += "{}{}\n".format(tab*ntab, name)
-            report += dict_to_report(value, tab=tab, ntab=ntab+1, sep=sep, sort_dict=sort_dict, max_items=max_items)
+            report += "{}{}\n".format(tab * ntab, name)
+            report += dict_to_report(
+                value,
+                tab=tab,
+                ntab=ntab + 1,
+                sep=sep,
+                sort_dict=sort_dict,
+                max_items=max_items,
+            )
         else:
-            report += "{}{}{}{}\n".format(tab*ntab, name, sep, value)
+            report += "{}{}{}{}\n".format(tab * ntab, name, sep, value)
     return report
+
 
 ##~~~~~~~ TABLE FORMATTING ~~~~~~~#
 
-def reformat_table (
+
+def reformat_table(
     input_file,
     output_file="",
     return_df=False,
     init_template=[],
     final_template=[],
-    header = '',
-    keep_original_header = True,
-    header_from_final_template = False,
-    replace_internal_space='_',
+    header="",
+    keep_original_header=True,
+    header_from_final_template=False,
+    replace_internal_space="_",
     replace_null_val="*",
     subst_dict={},
     filter_dict=[],
     predicate=None,
     standard_template=None,
     verbose=False,
-    **kwargs):
+    **kwargs,
+):
     """
     Reformat a table given an initial and a final line templates indicated as a list where numbers
     indicate the data column and strings the formatting characters
@@ -1473,89 +1741,175 @@ def reformat_table (
     if standard_template:
 
         if standard_template == "gff3_ens_gene":
-            print("Using gff3 ensembl gene template. Non-gene features will be filtered out")
+            print(
+                "Using gff3 ensembl gene template. Non-gene features will be filtered out"
+            )
 
-            init_template = ["{seqid}","\t","{source}","\t","{type}","\t","{start}","\t","{end}","\t","{score}","\t","{strand}","\t","{phase}",
-            "\tID=","{ID}",
-            ";gene_id=","{gene_id}",
-            ";gene_type=","{gene_type}",
-            ";gene_status=","{gene_status}",
-            ";gene_name=","{gene_name}",
-            ";level=","{level}",
-            ";havana_gene=","{havana_gene}"]
+            init_template = [
+                "{seqid}",
+                "\t",
+                "{source}",
+                "\t",
+                "{type}",
+                "\t",
+                "{start}",
+                "\t",
+                "{end}",
+                "\t",
+                "{score}",
+                "\t",
+                "{strand}",
+                "\t",
+                "{phase}",
+                "\tID=",
+                "{ID}",
+                ";gene_id=",
+                "{gene_id}",
+                ";gene_type=",
+                "{gene_type}",
+                ";gene_status=",
+                "{gene_status}",
+                ";gene_name=",
+                "{gene_name}",
+                ";level=",
+                "{level}",
+                ";havana_gene=",
+                "{havana_gene}",
+            ]
 
-            predicate2 = lambda v:v["type"]=="gene"
+            predicate2 = lambda v: v["type"] == "gene"
 
         if standard_template == "gtf_ens_gene":
-            print("Using gtf ensembl gene template. Non-gene features will be filtered out")
+            print(
+                "Using gtf ensembl gene template. Non-gene features will be filtered out"
+            )
 
-            init_template = ["{seqid}","\t","{source}","\t","{type}","\t","{start}","\t","{end}","\t","{score}","\t","{strand}","\t","{phase}",
-            "\tgene_id \"","{gene_id}",
-            "\"; gene_type \"","{gene_type}",
-            "\"; gene_status \"","{gene_status}",
-            "\"; gene_name \"","{gene_name}",
-            "\"; level ","{level}",
-            "; havana_gene \"","{havana_gene}"]
+            init_template = [
+                "{seqid}",
+                "\t",
+                "{source}",
+                "\t",
+                "{type}",
+                "\t",
+                "{start}",
+                "\t",
+                "{end}",
+                "\t",
+                "{score}",
+                "\t",
+                "{strand}",
+                "\t",
+                "{phase}",
+                '\tgene_id "',
+                "{gene_id}",
+                '"; gene_type "',
+                "{gene_type}",
+                '"; gene_status "',
+                "{gene_status}",
+                '"; gene_name "',
+                "{gene_name}",
+                '"; level ',
+                "{level}",
+                '; havana_gene "',
+                "{havana_gene}",
+            ]
 
-            predicate2 = lambda v:v["type"]=="gene"
+            predicate2 = lambda v: v["type"] == "gene"
 
         if standard_template == "gff3_ens_transcript":
-            print("Using gff3 ensembl transcript template. Non-transcript features will be filtered out")
+            print(
+                "Using gff3 ensembl transcript template. Non-transcript features will be filtered out"
+            )
 
-            init_template = ["{seqid}","\t","{source}","\t","{type}","\t","{start}","\t","{end}","\t","{score}","\t","{strand}","\t","{phase}",
-            "\tID=","{ID}",
-            ";Parent=","{Parent}",
-            ";gene_id=","{gene_id}",
-            ";transcript_id=","{transcript_id}",
-            ";gene_type=","{gene_type}",
-            ";gene_status=","{gene_status}",
-            ";gene_name=","{gene_name}",
-            ";transcript_type=","{transcript_type}",
-            ";transcript_status=","{transcript_status}",
-            ";transcript_name=","{transcript_name}",
-            ";level=","{level}",
-            ";transcript_support_level=","{transcript_support_level}",
-            ";tag=","{tag}",
-            ";havana_gene=","{havana_gene}",
-            ";havana_transcript=","{havana_transcript}"]
+            init_template = [
+                "{seqid}",
+                "\t",
+                "{source}",
+                "\t",
+                "{type}",
+                "\t",
+                "{start}",
+                "\t",
+                "{end}",
+                "\t",
+                "{score}",
+                "\t",
+                "{strand}",
+                "\t",
+                "{phase}",
+                "\tID=",
+                "{ID}",
+                ";Parent=",
+                "{Parent}",
+                ";gene_id=",
+                "{gene_id}",
+                ";transcript_id=",
+                "{transcript_id}",
+                ";gene_type=",
+                "{gene_type}",
+                ";gene_status=",
+                "{gene_status}",
+                ";gene_name=",
+                "{gene_name}",
+                ";transcript_type=",
+                "{transcript_type}",
+                ";transcript_status=",
+                "{transcript_status}",
+                ";transcript_name=",
+                "{transcript_name}",
+                ";level=",
+                "{level}",
+                ";transcript_support_level=",
+                "{transcript_support_level}",
+                ";tag=",
+                "{tag}",
+                ";havana_gene=",
+                "{havana_gene}",
+                ";havana_transcript=",
+                "{havana_transcript}",
+            ]
 
-            predicate2 = lambda v:v["type"]=="transcript"
+            predicate2 = lambda v: v["type"] == "transcript"
 
     else:
         predicate2 = None
 
     if not final_template:
         if verbose:
-            print ("No final template given. Create final template from init template")
+            print("No final template given. Create final template from init template")
         final_template = init_template
 
     # Print the pattern of decomposition and recomposition
     if verbose:
-        print ("Initial template values")
-        print (_template_to_str(init_template))
-        print ("Final template values")
-        print (_template_to_str(final_template))
+        print("Initial template values")
+        print(_template_to_str(init_template))
+        print("Final template values")
+        print(_template_to_str(final_template))
 
-    #Init counters
+    # Init counters
     total = fail = success = filtered_out = 0
 
     # Init an empty panda dataframe if required
     if return_df:
-        df = pd.DataFrame(columns = _template_to_list(final_template))
+        df = pd.DataFrame(columns=_template_to_list(final_template))
 
     # init empty handlers
     infile = outfile = None
     try:
         # open the input file gziped or not
-        infile = gzip.open(input_file, "rt") if input_file[-2:].lower()=="gz" else open(input_file, "r")
+        infile = (
+            gzip.open(input_file, "rt")
+            if input_file[-2:].lower() == "gz"
+            else open(input_file, "r")
+        )
 
         # open the output file if required
         if output_file:
-            outfile = open (output_file, "wt")
+            outfile = open(output_file, "wt")
             if header:
                 outfile.write(header)
             if header_from_final_template:
-                outfile.write(_template_to_str(final_template)+"\n")
+                outfile.write(_template_to_str(final_template) + "\n")
 
         for line in infile:
 
@@ -1563,47 +1917,58 @@ def reformat_table (
             if line[0] == "#":
                 # write in file if required
                 if output_file:
-                      if keep_original_header:
+                    if keep_original_header:
                         outfile.write(line)
                 continue
 
-            total+=1
+            total += 1
 
             # Decompose the original line
             try:
-                raw_val = _decompose_line(
-                    line = line,
-                    template = init_template)
-                assert raw_val, "Decomposing the line #{} resulted in an empty value list:\n{}".format(total,line)
+                raw_val = _decompose_line(line=line, template=init_template)
+                assert (
+                    raw_val
+                ), "Decomposing the line #{} resulted in an empty value list:\n{}".format(
+                    total, line
+                )
             except AssertionError as E:
-                fail+=1
+                fail += 1
                 continue
 
             # Filter and clean the values
             try:
                 clean_val = _clean_values(
-                    val_dict = raw_val,
-                    replace_internal_space = replace_internal_space,
-                    replace_null_val = replace_null_val,
-                    subst_dict = subst_dict,
-                    filter_dict = filter_dict,
+                    val_dict=raw_val,
+                    replace_internal_space=replace_internal_space,
+                    replace_null_val=replace_null_val,
+                    subst_dict=subst_dict,
+                    filter_dict=filter_dict,
                     predicate=predicate,
-                    predicate2= predicate2)
-                assert clean_val, "The line #{} was filter according to the filter dictionnary:\n{}".format(total,line)
+                    predicate2=predicate2,
+                )
+                assert (
+                    clean_val
+                ), "The line #{} was filter according to the filter dictionnary:\n{}".format(
+                    total, line
+                )
             except AssertionError as E:
-                filtered_out+=1
+                filtered_out += 1
                 continue
 
             # Fill the dataframe if needed
             if return_df:
-                df.at[len(df)]= _reformat_list (val_dict=clean_val, template=final_template)
+                df.at[len(df)] = _reformat_list(
+                    val_dict=clean_val, template=final_template
+                )
 
             # Recompose the line and write in file if needed
             if output_file:
-                formated_line = _reformat_line (val_dict=clean_val, template=final_template)
+                formated_line = _reformat_line(
+                    val_dict=clean_val, template=final_template
+                )
                 outfile.write(formated_line)
 
-            success+=1
+            success += 1
 
     # Close the files properly
     finally:
@@ -1616,16 +1981,23 @@ def reformat_table (
         return df
 
     if verbose:
-        print ("{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail".format(total, success, filtered_out, fail))
+        print(
+            "{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail".format(
+                total, success, filtered_out, fail
+            )
+        )
 
-def _is_str_key (element):
-    return type(element)==str and element[0]=="{" and element[-1]=="}"
 
-def _is_str_sep (element):
-    return type(element)==str and (element[0]!="{" or element[-1]!="}")
+def _is_str_key(element):
+    return type(element) == str and element[0] == "{" and element[-1] == "}"
 
-def _template_to_str (template):
-    l=[]
+
+def _is_str_sep(element):
+    return type(element) == str and (element[0] != "{" or element[-1] != "}")
+
+
+def _template_to_str(template):
+    l = []
     for element in template:
         if _is_str_sep(element):
             l.append(element)
@@ -1635,8 +2007,9 @@ def _template_to_str (template):
             l.append(str(element))
     return "".join(l)
 
-def _template_to_list (template):
-    l=[]
+
+def _template_to_list(template):
+    l = []
     for element in template:
         if _is_str_key(element):
             l.append(element[1:-1])
@@ -1644,7 +2017,8 @@ def _template_to_list (template):
             l.append(str(element))
     return l
 
-def _decompose_line (line, template):
+
+def _decompose_line(line, template):
     """Helper function for reformat_table. Decompose a line in a dictionnary and extract the values given a template list"""
 
     val_dict = OrderedDict()
@@ -1677,14 +2051,16 @@ def _decompose_line (line, template):
 
     return val_dict
 
-def _clean_values (
+
+def _clean_values(
     val_dict,
     replace_internal_space=None,
     replace_null_val=None,
     subst_dict={},
     filter_dict={},
     predicate=None,
-    predicate2=None):
+    predicate2=None,
+):
     """Helper function for reformat_table. Clean the extracted values"""
 
     for key in val_dict.keys():
@@ -1697,7 +2073,7 @@ def _clean_values (
 
         # Replace internal spaces by underscores
         if replace_internal_space:
-            val_dict[key] = val_dict[key].replace(" ","_")
+            val_dict[key] = val_dict[key].replace(" ", "_")
 
         # Filter line based on the filter_dict
         if key in filter_dict and val_dict[key] in filter_dict[key]:
@@ -1717,31 +2093,33 @@ def _clean_values (
 
     return val_dict
 
-def _reformat_line (val_dict, template):
+
+def _reformat_line(val_dict, template):
     """Helper function for reformat_table. Reassemble a line from a dict of values and a template list"""
 
     line = ""
     try:
         for element in template:
             if _is_str_sep(element):
-                line+=element
+                line += element
             elif type(element) == int:
-                line+=val_dict[element]
+                line += val_dict[element]
             elif _is_str_key(element):
-                line+=val_dict[element[1:-1]]
+                line += val_dict[element[1:-1]]
 
     except IndexError as E:
-        print (E)
-        print (val_dict)
-        print (template)
+        print(E)
+        print(val_dict)
+        print(template)
         raise
 
-    return line+"\n"
+    return line + "\n"
 
-def _reformat_list (val_dict, template):
+
+def _reformat_list(val_dict, template):
     """Helper function for reformat_table. Reassemble a list from a dict of values and a template list"""
 
-    l=[]
+    l = []
     try:
         for element in template:
             if type(element) == int:
@@ -1750,16 +2128,18 @@ def _reformat_list (val_dict, template):
                 l.append(val_dict[element[1:-1]])
 
     except IndexError as E:
-        print (E)
-        print (val_dict)
-        print (template)
+        print(E)
+        print(val_dict)
+        print(template)
         raise
 
     return l
 
+
 ##~~~~~~~ WEB TOOLS ~~~~~~~#
 
-def url_exist (url, **kwargs):
+
+def url_exist(url, **kwargs):
     """
     Predicate verifying if an url exist without downloading all the link
     """
@@ -1768,20 +2148,23 @@ def url_exist (url, **kwargs):
     try:
         import httplib2
     except (NameError, ImportError) as E:
-        print (E)
-        print ("httplib2 is required to use this function. Please verify your dependencies")
+        print(E)
+        print(
+            "httplib2 is required to use this function. Please verify your dependencies"
+        )
         sys.exit()
 
     # Chek the url
     h = httplib2.Http()
 
     try:
-        resp = h.request(url, 'HEAD')
-        return int(resp[0]['status']) < 400
+        resp = h.request(url, "HEAD")
+        return int(resp[0]["status"]) < 400
     except:
         return False
 
-def wget (url, out_name="", progress_block=100000000, **kwargs):
+
+def wget(url, out_name="", progress_block=100000000, **kwargs):
     """
     Download a file from an URL to a local storage.
     *  url
@@ -1792,14 +2175,14 @@ def wget (url, out_name="", progress_block=100000000, **kwargs):
         size of the byte block for the progression of the download
     """
 
-    def size_to_status (size):
+    def size_to_status(size):
         if size >= 1000000000:
-            status = "{} GB".format(round(size/1000000000, 1))
+            status = "{} GB".format(round(size / 1000000000, 1))
         elif size >= 1000000:
-            status = "{} MB".format(round(size/1000000, 1))
+            status = "{} MB".format(round(size / 1000000, 1))
         elif size >= 1000:
-            status = "{} kB".format(round(size/1000, 1))
-        else :
+            status = "{} kB".format(round(size / 1000, 1))
+        else:
             status = "{} B".format(size)
         return status
 
@@ -1813,27 +2196,27 @@ def wget (url, out_name="", progress_block=100000000, **kwargs):
         u = urlopen(url)
         scheme, netloc, path, query, fragment = urlsplit(url)
     except (HTTPError, URLError, ValueError) as E:
-        print (E)
+        print(E)
         return None
 
     # Attribute a file name if not given
     if not out_name:
         out_name = file_name(path)
         if not out_name:
-            out_name = 'output.file'
+            out_name = "output.file"
 
     # Create the output file and
-    with open(out_name, 'wb') as fp:
+    with open(out_name, "wb") as fp:
 
         # Retrieve file meta information
         meta = u.info()
-        meta_func = meta.getheaders if hasattr(meta, 'getheaders') else meta.get_all
+        meta_func = meta.getheaders if hasattr(meta, "getheaders") else meta.get_all
         meta_size = meta_func("Content-Length")
         if meta_size:
             file_size = int(meta_func("Content-Length")[0])
             print("Downloading: {}\tBytes: {}".format(url, file_size))
         else:
-            file_size=None
+            file_size = None
             print("Downloading: {}\tSize unknown".format(url))
 
         # Buffered reading of the file to download
@@ -1853,7 +2236,9 @@ def wget (url, out_name="", progress_block=100000000, **kwargs):
             if file_size_dl >= last_pblock:
                 status = "{} Downloaded".format(size_to_status(file_size_dl))
                 if file_size:
-                    status += "\t[{} %]".format (round(file_size_dl*100/file_size, 2))
+                    status += "\t[{} %]".format(
+                        round(file_size_dl * 100 / file_size, 2)
+                    )
                 print(status)
                 last_pblock += progress_block
 
@@ -1865,9 +2250,11 @@ def wget (url, out_name="", progress_block=100000000, **kwargs):
 
     return out_name
 
+
 ##~~~~~~~ FUNCTIONS TOOLS ~~~~~~~#
 
-def print_arg (**kwargs):
+
+def print_arg(**kwargs):
     """
     Print calling function named and unnamed arguments
     """
@@ -1882,114 +2269,23 @@ def print_arg (**kwargs):
         print("Enumerated named argument list:")
         for i, j in args.items():
             if i != posname and i != kwname:
-                print("\t{}: {}".format(i,j))
+                print("\t{}: {}".format(i, j))
         # For **kwarg arguments
         if kwname:
             print("Unenumerated named arguments list:")
             for i, j in args[kwname].items():
-                print("\t{}: {}".format(i,j))
+                print("\t{}: {}".format(i, j))
         args.update(args.pop(kwname, []))
         if posname:
             print("Unnamed positional arguments list:")
             for i in args[posname]:
                 print("\t{}".format(i))
 
-##~~~~~~~ SSH TOOLS ~~~~~~~#
-
-def scp (
-    hostname,
-    local_file,
-    remote_dir,
-    username=None,
-    rsa_private_key=None,
-    ssh_config="~/.ssh/config",
-    verbose=False,
-    **kwargs):
-    """
-    Copy a file over ssh in a target remote directory
-    * hostname
-        Name of the host ssh server
-    * username
-        name of the user
-    * rsa_private_key
-        path to the rsa private key
-    * local_file
-        path to the local file
-    * remote_dir
-        path to the target directory
-    * ssh_config
-        use as an alternative method instead of giving the username and rsa_private_key. Will fetch them from the config file directly
-    """
-    # Function specific third party import
-    try:
-        import paramiko
-    except (NameError, ImportError) as E:
-        print (E)
-        print ("paramiko is required to use this function. Please verify your dependencies")
-        sys.exit()
-
-    if not username or not rsa_private_key:
-        if verbose: print ("Parse the ssh config file")
-        ssh_config = os.path.expanduser(ssh_config)
-        # Find host in the host list of the ssh config file
-        with open (ssh_config) as conf:
-            host_dict = OrderedDict()
-            host=None
-            for line in conf:
-                if not line.startswith("#"):
-                    if line.startswith("Host"):
-                        host = line.strip().split()[1]
-                        host_dict[host] = OrderedDict()
-                    else:
-                        ls = line.strip().split()
-                        if len(ls) == 2:
-                            host_dict[host][ls[0]]= ls[1]
-
-        try:
-            username = host_dict[hostname]["User"]
-            rsa_private_key = os.path.expanduser(host_dict[hostname]["IdentityFile"])
-            hostname = host_dict[hostname]["Hostname"]
-        except KeyError as E:
-            print(E)
-            print('Hostname not found in the config file or config not containing User, IdentityFile and Hostname')
-            raise
-
-    # now, connect and use paramiko Transport to negotiate SSH2 across the connection
-    if verbose: print ('Establishing SSH connection to: {} ...'.format(hostname))
-    with paramiko.Transport(hostname) as t:
-        t.start_client()
-
-        try:
-            key = paramiko.RSAKey.from_private_key_file(rsa_private_key)
-            t.auth_publickey(username, key)
-            if verbose: print ('... Success!')
-
-        except Exception as e:
-            if verbose: print ('... Failed loading {}'.format(rsa_private_key))
-
-        assert t.is_authenticated(), 'RSA key auth failed!'
-
-        sftp = t.open_session()
-        sftp = paramiko.SFTPClient.from_transport(t)
-
-        if remote_dir.startswith ("~"):
-            remote_dir = "."+remote_dir[1:]
-
-        try:
-            sftp.mkdir(remote_dir)
-            if verbose: print ('Create directory {}'.format(remote_dir))
-        except IOError as e:
-            if verbose: print ('Assuming {} exists'.format(remote_dir))
-
-        remote_file = remote_dir + '/' + os.path.basename(local_file)
-
-        if verbose: print ('Copying local file from {} to {}:{}'.format(local_file, hostname, remote_file))
-        sftp.put(local_file, remote_file)
-        if verbose: print ('All operations complete!')
 
 ##~~~~~~~ PACKAGE TOOLS ~~~~~~~#
 
-def get_package_file (package, fp="", **kwargs):
+
+def get_package_file(package, fp="", **kwargs):
     """
     Verify the existence of a file from the package data and return a file path
     * package
@@ -2001,6 +2297,7 @@ def get_package_file (package, fp="", **kwargs):
     # Try to import pkg_resources package and try to get the file via pkg_resources
     try:
         from pkg_resources import Requirement, resource_filename, DistributionNotFound
+
         fp = resource_filename(Requirement.parse(package), fp)
     except (NameError, ImportError, DistributionNotFound) as E:
         warnings.warn(str(E))
@@ -2013,9 +2310,9 @@ def get_package_file (package, fp="", **kwargs):
         if os.path.isdir(fp):
             for root, dirs, files in os.walk(fp):
                 path = root.split(os.sep)
-                print((len(path) - 1) * '-', os.path.basename(root))
+                print((len(path) - 1) * "-", os.path.basename(root))
                 for file in files:
-                    print(len(path) * '-', file)
+                    print(len(path) * "-", file)
             return fp
 
         # If file exist and is readable
@@ -2026,9 +2323,11 @@ def get_package_file (package, fp="", **kwargs):
         warnings.warn("File does not exist or is not readeable")
         return
 
+
 ##~~~~~~~ SAM/BAM TOOLS ~~~~~~~#
 
-def bam_sample (fp_in, fp_out, n_reads, verbose=False, **kwargs):
+
+def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
     """
     Sample reads from a SAM/BAM file and write in a new file
     * fp_in
@@ -2046,7 +2345,7 @@ def bam_sample (fp_in, fp_out, n_reads, verbose=False, **kwargs):
     elif has_extension(fp_in, "cram"):
         mode_in = "rc"
     else:
-        warnings.warn ("Invalid input file format (.bam/.sam/.cram)")
+        warnings.warn("Invalid input file format (.bam/.sam/.cram)")
         return
     if has_extension(fp_out, "bam"):
         mode_out = "wb"
@@ -2055,7 +2354,7 @@ def bam_sample (fp_in, fp_out, n_reads, verbose=False, **kwargs):
     elif has_extension(fp_out, "cram"):
         mode_out = "wc"
     else:
-        warnings.warn ("Invalid output file format (.bam/.sam/.cram)")
+        warnings.warn("Invalid output file format (.bam/.sam/.cram)")
         return
 
     # Count the reads and define a list of random lines to sample
@@ -2067,10 +2366,12 @@ def bam_sample (fp_in, fp_out, n_reads, verbose=False, **kwargs):
         # Take into account the situation in which there are less lines in the file than requested.
         if n_reads >= n_read_origin:
             if verbose:
-                print("Not enough lines in source file. Writing all reads in the output file")
-            index_list = list(range(0, n_read_origin-1))
+                print(
+                    "Not enough lines in source file. Writing all reads in the output file"
+                )
+            index_list = list(range(0, n_read_origin - 1))
         else:
-            index_list = sorted(random.sample(range(0, n_read_origin-1), n_reads))
+            index_list = sorted(random.sample(range(0, n_read_origin - 1), n_reads))
 
     # Sample lines in input file according to the list of random line numbers
     with ps.AlignmentFile(fp_in, mode_in) as fh_in:
@@ -2081,16 +2382,19 @@ def bam_sample (fp_in, fp_out, n_reads, verbose=False, **kwargs):
                     break
                 if i == index_list[j]:
                     fh_out.write(line)
-                    j+=1
+                    j += 1
             if verbose:
                 print("Wrote {} reads in output file".format(j))
 
+
 ##~~~~~~~ DNA SEQUENCE TOOLS ~~~~~~~#
 
-def base_generator (
-    bases = ["A","T","C","G"],
-    weights = [0.280788,0.281691,0.193973,0.194773],
-    **kwargs):
+
+def base_generator(
+    bases=["A", "T", "C", "G"],
+    weights=[0.280788, 0.281691, 0.193973, 0.194773],
+    **kwargs,
+):
     """
     Generator returning DNA/RNA bases according to a probability weightning
     * bases: list (default ["A","T","C","G"])
@@ -2105,7 +2409,7 @@ def base_generator (
 
         # Verify that the 2 lists are the same size
         if len(bases) != len(weights):
-            raise ValueError ("weights is not the same length as bases.")
+            raise ValueError("weights is not the same length as bases.")
 
         # Calculate cumulated weights
         cum_weights = list(itertools.accumulate(weights))
@@ -2121,11 +2425,13 @@ def base_generator (
         while True:
             yield random.choice(bases)
 
-def make_random_sequence (
-    bases = ["A","T","C","G"],
-    weights = [0.280788,0.281691,0.193973,0.194773],
+
+def make_random_sequence(
+    bases=["A", "T", "C", "G"],
+    weights=[0.280788, 0.281691, 0.193973, 0.194773],
     length=1000,
-    **kwargs):
+    **kwargs,
+):
     """
     return a sequence of DNA/RNA bases according to a probability weightning
     * bases: list (default ["A","T","C","G"])
@@ -2138,10 +2444,20 @@ def make_random_sequence (
         length of the sequence to be returned
     """
     bgen = base_generator(bases=bases, weights=weights)
-    seq_list = [next(bgen) for _ in range (length)]
+    seq_list = [next(bgen) for _ in range(length)]
     return "".join(seq_list)
 
-def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, hp_max=3, seq_len=100, n_seq=10, seed=None, verbose=True):
+
+def make_kmer_guided_sequence(
+    how="min",
+    bases=["A", "G", "T", "C"],
+    kmer_len=3,
+    hp_max=3,
+    seq_len=100,
+    n_seq=10,
+    seed=None,
+    verbose=True,
+):
     """
     Generate a list of sequences with an optimized kmer content.
     * how
@@ -2167,7 +2483,7 @@ def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, h
     kmer_c = Counter()
     seq_l = []
 
-    for _ in trange(n_seq, disable= not verbose):
+    for _ in trange(n_seq, disable=not verbose):
         seq = []
 
         # First base
@@ -2175,27 +2491,27 @@ def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, h
         seq.append(random.choice(bases))
 
         # Extend seed to length kmer_len
-        for i in range(kmer_len-1):
+        for i in range(kmer_len - 1):
             # Reduce choice if max homopolymer reached
-            choices = [i for i in bases if i!=seq[-1]] if hp >= hp_max else bases
+            choices = [i for i in bases if i != seq[-1]] if hp >= hp_max else bases
             # Sample from available choices
             seq.append(random.choice(choices))
             # Check if homopolymers extends
-            hp = hp+1 if seq[-2] == seq[-1] else 1
+            hp = hp + 1 if seq[-2] == seq[-1] else 1
         kmer_c["".join(seq)] += 1
 
         # Extend sequence
-        for _ in range (seq_len-kmer_len):
+        for _ in range(seq_len - kmer_len):
 
             # Reduce choice if max homopolymer reached
-            choices = [i for i in bases if i!=seq[-1]] if hp >= hp_max else bases
-            prev = seq[-kmer_len+1:]
+            choices = [i for i in bases if i != seq[-1]] if hp >= hp_max else bases
+            prev = seq[-kmer_len + 1 :]
 
             if how == "min":
                 count_d = defaultdict(list)
                 # Collect count for each possible kmers
                 for b in choices:
-                    kmer = "".join(prev+[b])
+                    kmer = "".join(prev + [b])
                     if not kmer in kmer_c:
                         count_d[0].append(b)
                     else:
@@ -2207,15 +2523,15 @@ def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, h
                 p = []
                 # Collect count per kmer
                 for b in choices:
-                    kmer = "".join(prev+[b])
+                    kmer = "".join(prev + [b])
                     if not kmer in kmer_c:
                         p.append(0)
                     else:
                         p.append(kmer_c[kmer])
                 # transform counts in inverted frequency weights
                 p = np.array(p)
-                p = 1/(p-p.min()+1)
-                p = p/p.sum()
+                p = 1 / (p - p.min() + 1)
+                p = p / p.sum()
                 # Choose randomly using weight matrix
                 b = np.random.choice(choices, p=p)
             else:
@@ -2224,9 +2540,9 @@ def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, h
             # extend current sequence
             seq.append(b)
             # Update kmer counter
-            kmer_c["".join(prev+[b])] += 1
+            kmer_c["".join(prev + [b])] += 1
             # Check if homopolymers extends
-            hp = hp+1 if seq[-2]==seq[-1] else 1
+            hp = hp + 1 if seq[-2] == seq[-1] else 1
 
         # Append to list
         seq_l.append("".join(seq))
@@ -2234,15 +2550,16 @@ def make_kmer_guided_sequence (how="min", bases=["A","G","T","C"], kmer_len=3, h
     if verbose:
         cc = Counter()
         for i in kmer_c.values():
-            cc[i]+=1
+            cc[i] += 1
         for i, j in cc.most_common():
-            print ("kmer counts {} / Occurences: {:,}".format(i,j))
+            print("kmer counts {} / Occurences: {:,}".format(i, j))
 
     if n_seq == 1:
         return seq_l[0]
     return seq_l
 
-def kmer_content (seq_list, min_kmer=3, max_kmer=9, figsize=(10,2), yscale="log"):
+
+def kmer_content(seq_list, min_kmer=3, max_kmer=9, figsize=(10, 2), yscale="log"):
     """
     Plot kmer content information from a list of DNA/RNA sequences
     * seq_list
@@ -2253,30 +2570,38 @@ def kmer_content (seq_list, min_kmer=3, max_kmer=9, figsize=(10,2), yscale="log"
         Maximal kmer size
     """
     # Cast to list if single seq
-    if type(seq_list)== str:
+    if type(seq_list) == str:
         seq_list = [seq_list]
 
     # Collect kmer info in several passses
-    for kmer_len in range (min_kmer,max_kmer+1):
-        jprint ("Kmer of length {}".format(kmer_len), bold=True)
+    for kmer_len in range(min_kmer, max_kmer + 1):
+        jprint("Kmer of length {}".format(kmer_len), bold=True)
         c = Counter()
 
         # Count each kmer occurence
         for seq in seq_list:
-            for i in range(0, len(seq)-kmer_len+1):
-                c[seq[i:i+kmer_len]]+=1
-        print ("Found {:,} kmers out of {:,} possibilities".format(len(c), pow(4,kmer_len)))
+            for i in range(0, len(seq) - kmer_len + 1):
+                c[seq[i : i + kmer_len]] += 1
+        print(
+            "Found {:,} kmers out of {:,} possibilities".format(
+                len(c), pow(4, kmer_len)
+            )
+        )
 
         # Compute Stats
         l = []
         for i in c.values():
             l.append(i)
-        print ("Median occurences: {:,}, Min occurences: {:,}, Max occurences: {:,}".format(int(np.median(l)),np.min(l),np.max(l)))
+        print(
+            "Median occurences: {:,}, Min occurences: {:,}, Max occurences: {:,}".format(
+                int(np.median(l)), np.min(l), np.max(l)
+            )
+        )
 
         # Bin kmer occurence counts
         cc = Counter()
         for i in c.values():
-            cc[i]+=1
+            cc[i] += 1
 
         # plot distribution
         with pl.style.context("ggplot"):
@@ -2286,20 +2611,28 @@ def kmer_content (seq_list, min_kmer=3, max_kmer=9, figsize=(10,2), yscale="log"
             ax.set_xlabel("Occurences count")
             pl.show()
 
+
 ##~~~~~~~ FASTQ SEQUENCE TOOLS ~~~~~~~#
 
-def fastqc_summary (
+
+def fastqc_summary(
     fastqc_res_dir,
     max_table_row=10,
     plot_width=500,
-    table_module_list=[
-       "Basic Statistics",
-       "Overrepresented sequences",
-       "Kmer Content"],
-   plot_module_list = [
-       'Per base sequence quality','Per tile sequence quality','Per sequence quality scores',
-       'Per base sequence content', 'Per sequence GC content', 'Per base N content', 'Sequence Length Distribution',
-       'Sequence Duplication Levels','Kmer Content','Adapter Content']):
+    table_module_list=["Basic Statistics", "Overrepresented sequences", "Kmer Content"],
+    plot_module_list=[
+        "Per base sequence quality",
+        "Per tile sequence quality",
+        "Per sequence quality scores",
+        "Per base sequence content",
+        "Per sequence GC content",
+        "Per base N content",
+        "Sequence Length Distribution",
+        "Sequence Duplication Levels",
+        "Kmer Content",
+        "Adapter Content",
+    ],
+):
 
     """
     Summarize and display fastqc results in IPYTHON/JUPYTER. Don't try to use in another interface or in terminal
@@ -2316,29 +2649,30 @@ def fastqc_summary (
 
     # Convert pictures names to module names
     all_plot_modules = {
-        'Per base sequence quality': 'per_base_quality.png',
-        'Per tile sequence quality':'per_tile_quality.png',
-        'Per sequence quality scores':'per_sequence_quality.png',
-        'Per base sequence content':'per_base_sequence_content.png',
-        'Per sequence GC content':'per_sequence_gc_content.png',
-        'Per base N content':'per_base_n_content.png',
-        'Sequence Length Distribution':'sequence_length_distribution.png',
-        'Sequence Duplication Levels':'duplication_levels.png',
-        'Kmer Content':"kmer_profiles.png",
-        'Adapter Content':'adapter_content.png'}
+        "Per base sequence quality": "per_base_quality.png",
+        "Per tile sequence quality": "per_tile_quality.png",
+        "Per sequence quality scores": "per_sequence_quality.png",
+        "Per base sequence content": "per_base_sequence_content.png",
+        "Per sequence GC content": "per_sequence_gc_content.png",
+        "Per base N content": "per_base_n_content.png",
+        "Sequence Length Distribution": "sequence_length_distribution.png",
+        "Sequence Duplication Levels": "duplication_levels.png",
+        "Kmer Content": "kmer_profiles.png",
+        "Adapter Content": "adapter_content.png",
+    }
 
-    for fp in glob.glob(fastqc_res_dir+"/*_fastqc.zip"):
+    for fp in glob.glob(fastqc_res_dir + "/*_fastqc.zip"):
         display(HTML("<hr></hr>"))
-        display(HTML("<font size=\"4\"><b>{}</b></font>".format(fp.rpartition("/")[2])))
+        display(HTML('<font size="4"><b>{}</b></font>'.format(fp.rpartition("/")[2])))
 
         # Extract the zip file in a temporary folder
         with tempfile.TemporaryDirectory() as tmpdirname:
             zfile = zipfile.ZipFile(fp)
             zfile.extractall(tmpdirname)
-            base_dir = glob.glob(tmpdirname+"/*/")[0]
+            base_dir = glob.glob(tmpdirname + "/*/")[0]
 
             # Iterate over the fastqdata file
-            with open(base_dir+"fastqc_data.txt", "r") as fastqc_data:
+            with open(base_dir + "fastqc_data.txt", "r") as fastqc_data:
                 # Set bool flag to false
                 found_module = found_header = False
 
@@ -2350,7 +2684,7 @@ def fastqc_summary (
                     if line.startswith(">>END_MODULE"):
                         if found_module and found_header:
                             df_html = df.head(max_table_row).to_html()
-                            display(HTML('<font size=2>'+df_html+'</font>'))
+                            display(HTML("<font size=2>" + df_html + "</font>"))
                             found_module = found_header = False
 
                     # Detect the start of a module section
@@ -2361,13 +2695,27 @@ def fastqc_summary (
 
                         # Detect the start of a table section
                         if module_name in table_module_list:
-                            display(HTML("<font size=\"3\"><b>{} : {}</b></font>".format(module_name, module_status)))
-                            found_module=True
+                            display(
+                                HTML(
+                                    '<font size="3"><b>{} : {}</b></font>'.format(
+                                        module_name, module_status
+                                    )
+                                )
+                            )
+                            found_module = True
 
                         # Detect the header of a plot section
                         if module_name in plot_module_list:
-                            display(HTML("<font size=\"3\"><b>{} : {}</b></font>".format(module_name, module_status)))
-                            image = "{}Images/{}".format(base_dir, all_plot_modules[module_name])
+                            display(
+                                HTML(
+                                    '<font size="3"><b>{} : {}</b></font>'.format(
+                                        module_name, module_status
+                                    )
+                                )
+                            )
+                            image = "{}Images/{}".format(
+                                base_dir, all_plot_modules[module_name]
+                            )
                             display(Image(image, width=plot_width))
 
                     # Fill a dataframe if a table section was found
@@ -2379,7 +2727,8 @@ def fastqc_summary (
                             ls = line.split("\t")
                             df.loc[ls[0]] = ls[1:]
 
-def bam_align_summary (fp, min_mapq=30):
+
+def bam_align_summary(fp, min_mapq=30):
     """
     Parse bam files and return a summary dataframe
     * fp
@@ -2387,11 +2736,11 @@ def bam_align_summary (fp, min_mapq=30):
     * min_mapq
         minimal score to be considered high mapq
     """
-    counter_dict = defaultdict (Counter)
-    for bam in glob.glob (fp):
+    counter_dict = defaultdict(Counter)
+    for bam in glob.glob(fp):
 
         label = bam.split("/")[-1].split(".")[0]
-        jprint ("Parse bam {}".format(label), bold=True)
+        jprint("Parse bam {}".format(label), bold=True)
 
         with ps.AlignmentFile(bam, "rb") as f:
             for read in f:
@@ -2404,7 +2753,7 @@ def bam_align_summary (fp, min_mapq=30):
                 else:
                     counter_dict[label]["primary"] += 1
                     counter_dict[label]["primary bases"] += read.infer_read_length()
-                    if read.mapping_quality>=min_mapq:
+                    if read.mapping_quality >= min_mapq:
                         counter_dict[label]["primary high mapq"] += 1
 
     return pd.DataFrame(counter_dict)
