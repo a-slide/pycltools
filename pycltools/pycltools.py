@@ -401,7 +401,7 @@ def copyFile(src, dest, **kwargs):
         print("Error: %s" % E.strerror)
 
 
-def gzip_file(fpin, fpout=None, **kwargs):
+def gzip(fpin, fpout=None, keep_source=False, **kwargs):
     """
     gzip a file
     * fpin
@@ -423,6 +423,9 @@ def gzip_file(fpin, fpout=None, **kwargs):
         # Close both files
         in_handle.close()
         out_handle.close()
+        if not keep_source:
+            remove_file(fpin)
+
         return os.path.abspath(fpout)
 
     except IOError as E:
@@ -434,7 +437,7 @@ def gzip_file(fpin, fpout=None, **kwargs):
                 print("Can't remove {}".format(fpout))
 
 
-def gunzip_file(fpin, fpout=None, **kwargs):
+def gunzip(fpin, fpout=None, keep_source=False, **kwargs):
     """
     ungzip a file
     * fpin
@@ -456,6 +459,9 @@ def gunzip_file(fpin, fpout=None, **kwargs):
         # Close both files
         out_handle.close()
         in_handle.close()
+        if not keep_source:
+            remove_file(fpin)
+
         return os.path.abspath(fpout)
 
     except IOError as E:
