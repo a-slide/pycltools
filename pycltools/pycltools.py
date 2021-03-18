@@ -2164,91 +2164,35 @@ def url_exist(url, **kwargs):
         return False
 
 
-def wget(url, out_name="", progress_block=100000000, **kwargs):
+def wget(url, out_name=None, out_dir=None, ftp_proxy=None, http_proxy=None):
     """
-    Download a file from an URL to a local storage.
+    Download a file from an URL to a local storage using wget
     *  url
         A internet URL pointing to the file to download
-    *  outname
-        Name of the outfile where (facultative)
-    *  progress_block
-        size of the byte block for the progression of the download
+    *  out_name
+        Path of the output file (facultative)
+    * out_dir
+        Path of the output directory, if no out_name given (facultative)
+    * ftp_proxy
+        address of ftp proxy to use
+    * http_proxy
+        address of http proxy to use
     """
+    cmd_l = []
+    if ftp_proxy:
+        cmd_l.append(f"export ftp_proxy={ftp_proxy} &&")
+    if http_proxy:
+        cmd_l.append(f"export http_proxy={http_proxy} &&")
 
-    def size_to_status(size):
-        if size >= 1000000000:
-            status = "{} GB".format(round(size / 1000000000, 1))
-        elif size >= 1000000:
-            status = "{} MB".format(round(size / 1000000, 1))
-        elif size >= 1000:
-            status = "{} kB".format(round(size / 1000, 1))
-        else:
-            status = "{} B".format(size)
-        return status
+    cmd_l.append("wget --no-verbose")
+    if out_name:
+        cmd_l.append(f"-O {out_name}")
+    elif out_dir:
+        cmd_l.append(f"-P {out_dir}")
+    cmd_l.append(url)
 
-    # Function specific standard lib imports
-    from urllib.request import urlopen
-    from urllib.parse import urlsplit
-    from urllib.error import HTTPError, URLError
-
-    # Open the url and retrieve info
-    try:
-        u = urlopen(url)
-        scheme, netloc, path, query, fragment = urlsplit(url)
-    except (HTTPError, URLError, ValueError) as E:
-        print(E)
-        return None
-
-    # Attribute a file name if not given
-    if not out_name:
-        out_name = file_name(path)
-        if not out_name:
-            out_name = "output.file"
-
-    # Create the output file and
-    with open(out_name, "wb") as fp:
-
-        # Retrieve file meta information
-        meta = u.info()
-        meta_func = meta.getheaders if hasattr(meta, "getheaders") else meta.get_all
-        meta_size = meta_func("Content-Length")
-        if meta_size:
-            file_size = int(meta_func("Content-Length")[0])
-            print("Downloading: {}\tBytes: {}".format(url, file_size))
-        else:
-            file_size = None
-            print("Downloading: {}\tSize unknown".format(url))
-
-        # Buffered reading of the file to download
-        file_size_dl = 0
-        block_sz = 1000000
-
-        last_pblock = progress_block
-        while True:
-            buffer = u.read(block_sz)
-            if not buffer:
-                break
-            fp.write(buffer)
-
-            # Progress bar
-            file_size_dl += len(buffer)
-
-            if file_size_dl >= last_pblock:
-                status = "{} Downloaded".format(size_to_status(file_size_dl))
-                if file_size:
-                    status += "\t[{} %]".format(
-                        round(file_size_dl * 100 / file_size, 2)
-                    )
-                print(status)
-                last_pblock += progress_block
-
-        # Final step of the progress bar
-        status = "{} Downloaded".format(size_to_status(file_size_dl))
-        if file_size:
-            status += "\t[100 %]"
-        print(status)
-
-    return out_name
+    cmd = " ".join(cmd_l)
+    bash(cmd)
 
 
 ##~~~~~~~ FUNCTIONS TOOLS ~~~~~~~#
