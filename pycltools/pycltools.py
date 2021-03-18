@@ -477,7 +477,7 @@ def remove_file(fp, exception_if_exist=False):
     Try to remove a file from disk.
     """
     try:
-        os.remove(filename)
+        os.remove(fp)
     except OSError as E:
         if exception_if_exist:
             raise E
