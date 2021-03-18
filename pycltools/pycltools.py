@@ -2,7 +2,6 @@
 
 # Strandard library imports
 import os
-import gzip
 import shutil
 import sys
 import gzip
@@ -401,7 +400,7 @@ def copyFile(src, dest, **kwargs):
         print("Error: %s" % E.strerror)
 
 
-def gzip(fpin, fpout=None, keep_source=False, **kwargs):
+def gzip_file(fpin, fpout=None, keep_source=False, **kwargs):
     """
     gzip a file
     * fpin
@@ -437,7 +436,7 @@ def gzip(fpin, fpout=None, keep_source=False, **kwargs):
                 print("Can't remove {}".format(fpout))
 
 
-def gunzip(fpin, fpout=None, keep_source=False, **kwargs):
+def gunzip_file(fpin, fpout=None, keep_source=False, **kwargs):
     """
     ungzip a file
     * fpin
