@@ -1024,26 +1024,68 @@ def _mkdir(fp):
         os.mkdir(fp)
 
 
-def dir_walk(fp):
+def get_size_str(fp):
+    size = os.path.getsize(fp)
+    for limit, unit in ((1, "KB"), (1e3, "MB"), (1e6, "GB"), (1e9, "TB"), (1e12, "PB")):
+        s = size / limit
+        if s < 1000:
+            return f"{round(s, 3)} {unit}"
+
+
+def tree(dir_fn=".", depth=2, dir_only=False, tab="  ", level=0):
     """
     Print a directory arborescence
     """
-    if os.path.exists(fp) and os.path.isdir(fp):
-        if fp.endswith(os.sep):
-            fp = fp[:-1]
+    dir_fn = dir_fn.rstrip("/")
 
-        fp_len = len(fp.split(os.sep))
-        for root, dirs, file_list in os.walk(fp):
-            cur_path_len = len(root.split(os.sep)) - fp_len
-            print((cur_path_len) * "-", os.path.basename(root))
+    if not os.path.isdir(dir_fn):
+        return
+    else:
+        if level == 0:
+            print("\x1b[{}m{}\x1b[0m".format(34, os.path.basename(dir_fn)))
 
-            if file_list:
-                file_list.sort()
-                for f in file_list:
-                    print((cur_path_len) * " " + "-", f)
+        dir_list = []
+        other_list = []
+        for fn in os.listdir(dir_fn):
+            fn = os.path.join(dir_fn, fn)
+            if os.path.isdir(fn):
+                dir_list.append(fn)
+            else:
+                other_list.append(fn)
+
+        if not dir_only:
+            if other_list:
+                for fn in sorted(other_list):
+                    if os.path.isfile(fn):
+                        color = "32"
+                    elif os.path.islink(fn):
+                        color = "31"
+                    else:
+                        color = "37"
+                    print(
+                        "{}|_\x1b[{}m{} [{}]\x1b[0m".format(
+                            tab * level, color, os.path.basename(fn), get_size_str(fn)
+                        )
+                    )
+
+        if dir_list:
+            for fn in sorted(dir_list):
+                print(
+                    "{}|_\x1b[{}m{}\x1b[0m".format(
+                        tab * level, 34, os.path.basename(fn)
+                    )
+                )
+                if not depth == 1:
+                    tree(
+                        dir_fn=fn,
+                        depth=depth - 1,
+                        dir_only=dir_only,
+                        tab=tab,
+                        level=level + 1,
+                    )
 
 
-def ls(dir_fn):
+def ls(dir_fn="./"):
     """
     Simple function to emulate ls -lahG
     """
@@ -1066,8 +1108,7 @@ def ls(dir_fn):
             else:
                 color = "37"
 
-            size = "{} Mb".format(os.path.getsize(path) // 100)
-            print(" \x1b[{}m{:<15} {}\x1b[0m".format(color, size, fn))
+            print(" \x1b[{}m{:<12} {}\x1b[0m".format(color, get_size_str(fn), fn))
 
 
 # ~~~~~~~ SHELL MANIPULATION ~~~~~~~#
