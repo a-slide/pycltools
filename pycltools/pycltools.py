@@ -1043,6 +1043,33 @@ def dir_walk(fp):
                     print((cur_path_len) * " " + "-", f)
 
 
+def ls(dir_fn):
+    """
+    Simple function to emulate ls -lahG
+    """
+    if not os.path.isdir(dir_fn):
+        print(f"{dir_fn} is not a directory")
+    else:
+        print(dir_fn)
+        fn_list = os.listdir(dir_fn)
+        fn_list.sort()
+
+        for fn in fn_list:
+            path = os.path.join(dir_fn, fn)
+
+            if os.path.isdir(path):
+                color = "34"
+            elif os.path.isfile(path):
+                color = "32"
+            elif os.path.islink(path):
+                color = "31"
+            else:
+                color = "37"
+
+            size = "{} Mb".format(os.path.getsize(path) // 100)
+            print(" \x1b[{}m{:<15} {}\x1b[0m".format(color, size, fn))
+
+
 # ~~~~~~~ SHELL MANIPULATION ~~~~~~~#
 
 
