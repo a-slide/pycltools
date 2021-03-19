@@ -67,7 +67,30 @@ def stdout_print(*args):
     Emulate print but uses sys stdout instead. It could sometimes be useful in specific situations where print
     is in is not behaving optimaly (like with tqdm for example)
     """
+    cprint(args)
+
+
+def cprint(*args, **kwargs):
+    """
+    Emulate print + colored output using color argument. Also used sys.stdout to
+    avoid string buffering with print.
+    Available colors: white, grey, red, green, yellow, blue, pink, purple, beige
+    """
+    color_codes = {
+        "white": 29,
+        "grey": 30,
+        "red": 31,
+        "green": 32,
+        "yellow": 33,
+        "blue": 34,
+        "pink": 35,
+        "purple": 36,
+        "beige": 37,
+    }
     s = " ".join([str(i) for i in args])
+    color = kwargs.get("color", "white")
+    color_code = color_codes.get(color, 29)
+    s = "\x1b[{}m{}\x1b[0m\n".format(color_code, s)
     sys.stdout.write(s)
     sys.stdout.flush()
 
@@ -75,8 +98,8 @@ def stdout_print(*args):
 def jprint(*args, **kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
-    Format a string in HTML and print the output. Equivalent of print, but highly customizable. Many options can be
-    passed to the function.
+    Format a string in HTML and print the output. Equivalent of print, but
+    highly customizable. Many options can be passed to the function.
     * *args
         One or several objects that can be cast in str
     * **kwargs
