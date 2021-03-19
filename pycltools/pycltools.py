@@ -1112,6 +1112,8 @@ def ls(dir_fn="./"):
     """
     Simple function to emulate ls -lahG
     """
+    dir_fn = dir_fn.rstrip("/")
+
     if not os.path.isdir(dir_fn):
         print(f"{dir_fn} is not a directory")
     else:
@@ -1119,7 +1121,7 @@ def ls(dir_fn="./"):
         fn_list = os.listdir(dir_fn)
         fn_list.sort()
 
-        for fn in fn_list:
+        for fn in sorted(fn_list):
             path = os.path.join(dir_fn, fn)
 
             if os.path.isdir(path):
@@ -1131,7 +1133,7 @@ def ls(dir_fn="./"):
             else:
                 color = "37"
 
-            print(" \x1b[{}m{:<12} {}\x1b[0m".format(color, get_size_str(fn), fn))
+            print(" \x1b[{}m{:<12} {}\x1b[0m".format(color, get_size_str(path), fn))
 
 
 # ~~~~~~~ SHELL MANIPULATION ~~~~~~~#
