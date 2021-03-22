@@ -1047,6 +1047,14 @@ def mkdir(fp, error_if_existing=False, delete_existing=False, verbose=False, **k
         os.makedirs(fp)
 
 
+def get_size_str(fp):
+    size = os.path.getsize(fp)
+    for limit, unit in ((1, "KB"), (1e3, "MB"), (1e6, "GB"), (1e9, "TB"), (1e12, "PB")):
+        s = size / limit
+        if s < 1000:
+            return f"{round(s, 3)} {unit}"
+
+
 def tree(dir_fn=".", depth=2, dir_only=False, tab="  ", show_hidden=False, level=0):
     """
     Print a directory arborescence
