@@ -1014,48 +1014,40 @@ def simplecount(fp, ignore_hashtag_line=False, **kwargs):
 # ~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
 
 
-def mkdir(fp, level=1, **kwargs):
+def mkdir(fp, error_if_existing=False, delete_existing=False, verbose=False, **kwargs):
     """
     Reproduce the ability of UNIX "mkdir -p" command
     (ie if the path already exits no exception will be raised).
     Can create nested directories by recursivity
+    Remove existing directory is requested
     * fp
         path name where the folder should be created
-    * level
-        level in the path where to start to create the directories. Used by the program for the recursive creation of
-        directories
+    * error_if_existing
+        Raise an error if the directory already exists
+    * delete_existing
+        Delete existing directory before creating a new one
+    * verbose
+        Print extra info
     """
 
-    # Extract the path corresponding to the current level of subdirectory and create it if needed
-    fp = os.path.abspath(fp)
-    split_path = fp.split("/")
-    cur_level = split_path[level - 1]
-    cur_path = "/".join(split_path[0:level])
-    if cur_path:
-        _mkdir(cur_path)
-
-    # If the path is longer than the current level continue to call mkdir recursively
-    if len(fp.split("/")) > level:
-        mkdir(fp, level=level + 1)
-
-
-def _mkdir(fp):
     if os.path.exists(fp) and os.path.isdir(fp):
-        pass
+        if error_if_existing:
+            raise FileExistsError("Directory already existing")
+        elif delete_existing:
+            if verbose:
+                print(f"Removing existing directory and creating directory: {fp}")
+            shutil.rmtree(fp)
+            os.makedirs(fp)
+        else:
+            if verbose:
+                print("Directory already existing. No need to create")
     else:
-        print("Creating {}".format(fp))
-        os.mkdir(fp)
+        if verbose:
+            print(f"Creating directory: {fp}")
+        os.makedirs(fp)
 
 
-def get_size_str(fp):
-    size = os.path.getsize(fp)
-    for limit, unit in ((1, "KB"), (1e3, "MB"), (1e6, "GB"), (1e9, "TB"), (1e12, "PB")):
-        s = size / limit
-        if s < 1000:
-            return f"{round(s, 3)} {unit}"
-
-
-def tree(dir_fn=".", depth=2, dir_only=False, tab="  ", level=0):
+def tree(dir_fn=".", depth=2, dir_only=False, tab="  ", show_hidden=False, level=0):
     """
     Print a directory arborescence
     """
@@ -1070,6 +1062,9 @@ def tree(dir_fn=".", depth=2, dir_only=False, tab="  ", level=0):
         dir_list = []
         other_list = []
         for fn in os.listdir(dir_fn):
+            if not show_hidden and fn.startswith("."):
+                continue
+
             fn = os.path.join(dir_fn, fn)
             if os.path.isdir(fn):
                 dir_list.append(fn)
