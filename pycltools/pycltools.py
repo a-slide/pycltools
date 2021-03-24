@@ -2802,3 +2802,86 @@ def bam_align_summary(fp, min_mapq=30):
                         counter_dict[label]["primary high mapq"] += 1
 
     return pd.DataFrame(counter_dict)
+
+
+def _convert_sec_to_h(s):
+    """
+    Convert seconds to hour, minutes, secondes
+    """
+    s = s % (24 * 3600)
+    h = s // 3600
+    s %= 3600
+    m = s // 60
+    s %= 60
+    return (int(h), int(m), int(s))
+
+
+def line_profiler_parse(fn, percent_cufoff=0.1, sort_by_time=True):
+    """
+    Parse the output of python line_profiler and display for jupyter
+    """
+
+    # Define data header and type
+    header = ["Line #", "Hits", "Time", "Time Per Hit", "% Time", "Line Contents"]
+    dtypes = [int, int, float, float, float, str]
+    dtypes_header = {i: j for i, j in zip(header, dtypes)}
+
+    all_results = []
+
+    with open(fn) as fp:
+        try:
+            while True:
+                line = next(fp).strip()
+                if line.startswith("Total time: "):
+                    time = float(line.split(":")[-1].strip().split(" ")[0])
+                    file = next(fp).split("/")[-1].strip()
+                    function = next(fp).split(":")[-1].strip()
+
+                    # Flush out useles lines
+                    for i in range(3):
+                        _ = next(fp)
+
+                    # Parse data lines
+                    data_lines = []
+                    while True:
+                        line = next(fp).strip()
+                        if line == "":
+                            break
+                        # parse messy lprun lines
+                        try:
+                            ls = line.split()
+                            parsed_line = []
+                            if len(ls) >= 6:
+                                for e, t in zip(
+                                    ls[0:5], (int, int, float, float, float)
+                                ):
+                                    parsed_line.append(t(e))
+                            parsed_line.append(" ".join(ls[5:]))
+                            data_lines.append(parsed_line)
+                        except:
+                            pass
+
+                    if data_lines:
+                        df = pd.DataFrame(data=data_lines, columns=header)
+                        if sort_by_time:
+                            df.sort_values("% Time", inplace=True, ascending=False)
+                        df = df[df["% Time"] >= percent_cufoff]
+                    all_results.append(
+                        {"time": time, "file": file, "function": function, "df": df}
+                    )
+
+        except StopIteration:
+            if data_lines:
+                df = pd.DataFrame(data=data_lines, columns=header)
+                df.sort_values("% Time", inplace=True, ascending=False)
+                df = df[df["% Time"] > 0]
+            all_results.append(
+                {"time": time, "file": file, "function": function, "df": df}
+            )
+
+        all_results.sort(key=lambda item: item.get("time"), reverse=True)
+        for i in all_results:
+            cprint(f"Function {i['function']} from {i['file']}", color="blue")
+            h, m, s = _convert_sec_to_h(i["time"])
+            cprint(f"Execution time: {h}h:{m}m:{s}s", color="red")
+            display(i["df"])
