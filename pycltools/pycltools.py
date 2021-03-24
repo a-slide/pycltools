@@ -1049,7 +1049,7 @@ def mkdir(fp, error_if_existing=False, delete_existing=False, verbose=False, **k
 
 def get_size_str(fp):
     size = os.path.getsize(fp)
-    for limit, unit in ((1, "KB"), (1e3, "MB"), (1e6, "GB"), (1e9, "TB"), (1e12, "PB")):
+    for limit, unit in ((1, "B"), (1e3, "KB"), (1e6, "MB"), (1e9, "GB"), (1e12, "TB")):
         s = size / limit
         if s < 1000:
             return f"{round(s, 3)} {unit}"
