@@ -1427,7 +1427,11 @@ def qsub(
         return random.randint(0, 100000)
     else:
         stdout = bash(cmd=f"qsub {script_fn}", ret_stdout=True, print_stdout=False)
-        return stdout.split(" ")[2]
+        try:
+            return stdout.split(" ")[2]
+        except Exception as E:
+            cprint("ERROR: job not submitted", color=red)
+            cprint(str(E))
 
 
 def bsub(
