@@ -614,9 +614,9 @@ def head(
     n=10,
     ignore_comment_line=False,
     comment_char="#",
-    max_char_line=200,
+    max_char_line=300,
     sep="\t",
-    max_char_col=50,
+    max_char_col=200,
     **kwargs,
 ):
     """
