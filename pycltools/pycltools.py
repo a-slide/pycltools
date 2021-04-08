@@ -16,6 +16,7 @@ import zipfile
 import tempfile
 import glob
 import re
+from datetime import date
 
 # Third party imports
 import pandas as pd
@@ -169,8 +170,7 @@ def jprint(*args, **kwargs):
 def toogle_code(**kwargs):
     """
     FOR JUPYTER NOTEBOOK ONLY
-    Hide code with a clickable link in a j
-    upyter notebook
+    Hide code with a clickable link in a jupyter notebook
     """
     # Function specific third party import
     try:
@@ -244,6 +244,24 @@ def _hide_traceback(
     etype, value, tb = sys.exc_info()
     return ipython._showtraceback(
         etype, value, ipython.InteractiveTB.get_exception_only(etype, value)
+    )
+
+
+def init_notebook(
+    author="author",
+    creation_date="XXXX/XX/XX",
+    color="blue",
+):
+    """
+    Display a basic initialization message for Jupyter notebooks
+    """
+    cprint(author, color=color)
+    cprint(f"Starting date : {creation_date}", color=color)
+    cprint(
+        "Last modification date : {}/{:02}/{:02}".format(
+            date.today().year, date.today().month, date.today().day
+        ),
+        color=color,
     )
 
 
