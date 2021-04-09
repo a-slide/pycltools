@@ -1448,7 +1448,7 @@ def qsub(
         try:
             return stdout.split(" ")[2]
         except Exception as E:
-            cprint("ERROR: job not submitted", color=red)
+            cprint("ERROR: job not submitted", color="red")
             cprint(str(E))
 
 
