@@ -1107,7 +1107,7 @@ def tree(dir_fn=".", depth=2, dir_only=False, tab="  ", show_hidden=False, level
                     else:
                         color = "37"
                     print(
-                        "{}|_\x1b[{}m{} [{}]\x1b[0m".format(
+                        "{}|_ \x1b[{}m{} [{}]\x1b[0m".format(
                             tab * level, color, os.path.basename(fn), get_size_str(fn)
                         )
                     )
@@ -1115,7 +1115,7 @@ def tree(dir_fn=".", depth=2, dir_only=False, tab="  ", show_hidden=False, level
         if dir_list:
             for fn in sorted(dir_list):
                 print(
-                    "{}|_\x1b[{}m{}\x1b[0m".format(
+                    "{}|_ \x1b[{}m{}\x1b[0m".format(
                         tab * level, 34, os.path.basename(fn)
                     )
                 )
@@ -1423,7 +1423,7 @@ def qsub(
             if queue == "algo":
                 fp.write(f"#$ -l algo=1\n")
             else:
-                fp.write(f"#$ -q {job_name}\n")
+                fp.write(f"#$ -q {queue}\n")
         if stdout_fn:
             fp.write(f"#$ -o {stdout_fn}\n")
         if stderr_fn:
