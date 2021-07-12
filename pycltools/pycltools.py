@@ -200,53 +200,6 @@ def toogle_code(**kwargs):
     )
 
 
-def larger_display(percent=100, **kwargs):
-    """
-    FOR JUPYTER NOTEBOOK ONLY
-    Resize the area of the screen containing the notebook according to a given percentage of the available width
-    *  percent percentage of the width of the screen to use [DEFAULT:100]
-    """
-    # Function specific third party import
-    try:
-        from IPython.core.display import display, HTML
-    except (NameError, ImportError) as E:
-        warnings.warn(
-            "jupyter notebook is required to use this function. Please verify your dependencies"
-        )
-        return
-
-    # resizing
-    display(
-        HTML("<style>.container {{ width:{0}% !important; }}</style>".format(percent))
-    )
-
-
-def hide_traceback():
-    """
-    FOR JUPYTER NOTEBOOK ONLY
-    Remove the traceback of exception and return only the Exception message and type
-    """
-    ipython = get_ipython()
-    ipython.showtraceback = _hide_traceback
-
-
-def _hide_traceback(
-    exc_tuple=None,
-    filename=None,
-    tb_offset=None,
-    exception_only=False,
-    running_compiled_code=False,
-):
-    """
-    Private helper function for hide_traceback
-    """
-    ipython = get_ipython()
-    etype, value, tb = sys.exc_info()
-    return ipython._showtraceback(
-        etype, value, ipython.InteractiveTB.get_exception_only(etype, value)
-    )
-
-
 def init_notebook(
     author="author",
     creation_date="XXXX/XX/XX",
@@ -557,9 +510,9 @@ def linerange(fp, range_list=[], line_numbering=True, max_char_line=150, **kwarg
             for start, end in range_list:
                 if start <= n <= end:
                     if line_numbering:
-                        l = "{}\t{}".format(n, line.strip())
+                        l = "{}\t{}".format(n, line.rstrip())
                     else:
-                        l = line.strip()
+                        l = line.rstrip()
 
                     if max_char_line and len(l) > max_char_line:
                         print(l[0:max_char_line] + "...")
@@ -680,7 +633,7 @@ def head(
             with open_fun(fp, open_mode) as fh:
                 line_num = 0
                 while line_num < n:
-                    l = next(fh).strip()
+                    l = next(fh).rstrip()
                     if ignore_comment_line and l.startswith(comment_char):
                         continue
                     if sep:
@@ -766,7 +719,7 @@ def grep(fp, regex, max_lines=None):
                 break
             for r in regex_list:
                 if r.search(line):
-                    print(line.strip())
+                    print(line.rstrip())
                     found += 1
                     break
 
@@ -810,7 +763,7 @@ def linesample(fp, n_lines=100, line_numbering=True, max_char_line=150, **kwargs
                 break
             if i == index_list[j]:
                 j += 1
-                l = l.strip()
+                l = l.rstrip()
                 if max_char_line and len(l) > max_char_line:
                     l = l[0:max_char_line] + "..."
                 if line_numbering:
@@ -851,7 +804,12 @@ def count_uniq(
         engine = "c"
 
     df = pd.read_csv(
-        fp, sep=sep, index_col=False, header=None, comment=skip_comment, engine=engine
+        fp,
+        sep=sep,
+        index_col=False,
+        header=None,
+        comment=skip_comment,
+        engine=engine,
     )
 
     if select_values:
@@ -869,119 +827,6 @@ def count_uniq(
                 df = df[(~df[i].isin(j))]
 
     return df.groupby(colnum).size().sort_values(ascending=False)
-
-
-def colsum(
-    fp,
-    colrange=None,
-    separator="",
-    header=False,
-    ignore_hashtag_line=False,
-    max_items=10,
-    ret_type="md",
-    **kwargs,
-):
-    """
-    Create a summary of selected columns of a file
-    * fp
-        Path to the file to be parsed
-    * colrange
-        A list of column index to parse
-    * separator
-        A character or a list of characters to split the lines
-    * ignore_hashtag_line
-        skip line starting with a # symbol
-    * max_items
-        maximum item per line
-    * ret_type
-        Possible return types:
-        md = markdown formatted table,
-        dict = raw parsing dict,
-        report = Indented_text_report
-    """
-
-    res_dict = OrderedDict()
-
-    with open(fp, "r") as f:
-        # Manage the first line
-        first_line = False
-        header_found = False
-        while not first_line:
-
-            line = next(f)
-
-            if ignore_hashtag_line and line[0] == "#":
-                continue
-
-            # Split the first line
-            ls = supersplit(line, separator)
-
-            if header and not header_found:
-                header_dict = {}
-                for colnum, val in enumerate(ls):
-                    header_dict[colnum] = val
-                header_found = True
-                # print("Header found")
-                continue
-
-            # Get the number of col if not given and handle the first line
-            if not colrange:
-                colrange = [i for i in range(len(ls))]
-                # print("Found {} colums".format(len(ls)))
-
-            # Manage the first valid line
-            # print("First line found")
-            for colnum in colrange:
-                res_dict[colnum] = OrderedDict()
-                val = ls[colnum].strip()
-                res_dict[colnum][val] = 1
-            first_line = True
-
-        # Continue to read and parse the lines
-        for line in f:
-            ls = supersplit(line, separator)
-            for colnum in colrange:
-                val = ls[colnum].strip()
-                if val not in res_dict[colnum]:
-                    res_dict[colnum][val] = 0
-                res_dict[colnum][val] += 1
-
-    # Return directly the whole dict
-    if ret_type == "dict":
-        return res_dict
-
-    # Return an indented text report
-    if ret_type == "report":
-        return dict_to_report(
-            res_dict, tab="\t", sep="\t", sort_dict=True, max_items=max_items
-        )
-
-    # Create a Markdown table output per colums
-    elif ret_type == "md":
-        buffer = ""
-        for colnum, col_dict in res_dict.items():
-            if header:
-                buffer += dict_to_md(
-                    col_dict,
-                    header_dict[colnum],
-                    "Count",
-                    transpose=True,
-                    sort_by_val=True,
-                    max_items=max_items,
-                )
-            else:
-                buffer += dict_to_md(
-                    col_dict,
-                    colnum,
-                    "Count",
-                    transpose=True,
-                    sort_by_val=True,
-                    max_items=max_items,
-                )
-            buffer += "\n"
-        return buffer
-    else:
-        print("Invalid return type")
 
 
 def fastcount(fp, **kwargs):
@@ -1032,7 +877,13 @@ def simplecount(fp, ignore_hashtag_line=False, **kwargs):
 # ~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
 
 
-def mkdir(fp, error_if_existing=False, delete_existing=False, verbose=False, **kwargs):
+def mkdir(
+    fp,
+    error_if_existing=False,
+    delete_existing=False,
+    verbose=False,
+    **kwargs,
+):
     """
     Reproduce the ability of UNIX "mkdir -p" command
     (ie if the path already exits no exception will be raised).
@@ -1073,60 +924,70 @@ def get_size_str(fp):
             return f"{round(s, 3)} {unit}"
 
 
-def tree(dir_fn=".", depth=2, dir_only=False, tab="  ", show_hidden=False, level=0):
+def tree(
+    dir_fn=".",
+    depth=2,
+    dir_only=False,
+    tab="  ",
+    show_hidden=False,
+    level=0,
+):
     """
     Print a directory arborescence
     """
     dir_fn = dir_fn.rstrip("/")
+    for dir_fn in glob(dir_fn):
+        if not os.path.isdir(dir_fn):
+            return
+        else:
+            if level == 0:
+                print("\x1b[{}m{}\x1b[0m".format(34, os.path.basename(dir_fn)))
 
-    if not os.path.isdir(dir_fn):
-        return
-    else:
-        if level == 0:
-            print("\x1b[{}m{}\x1b[0m".format(34, os.path.basename(dir_fn)))
+            dir_list = []
+            other_list = []
+            for fn in os.listdir(dir_fn):
+                if not show_hidden and fn.startswith("."):
+                    continue
 
-        dir_list = []
-        other_list = []
-        for fn in os.listdir(dir_fn):
-            if not show_hidden and fn.startswith("."):
-                continue
+                fn = os.path.join(dir_fn, fn)
+                if os.path.isdir(fn):
+                    dir_list.append(fn)
+                else:
+                    other_list.append(fn)
 
-            fn = os.path.join(dir_fn, fn)
-            if os.path.isdir(fn):
-                dir_list.append(fn)
-            else:
-                other_list.append(fn)
+            if not dir_only:
+                if other_list:
+                    for fn in sorted(other_list):
+                        if os.path.isfile(fn):
+                            color = "32"
+                        elif os.path.islink(fn):
+                            color = "31"
+                        else:
+                            color = "37"
+                        print(
+                            "{}|_ \x1b[{}m{} [{}]\x1b[0m".format(
+                                tab * level,
+                                color,
+                                os.path.basename(fn),
+                                get_size_str(fn),
+                            )
+                        )
 
-        if not dir_only:
-            if other_list:
-                for fn in sorted(other_list):
-                    if os.path.isfile(fn):
-                        color = "32"
-                    elif os.path.islink(fn):
-                        color = "31"
-                    else:
-                        color = "37"
+            if dir_list:
+                for fn in sorted(dir_list):
                     print(
-                        "{}|_ \x1b[{}m{} [{}]\x1b[0m".format(
-                            tab * level, color, os.path.basename(fn), get_size_str(fn)
+                        "{}|_ \x1b[{}m{}\x1b[0m".format(
+                            tab * level, 34, os.path.basename(fn)
                         )
                     )
-
-        if dir_list:
-            for fn in sorted(dir_list):
-                print(
-                    "{}|_ \x1b[{}m{}\x1b[0m".format(
-                        tab * level, 34, os.path.basename(fn)
-                    )
-                )
-                if not depth == 1:
-                    tree(
-                        dir_fn=fn,
-                        depth=depth - 1,
-                        dir_only=dir_only,
-                        tab=tab,
-                        level=level + 1,
-                    )
+                    if not depth == 1:
+                        tree(
+                            dir_fn=fn,
+                            depth=depth - 1,
+                            dir_only=dir_only,
+                            tab=tab,
+                            level=level + 1,
+                        )
 
 
 def ls(dir_fn="./"):
@@ -1160,7 +1021,12 @@ def ls(dir_fn="./"):
 # ~~~~~~~ SHELL MANIPULATION ~~~~~~~#
 
 
-def make_cmd_str(prog_name, opt_dict={}, opt_list=[], **kwargs):
+def make_cmd_str(
+    prog_name,
+    opt_dict={},
+    opt_list=[],
+    **kwargs,
+):
     """
     Create a Unix like command line string from the prog name, a dict named arguments and a list of unmammed arguments
     exemple make_cmd_str("bwa", {"b":None, t":6, "i":"../idx/seq.fa"}, ["../read1", "../read2"])
@@ -1783,482 +1649,6 @@ def dict_to_report(
     return report
 
 
-##~~~~~~~ TABLE FORMATTING ~~~~~~~#
-
-
-def reformat_table(
-    input_file,
-    output_file="",
-    return_df=False,
-    init_template=[],
-    final_template=[],
-    header="",
-    keep_original_header=True,
-    header_from_final_template=False,
-    replace_internal_space="_",
-    replace_null_val="*",
-    subst_dict={},
-    filter_dict=[],
-    predicate=None,
-    standard_template=None,
-    verbose=False,
-    **kwargs,
-):
-    """
-    Reformat a table given an initial and a final line templates indicated as a list where numbers
-    indicate the data column and strings the formatting characters
-
-    *  input_file
-        A file with a structured text formatting (gzipped or not)
-    *  output_file
-        A file path to output the reformatted table (if empty will not write in a file)
-    *  return_df
-        If true will return a pandas dataframe containing the reformated table (Third party pandas package required)
-        by default the columns will be names after the final template [DEFAULT:False]
-    *  init_template
-        A list of indexes and separators describing the structure of the input file
-            Example initial line = "chr1    631539    631540    Squires|id1    0    +"
-            Initial template = [0,"\t",1,"\t",2,"\t",3,"|",4,"\t",5,"\t",6]
-            Alternatively, instead of the numbers, string indexes can be used, but they need to be enclosed in curly
-            brackets to differentiate them from the separators. This greatly simplify the writing of the final template.
-            Example initial line = "chr1    631539    631540    Squires|id1    0    +"
-            Initial template = ["{chrom}","\t","{start}","\t","{end}","|","{name}","\t","{score}","\t","{strand}"]
-    *  final_template
-        A list of indexes and separators describing the required structure of the output file. Name indexes need to
-        match indexes of the init_template and have to follow the same synthax  [DEFAULT:Same that init template]
-            Example final line = "chr1    631539    631540    m5C|-|HeLa|22344696    -    -"
-            Final template = [0,"\t",1,"\t",2,"\tm5C|-|HeLa|22344696\t-\t",6]
-    *  header
-        A string to write as a file header at the beginning of the file
-    *  keep_original_header
-        If True the original header of the input file will be copied at the beginning of the output file [DEFAULT:True]
-    *  header_from_final_template
-        Generate a header according to the name or number of the fields given in the final_template [DEFAULT:True]
-    *  replace_internal_space
-        All internal blank space will be replaced by this character [DEFAULT:"_"]
-    *  replace_null_val
-        Field with no value will be replaced by this character [DEFAULT:"*"]
-    *  subst_dict
-        Nested dictionary of substitution per position to replace specific values by others [DEFAULT:None]
-            Example: { 0:{"chr1":"1","chr2":"2"}, 3:{"Squires":"5376774764","Li":"27664684"}}
-    *  filter_dict
-        A dictionary of list per position  to filter out lines  with specific values [DEFAULT:None]
-            Example: { 0:["chr2", "chr4"], 1:["46767", "87765"], 5:["76559", "77543"]}
-    *  predicate
-        A lambda predicate function for more advance filtering operations [DEFAULT:None]
-            Example:  lambda val_dict: abs(int(val_dict[1])-int(val_dict[2])) <= 2000
-    *  standard_template
-        Existing standard template to parse the file  instead of providing one manually. List of saved templates:
-        - "gff3_ens_gene" = Template for ensembl gff3 fields. Select only the genes lines and decompose to individual elements.
-        - "gff3_ens_transcript" = Template for ensembl gff3 fields. Select only the transcript lines and decompose to individual elements.
-        - "gtf_ens_gene" = Template for ensembl gft fields. Select only the genes lines and decompose to individual elements
-    * verbose
-        If True will print detailed information [DEFAULT:False]
-    """
-
-    if verbose:
-        print_arg()
-
-    # Verify if the user provided a standard template and parameter the function accordingly
-    # If needed the predicate2 variable will be used to filter the data according to the template
-    if standard_template:
-
-        if standard_template == "gff3_ens_gene":
-            print(
-                "Using gff3 ensembl gene template. Non-gene features will be filtered out"
-            )
-
-            init_template = [
-                "{seqid}",
-                "\t",
-                "{source}",
-                "\t",
-                "{type}",
-                "\t",
-                "{start}",
-                "\t",
-                "{end}",
-                "\t",
-                "{score}",
-                "\t",
-                "{strand}",
-                "\t",
-                "{phase}",
-                "\tID=",
-                "{ID}",
-                ";gene_id=",
-                "{gene_id}",
-                ";gene_type=",
-                "{gene_type}",
-                ";gene_status=",
-                "{gene_status}",
-                ";gene_name=",
-                "{gene_name}",
-                ";level=",
-                "{level}",
-                ";havana_gene=",
-                "{havana_gene}",
-            ]
-
-            predicate2 = lambda v: v["type"] == "gene"
-
-        if standard_template == "gtf_ens_gene":
-            print(
-                "Using gtf ensembl gene template. Non-gene features will be filtered out"
-            )
-
-            init_template = [
-                "{seqid}",
-                "\t",
-                "{source}",
-                "\t",
-                "{type}",
-                "\t",
-                "{start}",
-                "\t",
-                "{end}",
-                "\t",
-                "{score}",
-                "\t",
-                "{strand}",
-                "\t",
-                "{phase}",
-                '\tgene_id "',
-                "{gene_id}",
-                '"; gene_type "',
-                "{gene_type}",
-                '"; gene_status "',
-                "{gene_status}",
-                '"; gene_name "',
-                "{gene_name}",
-                '"; level ',
-                "{level}",
-                '; havana_gene "',
-                "{havana_gene}",
-            ]
-
-            predicate2 = lambda v: v["type"] == "gene"
-
-        if standard_template == "gff3_ens_transcript":
-            print(
-                "Using gff3 ensembl transcript template. Non-transcript features will be filtered out"
-            )
-
-            init_template = [
-                "{seqid}",
-                "\t",
-                "{source}",
-                "\t",
-                "{type}",
-                "\t",
-                "{start}",
-                "\t",
-                "{end}",
-                "\t",
-                "{score}",
-                "\t",
-                "{strand}",
-                "\t",
-                "{phase}",
-                "\tID=",
-                "{ID}",
-                ";Parent=",
-                "{Parent}",
-                ";gene_id=",
-                "{gene_id}",
-                ";transcript_id=",
-                "{transcript_id}",
-                ";gene_type=",
-                "{gene_type}",
-                ";gene_status=",
-                "{gene_status}",
-                ";gene_name=",
-                "{gene_name}",
-                ";transcript_type=",
-                "{transcript_type}",
-                ";transcript_status=",
-                "{transcript_status}",
-                ";transcript_name=",
-                "{transcript_name}",
-                ";level=",
-                "{level}",
-                ";transcript_support_level=",
-                "{transcript_support_level}",
-                ";tag=",
-                "{tag}",
-                ";havana_gene=",
-                "{havana_gene}",
-                ";havana_transcript=",
-                "{havana_transcript}",
-            ]
-
-            predicate2 = lambda v: v["type"] == "transcript"
-
-    else:
-        predicate2 = None
-
-    if not final_template:
-        if verbose:
-            print("No final template given. Create final template from init template")
-        final_template = init_template
-
-    # Print the pattern of decomposition and recomposition
-    if verbose:
-        print("Initial template values")
-        print(_template_to_str(init_template))
-        print("Final template values")
-        print(_template_to_str(final_template))
-
-    # Init counters
-    total = fail = success = filtered_out = 0
-
-    # Init an empty panda dataframe if required
-    if return_df:
-        df = pd.DataFrame(columns=_template_to_list(final_template))
-
-    # init empty handlers
-    infile = outfile = None
-    try:
-        # open the input file gziped or not
-        infile = (
-            gzip.open(input_file, "rt")
-            if input_file[-2:].lower() == "gz"
-            else open(input_file, "r")
-        )
-
-        # open the output file if required
-        if output_file:
-            outfile = open(output_file, "wt")
-            if header:
-                outfile.write(header)
-            if header_from_final_template:
-                outfile.write(_template_to_str(final_template) + "\n")
-
-        for line in infile:
-
-            # Original header lines
-            if line[0] == "#":
-                # write in file if required
-                if output_file:
-                    if keep_original_header:
-                        outfile.write(line)
-                continue
-
-            total += 1
-
-            # Decompose the original line
-            try:
-                raw_val = _decompose_line(line=line, template=init_template)
-                assert (
-                    raw_val
-                ), "Decomposing the line #{} resulted in an empty value list:\n{}".format(
-                    total, line
-                )
-            except AssertionError as E:
-                fail += 1
-                continue
-
-            # Filter and clean the values
-            try:
-                clean_val = _clean_values(
-                    val_dict=raw_val,
-                    replace_internal_space=replace_internal_space,
-                    replace_null_val=replace_null_val,
-                    subst_dict=subst_dict,
-                    filter_dict=filter_dict,
-                    predicate=predicate,
-                    predicate2=predicate2,
-                )
-                assert (
-                    clean_val
-                ), "The line #{} was filter according to the filter dictionnary:\n{}".format(
-                    total, line
-                )
-            except AssertionError as E:
-                filtered_out += 1
-                continue
-
-            # Fill the dataframe if needed
-            if return_df:
-                df.at[len(df)] = _reformat_list(
-                    val_dict=clean_val, template=final_template
-                )
-
-            # Recompose the line and write in file if needed
-            if output_file:
-                formated_line = _reformat_line(
-                    val_dict=clean_val, template=final_template
-                )
-                outfile.write(formated_line)
-
-            success += 1
-
-    # Close the files properly
-    finally:
-        if infile:
-            infile.close()
-        if outfile:
-            outfile.close()
-
-    if return_df:
-        return df
-
-    if verbose:
-        print(
-            "{} Lines processed\t{} Lines pass\t{} Lines filtered out\t{} Lines fail".format(
-                total, success, filtered_out, fail
-            )
-        )
-
-
-def _is_str_key(element):
-    return type(element) == str and element[0] == "{" and element[-1] == "}"
-
-
-def _is_str_sep(element):
-    return type(element) == str and (element[0] != "{" or element[-1] != "}")
-
-
-def _template_to_str(template):
-    l = []
-    for element in template:
-        if _is_str_sep(element):
-            l.append(element)
-        elif _is_str_key(element):
-            l.append(element[1:-1])
-        elif type(element) == int:
-            l.append(str(element))
-    return "".join(l)
-
-
-def _template_to_list(template):
-    l = []
-    for element in template:
-        if _is_str_key(element):
-            l.append(element[1:-1])
-        elif type(element) == int:
-            l.append(str(element))
-    return l
-
-
-def _decompose_line(line, template):
-    """Helper function for reformat_table. Decompose a line in a dictionnary and extract the values given a template list"""
-
-    val_dict = OrderedDict()
-
-    # Remove the first element from the line if this is a separator
-    if _is_str_sep(template[0]):
-        val, sep, line = line.partition(template[0])
-        template = template[1:]
-
-    # Decompose the line
-    last_key = None
-    for element in template:
-        # if found a str key, store it and remove the curly brackets
-        if _is_str_key(element):
-            last_key = element[1:-1]
-        # if numerical key, just store it
-        if type(element) == int:
-            last_key = element
-        if _is_str_sep(element):
-            # Verify the values before filling the dict
-            assert last_key != None, "Problem in the init template"
-            assert last_key not in val_dict, "Duplicated key in the init template"
-            val, sep, line = line.partition(element)
-            val_dict[last_key] = val
-            last_key = None
-
-    # Manage last element of the template if it is a key
-    if last_key:
-        val_dict[last_key] = line
-
-    return val_dict
-
-
-def _clean_values(
-    val_dict,
-    replace_internal_space=None,
-    replace_null_val=None,
-    subst_dict={},
-    filter_dict={},
-    predicate=None,
-    predicate2=None,
-):
-    """Helper function for reformat_table. Clean the extracted values"""
-
-    for key in val_dict.keys():
-        # Strip the heading and trailing blank spaces
-        val_dict[key] = val_dict[key].strip()
-
-        # Replace the empty field by a given char
-        if replace_null_val and not val_dict[key]:
-            val_dict[key] = replace_null_val
-
-        # Replace internal spaces by underscores
-        if replace_internal_space:
-            val_dict[key] = val_dict[key].replace(" ", "_")
-
-        # Filter line based on the filter_dict
-        if key in filter_dict and val_dict[key] in filter_dict[key]:
-            return None
-
-        # Filter line base on predicate function
-        if predicate and not predicate(val_dict):
-            return None
-
-        # Filter line base on an eventual second predicate function
-        if predicate2 and not predicate2(val_dict):
-            return None
-
-        # Use the substitution dict exept if the value is not in the dict in this case use the default value
-        if key in subst_dict and val_dict[key] in subst_dict[key]:
-            val_dict[key] = subst_dict[key][val_dict[key]]
-
-    return val_dict
-
-
-def _reformat_line(val_dict, template):
-    """Helper function for reformat_table. Reassemble a line from a dict of values and a template list"""
-
-    line = ""
-    try:
-        for element in template:
-            if _is_str_sep(element):
-                line += element
-            elif type(element) == int:
-                line += val_dict[element]
-            elif _is_str_key(element):
-                line += val_dict[element[1:-1]]
-
-    except IndexError as E:
-        print(E)
-        print(val_dict)
-        print(template)
-        raise
-
-    return line + "\n"
-
-
-def _reformat_list(val_dict, template):
-    """Helper function for reformat_table. Reassemble a list from a dict of values and a template list"""
-
-    l = []
-    try:
-        for element in template:
-            if type(element) == int:
-                l.append(val_dict[element])
-            elif _is_str_key(element):
-                l.append(val_dict[element[1:-1]])
-
-    except IndexError as E:
-        print(E)
-        print(val_dict)
-        print(template)
-        raise
-
-    return l
-
-
 ##~~~~~~~ WEB TOOLS ~~~~~~~#
 
 
@@ -2347,111 +1737,6 @@ def print_arg(**kwargs):
             print("Unnamed positional arguments list:")
             for i in args[posname]:
                 print("\t{}".format(i))
-
-
-##~~~~~~~ PACKAGE TOOLS ~~~~~~~#
-
-
-def get_package_file(package, fp="", **kwargs):
-    """
-    Verify the existence of a file from the package data and return a file path
-    * package
-        Name of the package
-    * fp
-        Relative path to the file in the package. Usually package_name/data/file_name
-        if the path points to a directory the directory arborescence will be printed
-    """
-    # Try to import pkg_resources package and try to get the file via pkg_resources
-    try:
-        from pkg_resources import Requirement, resource_filename, DistributionNotFound
-
-        fp = resource_filename(Requirement.parse(package), fp)
-    except (NameError, ImportError, DistributionNotFound) as E:
-        warnings.warn(str(E))
-        return
-
-    # if the path exists
-    if os.path.exists(fp):
-
-        # In case no fp is given or if the path is a directory list the package files, print the arborescence
-        if os.path.isdir(fp):
-            for root, dirs, files in os.walk(fp):
-                path = root.split(os.sep)
-                print((len(path) - 1) * "-", os.path.basename(root))
-                for file in files:
-                    print(len(path) * "-", file)
-            return fp
-
-        # If file exist and is readable
-        if os.access(fp, os.R_OK):
-            return fp
-
-    else:
-        warnings.warn("File does not exist or is not readeable")
-        return
-
-
-##~~~~~~~ SAM/BAM TOOLS ~~~~~~~#
-
-
-def bam_sample(fp_in, fp_out, n_reads, verbose=False, **kwargs):
-    """
-    Sample reads from a SAM/BAM file and write in a new file
-    * fp_in
-        Path to the input file in .bam/.sam/.cram (the format will be infered from extension)
-    * fp_out
-        Path to the output file in .bam/.sam/.cram (the format will be infered from extension)
-    * n_reads
-        number of reads to sample
-    """
-    # Define opening mode
-    if has_extension(fp_in, "bam"):
-        mode_in = "rb"
-    elif has_extension(fp_in, "sam"):
-        mode_in = "r"
-    elif has_extension(fp_in, "cram"):
-        mode_in = "rc"
-    else:
-        warnings.warn("Invalid input file format (.bam/.sam/.cram)")
-        return
-    if has_extension(fp_out, "bam"):
-        mode_out = "wb"
-    elif has_extension(fp_out, "sam"):
-        mode_out = "w"
-    elif has_extension(fp_out, "cram"):
-        mode_out = "wc"
-    else:
-        warnings.warn("Invalid output file format (.bam/.sam/.cram)")
-        return
-
-    # Count the reads and define a list of random lines to sample
-    with ps.AlignmentFile(fp_in, mode_in) as fh_in:
-        n_read_origin = fh_in.count()
-        if verbose:
-            print("Found {} reads in input file".format(n_read_origin))
-
-        # Take into account the situation in which there are less lines in the file than requested.
-        if n_reads >= n_read_origin:
-            if verbose:
-                print(
-                    "Not enough lines in source file. Writing all reads in the output file"
-                )
-            index_list = list(range(0, n_read_origin - 1))
-        else:
-            index_list = sorted(random.sample(range(0, n_read_origin - 1), n_reads))
-
-    # Sample lines in input file according to the list of random line numbers
-    with ps.AlignmentFile(fp_in, mode_in) as fh_in:
-        with ps.AlignmentFile(fp_out, mode_out, header=fh_in.header) as fh_out:
-            j = 0
-            for i, line in enumerate(fh_in):
-                if j >= n_reads:
-                    break
-                if i == index_list[j]:
-                    fh_out.write(line)
-                    j += 1
-            if verbose:
-                print("Wrote {} reads in output file".format(j))
 
 
 ##~~~~~~~ DNA SEQUENCE TOOLS ~~~~~~~#
