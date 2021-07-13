@@ -936,7 +936,7 @@ def tree(
     Print a directory arborescence
     """
     dir_fn = dir_fn.rstrip("/")
-    for dir_fn in glob(dir_fn):
+    for dir_fn in glob.glob(dir_fn):
         if not os.path.isdir(dir_fn):
             return
         else:
