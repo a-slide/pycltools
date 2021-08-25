@@ -1318,6 +1318,73 @@ def qsub(
             cprint(str(E))
 
 
+def qstat(
+    jobid=None,
+    user=None,
+    state=None,
+    queue=None,
+    name=None,
+):
+    """
+    FOR JUPYTER NOTEBOOK IN SGE environment
+    Emulate SGE qstat command. Return a Dataframe of jobs
+    """
+
+    stdout = bash(
+        "qstat -r",
+        print_stderr=False,
+        print_stdout=False,
+        ret_stderr=False,
+        ret_stdout=True,
+    )
+
+    if stdout:
+        jobs = []
+        header = []
+        for l in stdout.split("\n"):
+            if l:
+                if not header:
+                    l = l.replace("submit/start at", "submit/start_at")
+                    field = ""
+                    prev = " "
+                    start = 0
+                    for i, c in enumerate(l):
+                        if c != " " and prev == " ":
+                            if field:
+                                header.append((field.strip(), start, i))
+                            start = i
+                            field = c
+                        else:
+                            field += c
+                        prev = c
+
+                elif l.strip().split()[0].isdigit():
+                    job_dict = OrderedDict()
+                    for field, start, end in header:
+                        value = l[start:end].strip()
+                        job_dict[field] = value
+
+                elif l.strip().split(":")[0] == "Full jobname":
+                    job_dict["name"] = l.split(":")[1].strip()
+                    jobs.append(job_dict)
+
+        df = pd.DataFrame(jobs)
+
+        # filter if needed
+        if jobid:
+            df = df[df["job-ID"].str.match(jobid)]
+        if user:
+            df = df[df["user"].str.match(user)]
+        if state:
+            df = df[df["state"].str.match(state)]
+        if queue:
+            df = df[df["queue"].str.match(queue)]
+        if name:
+            df = df[df["name"].str.match(name)]
+
+        return df
+
+
 def bsub(
     cmd,
     virtualenv=None,
