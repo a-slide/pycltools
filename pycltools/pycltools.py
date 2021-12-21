@@ -1162,7 +1162,8 @@ def bash(
                     proc.returncode, cmd
                 )
             )
-            sys.stderr.write(proc.stderr.read())
+            for line in iter(proc.stderr.readline, b""):
+                sys.stderr.write(line.decode())
             return None
 
         if live != "stdout" and (print_stdout or ret_stdout or log_stdout):
