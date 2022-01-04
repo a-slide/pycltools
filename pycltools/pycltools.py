@@ -1143,7 +1143,7 @@ def bash(
             if live == "stdout":
                 for line in iter(proc.stdout.readline, b""):
                     if print_stdout:
-                        sys.stdout.write(line)
+                        sys.stdout.write(line.decode())
                     if ret_stdout or log_stdout:
                         stdout_str += line.decode()
 
@@ -1151,7 +1151,7 @@ def bash(
             elif live == "stderr":
                 for line in iter(proc.stderr.readline, b""):
                     if print_stderr:
-                        sys.stderr.write(line)
+                        sys.stderr.write(line.decode())
                     if ret_stderr or log_stderr:
                         stderr_str += line.decode()
 
@@ -1169,14 +1169,14 @@ def bash(
         if live != "stdout" and (print_stdout or ret_stdout or log_stdout):
             for line in iter(proc.stdout.readline, b""):
                 if print_stdout:
-                    sys.stdout.write(line)
+                    sys.stdout.write(line.decode())
                 if ret_stdout or log_stdout:
                     stdout_str += line.decode()
 
         if live != "stderr" and (print_stderr or ret_stderr or log_stderr):
             for line in iter(proc.stderr.readline, b""):
                 if print_stderr:
-                    sys.stderr.write(line)
+                    sys.stderr.write(line.decode())
                 if ret_stderr or log_stderr:
                     stderr_str += line.decode()
 
@@ -1313,7 +1313,9 @@ def qsub(
     else:
         stdout = bash(cmd=f"qsub {script_fn}", ret_stdout=True, print_stdout=False)
         try:
-            return stdout.split(" ")[2]
+            if stdout:
+                return stdout.split(" ")[2]
+
         except Exception as E:
             cprint("ERROR: job not submitted", color="red")
             cprint(str(E))
