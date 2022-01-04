@@ -2,7 +2,7 @@
 
 [![GitHub license](https://img.shields.io/github/license/a-slide/pycltools.svg)](https://github.com/a-slide/pycltools/blob/master/LICENSE)
 [![PyPI version](https://badge.fury.io/py/pycltools.svg)](https://badge.fury.io/py/pycltools)
-
+[![Upload Python Package](https://github.com/a-slide/pycltools/actions/workflows/python-publish.yml/badge.svg)](https://github.com/a-slide/pycltools/actions/workflows/python-publish.yml)
 ---
 
 **pycltools is a package written in python3 containing a collection of generic functions and classes for file parsing, manipulation...**
