@@ -1877,7 +1877,8 @@ def make_kmer_guided_sequence(
     hp_max=3,
     seq_len=100,
     n_seq=10,
-    init_seq="",
+    init_seq=None,
+    init_counter=None,
     seed=None,
     verbose=True,
 ):
@@ -1896,6 +1897,8 @@ def make_kmer_guided_sequence(
         Length of each sequence to be generated
     * init_seq: str (default None)
         Sequence to initialise the kmer counter from
+    * init_counter: str (default None)
+        Kmer counter to initialise from
     * n_seq: int (default 10)
         Overall number of sequences to be generated
     * seed: None or int
@@ -1912,6 +1915,9 @@ def make_kmer_guided_sequence(
             if set(kmer).difference(set(bases)):
                 continue
             kmer_c[kmer]+=1
+
+    if init_counter:
+        kmer_c = init_counter
 
     seq_l = []
     for _ in trange(n_seq, disable=not verbose):
