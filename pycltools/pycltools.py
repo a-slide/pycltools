@@ -1877,6 +1877,7 @@ def make_kmer_guided_sequence(
     hp_max=3,
     seq_len=100,
     n_seq=10,
+    init_seq="",
     seed=None,
     verbose=True,
 ):
@@ -1893,6 +1894,8 @@ def make_kmer_guided_sequence(
         Maximal length of homopolymers
     * seq_len: int (default 100)
         Length of each sequence to be generated
+    * init_seq: str (default None)
+        Sequence to initialise the kmer counter from
     * n_seq: int (default 10)
         Overall number of sequences to be generated
     * seed: None or int
@@ -1903,8 +1906,14 @@ def make_kmer_guided_sequence(
     np.random.seed(seed)
 
     kmer_c = Counter()
-    seq_l = []
+    if init_seq and len(init_seq) >= kmer_len:
+        for i in range(0, len(init_seq) - kmer_len):
+            kmer = init_seq[i:i+kmer_len]
+            if set(kmer).difference(set(bases)):
+                continue
+            kmer_c[kmer]+=1
 
+    seq_l = []
     for _ in trange(n_seq, disable=not verbose):
         seq = []
 
