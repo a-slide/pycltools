@@ -1893,8 +1893,8 @@ def make_kmer_guided_sequence(
         Length of kmer to optimize the distribution
     * hp_max: int (default 3)
         Maximal length of homopolymers
-    * seq_len: int (default 100)
-        Length of each sequence to be generated
+    * seq_len: int or list (default 100)
+        Length of sequences to be generated
     * init_seq: str (default None)
         Sequence to initialise the kmer counter from
     * init_counter: str (default None)
@@ -1920,7 +1920,12 @@ def make_kmer_guided_sequence(
         kmer_c = init_counter
 
     seq_l = []
-    for _ in trange(n_seq, disable=not verbose):
+    if n_seq > 1 and type(seq_len) == int:
+        seq_len = list(itertools.repeat(seq_len, n_seq))
+    if type(seq_len) in (list, set, tuple) and len(seq_len) != n_seq:
+        raise ValueError ("n_seq is not the same length as seq_len")
+
+    for slen in tqdm(seq_len, disable=not verbose):
         seq = []
 
         # First base
@@ -1938,7 +1943,7 @@ def make_kmer_guided_sequence(
         kmer_c["".join(seq)] += 1
 
         # Extend sequence
-        for _ in range(seq_len - kmer_len):
+        for _ in range(slen - kmer_len):
 
             # Reduce choice if max homopolymer reached
             choices = [i for i in bases if i != seq[-1]] if hp >= hp_max else bases
