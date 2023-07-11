@@ -1478,3 +1478,33 @@ def bam_align_summary(fp, min_mapq=30):
                         counter_dict[label]["primary high mapq"] += 1
 
     return pd.DataFrame(counter_dict)
+
+class random_seed_gen ():
+    def __init__(self, seed=None, skip_previous_seed=False, verbose=False):
+        """
+        Initiate a random seed generator object
+        * seed: int or None (default None)
+            Initial state. If None the first state is chosen randomly            
+        * skip_previous_seed: bool (default False)
+            If True track previously drawn seeds and make sure they are not used again
+        * verbose: bool (default False)
+        """
+        self.seed=seed
+        self.skip_previous_seed = skip_previous_seed
+        self.verbose = verbose
+        if skip_previous_seed:
+            self.previous_seeds = set()
+        random.seed(self.seed)
+
+    def __call__ (self):
+        seed = random.randint(0, sys.maxsize)
+        if self.skip_previous_seed:
+            if seed in self.previous_seeds:
+                if self.verbose:
+                    print(f"Seed {seed} already known. Incrementing")
+                while seed in self.previous_seeds:
+                    seed += 1
+            self.previous_seeds.add(seed)
+
+        random.seed(seed)
+        self.seed = seed
