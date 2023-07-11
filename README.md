@@ -78,9 +78,7 @@ Detailed usage of most of the functions with basic tests: [Tests Notebook](https
 
 ## Authors and Contact
 
-Adrien Leger - 2019
-
-EMBL EBI
+Adrien Leger - 2023
 
 * <aleg@ebi.ac.uk>
 * [Github](https://github.com/a-slide)

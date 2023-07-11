@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 # Define self package variable
-__version__ = "1.1.5"
+__version__ = "1.1.5.1"
 __all__ = ["pycltools"]
 __author__ = "Adrien Leger"
-__email__ = "aleg@ebi.ac.uk"
-__url__ = "https://github.com/a-slide/pycoQC"
+__email__ = "adrien.leger@nanoporetech.com"
+__url__ = "https://github.com/a-slide/pycltools"
 __licence__ = "GPLv3"
 __classifiers__ = [
     "Development Status :: 3 - Alpha",
