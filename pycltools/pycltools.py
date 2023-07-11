@@ -1299,7 +1299,7 @@ def make_kmer_guided_sequence(
     elif type(seq_len) in (list, set, tuple) and len(seq_len) != n_seq:
         raise ValueError ("n_seq is not the same length as seq_len")
 
-    for slen in tqdm.tqdm(seq_len, disable=True):
+    for slen in tqdm(seq_len, disable=True):
         
         seq = []
 
