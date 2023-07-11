@@ -1259,6 +1259,8 @@ def make_kmer_guided_sequence(
     n_seq=10,
     seed=None,
     include_rc=False,
+    init_seq=None,
+    init_counter=None,
     verbose=False,
 ):
     """
@@ -1276,6 +1278,10 @@ def make_kmer_guided_sequence(
         Length of sequences to be generated
     * n_seq: int (default 10)
         Overall number of sequences to be generated
+    * init_seq: str (default None)
+        Sequence to initialise the kmer counter from
+    * init_counter: str (default None)
+        Kmer counter to initialise from
     * seed: None or int
         If given the random generator will behave in a deterministic way
     """
@@ -1288,6 +1294,15 @@ def make_kmer_guided_sequence(
     np.random.seed(seed)  
 
     kmer_c = Counter()
+    if init_seq and len(init_seq) >= kmer_len:
+        for i in range(0, len(init_seq) - kmer_len):
+            kmer = init_seq[i:i+kmer_len]
+            if set(kmer).difference(set(bases)):
+                continue
+            kmer_c[kmer]+=1
+
+    if init_counter:
+        kmer_c = init_counter
 
     seq_l = []
     if n_seq > 1 and type(seq_len) == int:
