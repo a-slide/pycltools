@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Define self package variable
-__version__ = "1.1.3.39"
+__version__ = "1.1.4"
 __all__ = ["pycltools"]
 __author__ = "Adrien Leger"
 __email__ = "aleg@ebi.ac.uk"
@@ -19,9 +19,7 @@ __install_requires__ = [
     "pysam>=0.14.0",
     "pandas>=0.23.0",
     "numpy>=1.14.0",
-    "notebook>=5.6.0",
     "tqdm>=4.23.4",
-    "httplib2",
     "matplotlib>=3.0.0",
 ]
 __python_requires__ = ">=3"

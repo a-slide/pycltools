@@ -5,15 +5,11 @@ import os
 import shutil
 import sys
 import gzip
-import warnings
-import time
 import random
-from collections import OrderedDict, namedtuple, defaultdict, Counter
+from collections import OrderedDict, defaultdict, Counter
 from subprocess import Popen, PIPE
 import bisect
 import itertools
-import zipfile
-import tempfile
 import glob
 import re
 from datetime import date
@@ -21,55 +17,60 @@ from datetime import date
 # Third party imports
 import pandas as pd
 import pysam as ps
-from tqdm import tqdm, trange
+from tqdm import tqdm
 import numpy as np
-from IPython.core.display import Image, display, HTML
 from matplotlib import pyplot as pl
 
+##~~~~~~~ DEFINE CONSTANTS ~~~~~~~#
+
+COLOR_CODES = {
+    "white": 29,
+    "grey": 30,
+    "red": 31,
+    "green": 32,
+    "yellow": 33,
+    "blue": 34,
+    "pink": 35,
+    "purple": 36,
+    "beige": 37,
+}
+
+IUPAC_COMP = {
+    'A': 'T',
+    'C': 'G',
+    'G': 'C',
+    'T': 'A',
+    'N': 'N',
+    'R': 'Y',
+    'Y': 'R',
+    'S': 'W',
+    'W': 'S',
+    'K': 'M',
+    'M': 'K',
+    'B': 'V',
+    'V': 'B',
+    'D': 'H',
+    'H': 'D'}
+
+IUPAC_CODE = {
+    "A": ["A"],
+    "T": ["T"],
+    "C": ["C"],
+    "G": ["G"],
+    "R": ["A", "G"],
+    "Y": ["C", "T"],
+    "S": ["G", "C"],
+    "W": ["A", "T"],
+    "K": ["G", "T"],
+    "M": ["A", "C"],
+    "B": ["C", "G", "T"],
+    "D": ["A", "G", "T"],
+    "H": ["A", "C", "T"],
+    "V": ["A", "C", "G"],
+    "N": ["A", "T", "C", "G"],
+}
+
 ##~~~~~~~ JUPYTER NOTEBOOK SPECIFIC TOOLS ~~~~~~~#
-
-
-def jhelp(function, full=True, print_private=False, **kwargs):
-    """
-    Print a nice looking help string based on the name of a declared function. By default print the function
-    definition and description
-    * function
-        Name of a declared function or class method
-    * full
-        If True, the help string will included a description of all arguments
-    """
-    # For some reason signature is not aways importable. In these cases the build-in help in invoqued
-    try:
-        from IPython.core.display import display, HTML, Markdown
-        from inspect import signature, isfunction, ismethod
-    except (NameError, ImportError) as E:
-        warnings.warn(
-            "jupyter notebook is required to use this function. Please verify your dependencies"
-        )
-        help(function)
-        return
-
-    if isfunction(function) or ismethod(function):
-        # skip private functions
-        if not print_private and function.__name__.startswith("_"):
-            return
-        if full:
-            jprint(
-                "<b>{}</b> {}\n{}".format(
-                    function.__name__, signature(function), function.__doc__
-                )
-            )
-        else:
-            jprint("<b>{}</b> {}".format(function.__name__, signature(function)))
-
-
-def stdout_print(*args):
-    """
-    Emulate print but uses sys stdout instead. It could sometimes be useful in specific situations where print
-    is in is not behaving optimaly (like with tqdm for example)
-    """
-    cprint(args)
-
 
 def cprint(*args, **kwargs):
     """
@@ -77,128 +78,12 @@ def cprint(*args, **kwargs):
     avoid string buffering with print.
     Available colors: white, grey, red, green, yellow, blue, pink, purple, beige
     """
-    color_codes = {
-        "white": 29,
-        "grey": 30,
-        "red": 31,
-        "green": 32,
-        "yellow": 33,
-        "blue": 34,
-        "pink": 35,
-        "purple": 36,
-        "beige": 37,
-    }
     s = " ".join([str(i) for i in args])
     color = kwargs.get("color", "white")
-    color_code = color_codes.get(color, 29)
+    color_code = COLOR_CODES.get(color, 29)
     s = "\x1b[{}m{}\x1b[0m\n".format(color_code, s)
     sys.stdout.write(s)
     sys.stdout.flush()
-
-
-def jprint(*args, **kwargs):
-    """
-    FOR JUPYTER NOTEBOOK ONLY
-    Format a string in HTML and print the output. Equivalent of print, but
-    highly customizable. Many options can be passed to the function.
-    * *args
-        One or several objects that can be cast in str
-    * **kwargs
-        Formatting options to tweak the html rendering
-        Boolean options : bold, italic, highlight, underlined, striked, subscripted, superscripted
-        String oprions: font, color, size, align, background_color, line_height
-    """
-    # Function specific third party import
-    try:
-        from IPython.core.display import display, HTML
-    except (NameError, ImportError) as E:
-        warnings.warn(
-            "jupyter notebook is required to use this function. Please verify your dependencies"
-        )
-        print(args)
-        return
-
-    # Join the different elements together and cast in string
-    s = " ".join([str(i) for i in args])
-
-    # Replace new lines and tab by their html equivalent
-    s = s.replace("\n", "<br>").replace("\t", "&emsp;")
-
-    # For boolean options
-    if "bold" in kwargs and kwargs["bold"]:
-        s = "<b>{}</b>".format(s)
-    if "italic" in kwargs and kwargs["italic"]:
-        s = "<i>{}</i>".format(s)
-    if "highlight" in kwargs and kwargs["highlight"]:
-        s = "<mark>{}</mark>".format(s)
-    if "underlined" in kwargs and kwargs["underlined"]:
-        s = "<ins>{}</ins>".format(s)
-    if "striked" in kwargs and kwargs["striked"]:
-        s = "<del>{}</del>".format(s)
-    if "subscripted" in kwargs and kwargs["subscripted"]:
-        s = "<sub>{}</sub>".format(s)
-    if "superscripted" in kwargs and kwargs["superscripted"]:
-        s = "<sup>{}</sup>".format(s)
-
-    # for style options
-    style = ""
-    if "font" in kwargs and kwargs["font"]:
-        style += "font-family:{};".format(kwargs["font"])
-    if "color" in kwargs and kwargs["color"]:
-        style += "color:{};".format(kwargs["color"])
-    if "size" in kwargs and kwargs["size"]:
-        style += "font-size:{}%;".format(kwargs["size"])
-    if "align" in kwargs and kwargs["align"]:
-        style += "text-align:{};".format(kwargs["align"])
-    if "background_color" in kwargs and kwargs["background_color"]:
-        style += "background-color:{};".format(kwargs["background_color"])
-    if "line_height" in kwargs and kwargs["line_height"]:
-        line_height = kwargs["line_height"]
-    else:
-        line_height = 15
-    style += "line-height:{}px;".format(line_height)
-
-    # Format final string
-    if style:
-        s = '<p style="{}">{}</p>'.format(style, s)
-    else:
-        s = "<p>{}</p>".format(s)
-
-    display(HTML(s))
-
-
-def toogle_code(**kwargs):
-    """
-    FOR JUPYTER NOTEBOOK ONLY
-    Hide code with a clickable link in a jupyter notebook
-    """
-    # Function specific third party import
-    try:
-        from IPython.core.display import display, HTML
-    except (NameError, ImportError) as E:
-        warnings.warn(
-            "jupyter notebook is required to use this function. Please verify your dependencies"
-        )
-        return
-
-    display(
-        HTML(
-            """<script>
-    code_show=true;
-    function code_toggle() {
-     if (code_show){
-     $('div.input').hide();
-     } else {
-     $('div.input').show();
-     }
-     code_show = !code_show
-    }
-    $( document ).ready(code_toggle);
-    </script>
-    <b><a href="javascript:code_toggle()">Toggle on/off the raw code</a></b>"""
-        )
-    )
-
 
 def init_notebook(
     author="author",
@@ -217,9 +102,7 @@ def init_notebook(
         color=color,
     )
 
-
 # ~~~~~~~ PREDICATES ~~~~~~~#
-
 
 def is_readable_file(fp, raise_exception=True, **kwargs):
     """
@@ -233,13 +116,11 @@ def is_readable_file(fp, raise_exception=True, **kwargs):
     else:
         return True
 
-
 def is_gziped(fp, **kwargs):
     """
     Return True if the file is Gziped else False
     """
     return fp[-2:].lower() == "gz"
-
 
 def has_extension(fp, ext, pos=-1, raise_exception=False, **kwargs):
     """
@@ -265,16 +146,13 @@ def has_extension(fp, ext, pos=-1, raise_exception=False, **kwargs):
     else:
         return True
 
-
 # ~~~~~~~ PATH MANIPULATION ~~~~~~~#
-
 
 def file_basename(fp, **kwargs):
     """
     Return the basename of a file without folder location and extension
     """
     return fp.rpartition("/")[2].partition(".")[0]
-
 
 def extensions(fp, comp_ext_list=["gz", "tgz", "zip", "xz", "bz2"], **kwargs):
     """
@@ -292,7 +170,6 @@ def extensions(fp, comp_ext_list=["gz", "tgz", "zip", "xz", "bz2"], **kwargs):
     else:
         return ".{}".format(split_name[-1]).lower()
 
-
 def extensions_list(fp, comp_ext_list=["gz", "tgz", "zip", "xz", "bz2"], **kwargs):
     """
     Return The extension of a file in lower-case. If archived file ("gz", "tgz", "zip", "xz", "bz2")
@@ -309,13 +186,11 @@ def extensions_list(fp, comp_ext_list=["gz", "tgz", "zip", "xz", "bz2"], **kwarg
     else:
         return [split_name[-1].lower()]
 
-
 def file_name(fp, **kwargs):
     """
     Return The complete name of a file with the extension but without folder location
     """
     return fp.rpartition("/")[2]
-
 
 def dir_name(fp, **kwargs):
     """
@@ -323,16 +198,13 @@ def dir_name(fp, **kwargs):
     """
     return fp.rpartition("/")[0].rpartition("/")[2]
 
-
 def dir_path(fp, **kwargs):
     """
     Return the directory path of a file
     """
     return fp.rpartition("/")[0]
 
-
 ##~~~~~~~ STRING FORMATTING ~~~~~~~#
-
 
 def supersplit(string, separator="", **kwargs):
     """
@@ -348,15 +220,12 @@ def supersplit(string, separator="", **kwargs):
         string = string.replace(sep, "#")
     return string.split("#")
 
-
 def rm_blank(name, replace="", **kwargs):
     """Replace blank spaces in a name by a given character (default = remove)
     Blanks at extremities are always removed and nor replaced"""
     return replace.join(name.split())
 
-
 # ~~~~~~~ FILE MANIPULATION ~~~~~~~#
-
 
 def concatenate(src_list, dest, **kwargs):
     """
@@ -393,7 +262,6 @@ def copyFile(src, dest, **kwargs):
     except IOError as E:
         print("Error: %s" % E.strerror)
 
-
 def gzip_file(fpin, fpout=None, keep_source=False, **kwargs):
     """
     gzip a file
@@ -428,7 +296,6 @@ def gzip_file(fpin, fpout=None, keep_source=False, **kwargs):
                 os.remove(fpout)
             except OSError:
                 print("Can't remove {}".format(fpout))
-
 
 def gunzip_file(fpin, fpout=None, keep_source=False, **kwargs):
     """
@@ -465,7 +332,6 @@ def gunzip_file(fpin, fpout=None, keep_source=False, **kwargs):
             except OSError:
                 print("Can't remove {}".format(fpout))
 
-
 def remove_file(fp, exception_if_exist=False):
     """
     Try to remove a file from disk.
@@ -476,9 +342,7 @@ def remove_file(fp, exception_if_exist=False):
         if exception_if_exist:
             raise E
 
-
 # ~~~~~~~ FILE INFORMATION/PARSING ~~~~~~~#
-
 
 def linerange(fp, range_list=[], line_numbering=True, max_char_line=150, **kwargs):
     """
@@ -528,7 +392,6 @@ def linerange(fp, range_list=[], line_numbering=True, max_char_line=150, **kwarg
                     print("...")
                     previous_line_empty = True
 
-
 def cat(fp, max_lines=100, line_numbering=False, max_char_line=150, **kwargs):
     """
     Emulate linux cat cmd but with line cap protection. Handle gziped files
@@ -552,7 +415,6 @@ def cat(fp, max_lines=100, line_numbering=False, max_char_line=150, **kwargs):
         line_numbering=line_numbering,
         max_char_line=max_char_line,
     )
-
 
 def tail(fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
     """
@@ -578,7 +440,6 @@ def tail(fp, n=10, line_numbering=False, max_char_line=150, **kwargs):
         line_numbering=line_numbering,
         max_char_line=max_char_line,
     )
-
 
 def head(
     fp,
@@ -686,7 +547,6 @@ def head(
             print(l)
     print()
 
-
 def grep(fp, regex, max_lines=None):
     """
     Emulate linux head cmd. Handle gziped files and bam files
@@ -723,112 +583,6 @@ def grep(fp, regex, max_lines=None):
                     found += 1
                     break
 
-
-def linesample(fp, n_lines=100, line_numbering=True, max_char_line=150, **kwargs):
-    """
-    Randomly sample lines in a file and print them. Handle gziped files
-    * fp
-        Path to the file to be parsed
-    * n_lines
-        Number of lines to sample in the file
-    * line_numbering
-        If True the number of the line will be indicated in front of the line
-    * max_char_line
-        Maximal number of character to print per line
-    """
-    n_lines_origin = fastcount(fp)
-
-    # Take into account the situation in which there are less lines in the file than requested.
-    if n_lines >= n_lines_origin:
-        if verbose:
-            print(
-                "Not enough lines in source file. Writing all reads in the output file"
-            )
-        index_list = list(range(0, n_lines_origin - 1))
-    else:
-        index_list = sorted(random.sample(range(0, n_lines_origin - 1), n_lines))
-
-    # Sample lines in input file according to the list of random line numbers
-    if is_gziped(fp):
-        open_fun = gzip.open
-        open_mode = "rt"
-    else:
-        open_fun = open
-        open_mode = "r"
-
-    with open_fun(fp, open_mode) as fh:
-        j = 0
-        for i, l in enumerate(fh):
-            if j >= n_lines:
-                break
-            if i == index_list[j]:
-                j += 1
-                l = l.rstrip()
-                if max_char_line and len(l) > max_char_line:
-                    l = l[0:max_char_line] + "..."
-                if line_numbering:
-                    l = "{}\t{}".format(i, l)
-                print(l)
-
-
-def count_uniq(
-    fp,
-    colnum,
-    select_values=None,
-    drop_values=None,
-    skip_comment="#",
-    sep="\t",
-    **kwargs,
-):
-    """
-    Count unique occurences in a specific column of a tabulated file
-    * fp
-        Path to the file to be parsed (gzipped or not)
-    * colnum
-        Index number of the column to summarize
-    * select_values
-        Select specific lines in the file based on a dictionary containing column index(es) and valu(es) or list
-        of values to select. Exemple {2:["exon", "transcript"], 4:"lincRNA"}. DEFAULT=None
-    * drop_values
-        Same think that select_value but will drop the lines instead. DEFAULT=None
-    * skip_comment
-        Drop any comment lines starting with this character. DEFAULT="#"
-    * sep
-        Character or list of characters to use in order to split the lines. Exemple ["\t",";"]. DEFAULT="\t"
-    """
-    # Transform separator in regular expression if needed
-    if type(sep) == list:
-        sep = "[{}]".format("".join(sep))
-        engine = "python"
-    else:
-        engine = "c"
-
-    df = pd.read_csv(
-        fp,
-        sep=sep,
-        index_col=False,
-        header=None,
-        comment=skip_comment,
-        engine=engine,
-    )
-
-    if select_values:
-        for i, j in select_values.items():
-            if type(j) == str:
-                df = df[(df[i] == j)]
-            if type(j) == list:
-                df = df[(df[i].isin(j))]
-
-    if drop_values:
-        for i, j in drop_values.items():
-            if type(j) == str:
-                df = df[(df[i] != j)]
-            if type(j) == list:
-                df = df[(~df[i].isin(j))]
-
-    return df.groupby(colnum).size().sort_values(ascending=False)
-
-
 def fastcount(fp, **kwargs):
     """
     Efficient way to count the number of lines in a file. Handle gziped files
@@ -852,30 +606,7 @@ def fastcount(fp, **kwargs):
 
     return lines
 
-
-def simplecount(fp, ignore_hashtag_line=False, **kwargs):
-    """
-    Simple way to count the number of lines in a file with more options
-    """
-    if is_gziped(fp):
-        open_fun = gzip.open
-        open_mode = "rt"
-    else:
-        open_fun = open
-        open_mode = "r"
-
-    with open_fun(fp, open_mode) as fh:
-        lines = 0
-        for line in fh:
-            if ignore_hashtag_line and line[0] == "#":
-                continue
-            lines += 1
-
-    return lines
-
-
 # ~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
-
 
 def mkdir(
     fp,
@@ -915,14 +646,12 @@ def mkdir(
             print(f"Creating directory: {fp}")
         os.makedirs(fp)
 
-
 def get_size_str(fp):
     size = os.path.getsize(fp)
     for limit, unit in ((1, "B"), (1e3, "KB"), (1e6, "MB"), (1e9, "GB"), (1e12, "TB")):
         s = size / limit
         if s < 1000:
             return f"{round(s, 3)} {unit}"
-
 
 def tree(
     dir_fn=".",
@@ -989,7 +718,6 @@ def tree(
                             level=level + 1,
                         )
 
-
 def ls(dir_fn="./"):
     """
     Simple function to emulate ls -lahG
@@ -1017,65 +745,7 @@ def ls(dir_fn="./"):
 
             print(" \x1b[{}m{:<12} {}\x1b[0m".format(color, get_size_str(path), fn))
 
-
 # ~~~~~~~ SHELL MANIPULATION ~~~~~~~#
-
-
-def make_cmd_str(
-    prog_name,
-    opt_dict={},
-    opt_list=[],
-    **kwargs,
-):
-    """
-    Create a Unix like command line string from the prog name, a dict named arguments and a list of unmammed arguments
-    exemple make_cmd_str("bwa", {"b":None, t":6, "i":"../idx/seq.fa"}, ["../read1", "../read2"])
-    * prog_name
-        Name (if added to the system path) or path of the program
-    * opt_dict
-        Dictionary of option arguments such as "-t 5". The option flag have to be the key (without "-") and the the
-        option value in the dictionary value. If no value is requested after the option flag "None" had to be assigned
-        to the value field.
-    * opt_list
-        List of simple command line arguments
-    """
-
-    # Start the string by the name of the program
-    cmd = "{} ".format(prog_name)
-
-    # Add options arguments from opt_dict
-    if opt_dict:
-        for key, value in opt_dict.items():
-            if value:
-                cmd += "{} {} ".format(key, value)
-            else:
-                cmd += "{} ".format(key)
-
-    # Add arguments from opt_list
-    if opt_list:
-        for value in opt_list:
-            cmd += "{} ".format(value)
-
-    return cmd
-
-
-def bash_basic(cmd, virtualenv=None, **kwargs):
-    """
-    Sent basic bash command
-    * cmd
-        A command line string formatted as a string
-    * virtualenv
-        If specified will try to load a virtualenvwrapper environment before runing the command
-    """
-    if virtualenv:
-        cmd = "source ~/.bashrc && workon {} && {} && deactivate".format(
-            virtualenv, cmd
-        )
-    with Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True) as proc:
-        stdout, stderr = proc.communicate()
-        print(stdout.decode())
-        print(stderr.decode())
-
 
 def bash(
     cmd,
@@ -1198,54 +868,6 @@ def bash(
         return stderr_str
     return None
 
-
-def bash_update(cmd, update_freq=1, **kwargs):
-    """
-    FOR JUPYTER NOTEBOOK
-    Run a bash command and print the output in the cell. The output is updated each time until the output is None.
-    This is suitable for monitoring tasks that log events until there is nothing else to print such as bjobs or bpeeks.
-    * cmd
-        A command line string formatted as a string
-    * update_freq
-        The frequency of output updating in seconds [DEFAULT: 1]
-    """
-
-    # imports
-    try:
-        from IPython.core.display import clear_output
-    except (NameError, ImportError) as E:
-        print(E)
-        print(
-            "jupyter notebook is required to use this function. Please verify your dependencies"
-        )
-        sys.exit()
-
-    # Init stdout buffer
-    stdout_prev = ""
-
-    # Loop and update the line is something changes
-    try:
-        while True:
-            stdout = bash(
-                cmd,
-                ret_stderr=False,
-                ret_stdout=True,
-                print_stderr=False,
-                print_stdout=False,
-            )
-            if stdout != stdout_prev:
-                clear_output()
-                print(stdout)
-                stdout_prev = stdout
-            if not stdout:
-                print("All done")
-                break
-
-            time.sleep(update_freq)
-    except KeyboardInterrupt:
-        print("Stop monitoring\n")
-
-
 def qsub(
     cmd_list,
     mem="1G",
@@ -1320,7 +942,6 @@ def qsub(
             cprint("ERROR: job not submitted", color="red")
             cprint(str(E))
 
-
 def qstat(
     jobid=None,
     user=None,
@@ -1387,285 +1008,7 @@ def qstat(
 
         return df
 
-
-def bsub(
-    cmd,
-    virtualenv=None,
-    conda=None,
-    mem=None,
-    threads=None,
-    queue=None,
-    wait_jobid=None,
-    stdout_fp=None,
-    stderr_fp=None,
-    send_email=False,
-    print_cmd=True,
-    dry=False,
-    job_name=None,
-    other_options=None,
-    **kwargs,
-):
-    """
-    FOR JUPYTER NOTEBOOK IN LSF environment
-    Send an LSF bsub command through bash and return the JOBID
-    For more information read the bsub documentation
-    * cmd
-        A command line string formatted as a string
-    * virtualenv
-        If specified will try to load a virtualenvwrapper environment before runing the command
-    * conda
-        If specified will try to load a conda environment before runing the command
-    * mem
-        Memory to reserve (-M and -R 'rusage[mem=])
-    * threads
-        Number of thread to reserve (-n)
-    * queue
-        Name of the LSF queue to be used (-q)
-    * wait_jobid
-        jobid of list of jobid to wait before executing this command(-w 'post_done(jobid))
-    * stdout_fp
-        Path of the file where to write the standard output of the command (-oo)
-    * stderr_fp
-        Path of the file where to write the standard error of the command (-eo)
-    * send_email
-        If True, will force LSF to send an email even if stdout_fp and/or stderr_fp is given
-    * job_name
-
-    """
-    bsub_cmd = "bsub "
-    if job_name:
-        bsub_cmd += "-J {} ".format(job_name)
-    if mem:
-        bsub_cmd += "-M {0} -R 'rusage[mem={0}]' ".format(mem)
-    if threads:
-        bsub_cmd += "-n {0} ".format(threads)
-    if queue:
-        bsub_cmd += "-q {0} ".format(queue)
-    if stdout_fp:
-        bsub_cmd += "-oo {0} ".format(stdout_fp)
-    if stderr_fp:
-        bsub_cmd += "-eo {0} ".format(stderr_fp)
-    if send_email:
-        bsub_cmd += "-N "
-    if wait_jobid:
-        if not type(wait_jobid) in (list, set, tuple):
-            wait_jobid = [wait_jobid]
-        jobid_str = "&&".join(["post_done({0})".format(jobid) for jobid in wait_jobid])
-        bsub_cmd += "-w '{0}' ".format(jobid_str)
-    if other_options:
-        bsub_cmd += "{} ".format(other_options)
-
-    full_cmd = '{} "{}"'.format(bsub_cmd, cmd)
-
-    if print_cmd:
-        print(full_cmd)
-    if dry:
-        return random.randint(0, 100000)
-    else:
-        stdout = bash(virtualenv=virtualenv, conda=conda, cmd=full_cmd, ret_stdout=True)
-        return stdout.split("<")[1].split(">")[0]
-
-
-def bjobs(jobid=None, user=None, status=None, queue=None, cmd=None):
-    """
-    FOR JUPYTER NOTEBOOK IN LSF environment
-    Emulate LSF bjobs command. Return a Dataframe of jobs
-    """
-    # Init collection
-    job_info = namedtuple(
-        "job_info",
-        [
-            "jobid",
-            "user",
-            "status",
-            "queue",
-            "cmd",
-            "cpu_used",
-            "mem",
-            "swap",
-            "submit_time",
-            "start_time",
-        ],
-    )
-    l = []
-
-    # Get long job desriptions from bjobs
-    stdout = bash("bjobs -W", ret_stdout=True, print_stdout=False)
-
-    if not stdout:
-        pd.DataFrame()
-
-    # Parse bjobs output
-    for line in stdout.split("\n"):
-        if line[:1].isdigit():
-            ls = line.split()
-            l.append(
-                job_info(
-                    ls[0],
-                    ls[1],
-                    ls[2],
-                    ls[3],
-                    " ".join(ls[6:-8]),
-                    ls[-6],
-                    ls[-5],
-                    ls[-4],
-                    ls[-8],
-                    ls[-2],
-                )
-            )
-
-    # Cast to Dataframe
-    df = pd.DataFrame(l)
-
-    # filter if needed
-    if jobid:
-        df = df[df["jobid"].str.match(jobid)]
-    if user:
-        df = df[df["user"].str.match(user)]
-    if status:
-        df = df[df["status"].str.match(status)]
-    if queue:
-        df = df[df["queue"].str.match(queue)]
-    if cmd:
-        df = df[df["cmd"].str.match(cmd)]
-
-    return df
-
-
-def bjobs_update(
-    update_freq=5, jobid=None, user=None, status=None, queue=None, cmd=None
-):
-    """
-    FOR JUPYTER NOTEBOOK IN LSF environment
-    Emulate LSF bjobs command but update the cell every x seconds
-    Cell is locked
-    """
-    from time import sleep
-
-    try:
-        from IPython.core.display import display, clear_output
-    except (NameError, ImportError) as E:
-        print(E)
-        print(
-            "jupyter notebook is required to use this function. Please verify your dependencies"
-        )
-        sys.exit()
-
-    try:
-        while True:
-            df = bjobs(jobid=jobid, user=user, status=status, queue=queue, cmd=cmd)
-            if df.empty:
-                raise StopIteration
-            display(df)
-            sleep(update_freq)
-            clear_output()
-
-    except KeyboardInterrupt:
-        clear_output()
-        display(bjobs(jobid=jobid, user=user, status=status, queue=queue, cmd=cmd))
-
-    except StopIteration:
-        print("All jobs done")
-
-
-def bjobs_lock(jobid=None, update_freq=2, final_delay=2):
-    """
-    FOR JUPYTER NOTEBOOK IN LSF environment
-    Check if bjobs has running or pending jobs until all are done
-    * jobid
-        List of jobid to Check
-    * update_freq
-        The frequency of output updating in seconds [DEFAULT: 2]
-    * final_delay
-        Final delay in seconds at the end of all jobs to prevent IO errors [DEFAULT: 5]
-    """
-
-    # Homogenize types to list of str
-    if type(jobid) in [int, str]:
-        jobid = [str(jobid)]
-    elif type(jobid) in [list, set, tuple]:
-        jobid = [str(j) for j in jobid]
-
-    try:
-        while True:
-            df = bjobs()
-
-            if df.empty:
-                raise StopIteration
-
-            # if a jobid list was provided Check if at least one of the jobs is still in the list
-            if jobid:
-                if not df["JobID"].isin(jobid).any():
-                    raise StopIteration
-
-            s = []
-            for i, j in df["Status"].value_counts().items():
-                s.append("{}:{}".format(i, j))
-            stdout_print("Jobs Status {}\r".format("\t".join(s)))
-
-            time.sleep(update_freq)
-
-    except KeyboardInterrupt:
-        stdout_print("\rUser interuption" + " " * 30 + "\n")
-    except StopIteration:
-        time.sleep(final_delay)
-        stdout_print("All jobs done" + " " * 30 + "\n")
-
-
 ##~~~~~~~ DICTIONNARY FORMATTING ~~~~~~~#
-
-
-def dict_to_md(
-    d,
-    key_label="",
-    value_label="",
-    transpose=False,
-    sort_by_key=False,
-    sort_by_val=True,
-    max_items=None,
-    **kwargs,
-):
-    """
-    Transform a dict into a markdown formated table
-    """
-    # Preprocess dict
-    if sort_by_key:
-        d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[0])))
-
-    if sort_by_val:
-        d = OrderedDict(reversed(sorted(d.items(), key=lambda t: t[1])))
-
-    if max_items and len(d) > max_items:
-        d2 = OrderedDict()
-        n = 0
-        for key, value in d.items():
-            d2[key] = value
-            n += 1
-            if n >= max_items:
-                break
-        d2["..."] = "..."
-        d = d2
-
-    # Prepare output
-    if transpose:
-        buffer = "|{}|".format(key_label)
-        for key in d.keys():
-            buffer += "{}|".format(key)
-        buffer += "\n|:---|"
-        for _ in range(len(d)):
-            buffer += ":---|"
-        buffer += "\n|{}|".format(value_label)
-        for value in d.values():
-            buffer += "{}|".format(value)
-        buffer += "\n"
-
-    else:
-        buffer = "|{}|{}|\n|:---|:---|\n".format(key_label, value_label)
-        for key, value in d.items():
-            buffer += "|{}|{}|\n".format(key, value)
-
-    return buffer
-
 
 def dict_to_report(
     d, tab="\t", ntab=0, sep=":", sort_dict=True, max_items=None, **kwargs
@@ -1718,34 +1061,7 @@ def dict_to_report(
             report += "{}{}{}{}\n".format(tab * ntab, name, sep, value)
     return report
 
-
 ##~~~~~~~ WEB TOOLS ~~~~~~~#
-
-
-def url_exist(url, **kwargs):
-    """
-    Predicate verifying if an url exist without downloading all the link
-    """
-
-    # Function specific third party import
-    try:
-        import httplib2
-    except (NameError, ImportError) as E:
-        print(E)
-        print(
-            "httplib2 is required to use this function. Please verify your dependencies"
-        )
-        sys.exit()
-
-    # Chek the url
-    h = httplib2.Http()
-
-    try:
-        resp = h.request(url, "HEAD")
-        return int(resp[0]["status"]) < 400
-    except:
-        return False
-
 
 def wget(url, out_name=None, out_dir=None, ftp_proxy=None, http_proxy=None):
     """
@@ -1777,9 +1093,7 @@ def wget(url, out_name=None, out_dir=None, ftp_proxy=None, http_proxy=None):
     cmd = " ".join(cmd_l)
     bash(cmd)
 
-
 ##~~~~~~~ FUNCTIONS TOOLS ~~~~~~~#
-
 
 def print_arg(**kwargs):
     """
@@ -1808,20 +1122,86 @@ def print_arg(**kwargs):
             for i in args[posname]:
                 print("\t{}".format(i))
 
-
 ##~~~~~~~ DNA SEQUENCE TOOLS ~~~~~~~#
 
+def seq_from_motif(motif):
+    """
+    Generate sequences according to a DNA/RNA IUPAC motif
+    * motif: str
+        DNA motif which can contain ambiguous IUPAC bases
+    * return list
+        List of sequences corresponding to the motif
+    """
+    seq_list = []
+    parts = []
+    for base_code in motif:
+        if base_code in IUPAC_CODE:
+            parts.append(IUPAC_CODE[base_code])
+        else:
+            parts.append(base_code)
+    
+    for bases in itertools.product(*parts):
+        seq = "".join(bases)
+        seq_list.append(seq)
+    
+    return seq_list
+
+def highlight_motif (seq, motif, color="red"):
+    """
+    Highlight a given motif in a sequence with a chosen color
+    * seq: str
+        DNA reference sequence
+    * motif: str
+        DNA motif to  can contain ambiguous IUPAC bases
+    * color: str
+        Available colors: white, grey, red, green, yellow, blue, pink, purple, beige
+    """
+    col_code = COLOR_CODES.get(color, 29)
+    for m_seq in seq_from_motif(motif):
+        m_seq_rpl = f"\x1b[{col_code};1m{m_seq}\x1b[0m"
+        seq = seq.replace(m_seq,m_seq_rpl)
+    return seq
+
+def highlight_pos (seq, pos_list, color="red"):
+    """
+    Highlight a given position or list of positions in a sequence with a chosen color
+    * seq: str
+        DNA reference sequence
+    * pos_list: int or list of ints
+        Positions to highlight
+    * color: str
+        Available colors: white, grey, red, green, yellow, blue, pink, purple, beige
+    """
+    col_code = COLOR_CODES.get(color, 29)
+    seq = list(seq)
+    
+    if type(pos_list)==int:
+        pos_list = [pos_list]
+    for pos in pos_list:
+        seq[pos] = f"\x1b[{col_code};1m{seq[pos]}\x1b[0m"
+    seq = "".join(seq)
+    return seq
+
+def reverse_complement(seq):
+    """ Return the reverse complement of a DNA sequence
+    """
+    return ''.join([IUPAC_COMP[b] for b in reversed(seq)])
+
+def complement(seq):
+    """ Return the complement of a DNA sequence
+    """
+    return ''.join([IUPAC_COMP[b] for b in seq])
 
 def base_generator(
     bases=["A", "T", "C", "G"],
-    weights=[0.280788, 0.281691, 0.193973, 0.194773],
+    weights=[0.25, 0.25, 0.25, 0.25],
     **kwargs,
 ):
     """
     Generator returning DNA/RNA bases according to a probability weightning
     * bases: list (default ["A","T","C","G"])
         DNA RNA bases allowed
-    * weights: list (default [0.280788,0.281691,0.193973,0.194773])
+    * weights: list (default [0.25, 0.25, 0.25, 0.25])
         Probability of each base to be returned. Should match the index of bases. The sum does not need to be equal to 1.
         If the list is empty bases will be returned with a flat probability. The default values represent the frequency in the human
         genome (excluding N).
@@ -1847,10 +1227,9 @@ def base_generator(
         while True:
             yield random.choice(bases)
 
-
 def make_random_sequence(
     bases=["A", "T", "C", "G"],
-    weights=[0.280788, 0.281691, 0.193973, 0.194773],
+    weights=[0.25, 0.25, 0.25, 0.25],
     length=1000,
     **kwargs,
 ):
@@ -1858,7 +1237,7 @@ def make_random_sequence(
     return a sequence of DNA/RNA bases according to a probability weightning
     * bases: list (default ["A","T","C","G"])
         DNA RNA bases allowed in the sequence
-    * weights: list (default [0.280788,0.281691,0.193973,0.194773])
+    * weights: list (default [0.25, 0.25, 0.25, 0.25])
         Probability of each base to be returned. Should match the index of bases. The sum does not need to be equal to 1.
         If the list is empty bases will be returned with a flat probability. The default values represent the frequency in the human
         genome (excluding N).
@@ -1869,24 +1248,21 @@ def make_random_sequence(
     seq_list = [next(bgen) for _ in range(length)]
     return "".join(seq_list)
 
-
 def make_kmer_guided_sequence(
-    how="min",
+    how="weights",
     bases=["A", "G", "T", "C"],
     kmer_len=3,
     hp_max=3,
     seq_len=100,
     n_seq=10,
-    init_seq=None,
-    init_counter=None,
     seed=None,
-    verbose=True,
+    include_rc=False,
 ):
     """
     Generate a list of sequences with an optimized kmer content.
     * how
         min = Always choose the kmer with the lower kmer count in the previous sequence. Random in case of ties
-        weights = Bases are randomly picked based on a probability invertly corelated to the kmer counts in the prvious sequence
+        weights = Bases are randomly picked based on a probability invertly corelated to the kmer counts in the previous sequence
     * bases = ["A","T","C","G"],
         DNA RNA bases allowed in the sequence
     * kmer_len: int (default 3)
@@ -1895,43 +1271,39 @@ def make_kmer_guided_sequence(
         Maximal length of homopolymers
     * seq_len: int or list (default 100)
         Length of sequences to be generated
-    * init_seq: str (default None)
-        Sequence to initialise the kmer counter from
-    * init_counter: str (default None)
-        Kmer counter to initialise from
     * n_seq: int (default 10)
         Overall number of sequences to be generated
     * seed: None or int
         If given the random generator will behave in a deterministic way
     """
     # Set seed if needed
+    if seed is None:
+        random.seed(None)
+        seed = random.randint(0, sys.maxsize)
+        
     random.seed(seed)
-    np.random.seed(seed)
+    np.random.seed(seed)  
 
     kmer_c = Counter()
-    if init_seq and len(init_seq) >= kmer_len:
-        for i in range(0, len(init_seq) - kmer_len):
-            kmer = init_seq[i:i+kmer_len]
-            if set(kmer).difference(set(bases)):
-                continue
-            kmer_c[kmer]+=1
-
-    if init_counter:
-        kmer_c = init_counter
 
     seq_l = []
     if n_seq > 1 and type(seq_len) == int:
         seq_len = list(itertools.repeat(seq_len, n_seq))
-    if type(seq_len) in (list, set, tuple) and len(seq_len) != n_seq:
+        
+    elif n_seq == 1 and type(seq_len) == int:
+        seq_len = [seq_len,]
+        
+    elif type(seq_len) in (list, set, tuple) and len(seq_len) != n_seq:
         raise ValueError ("n_seq is not the same length as seq_len")
 
-    for slen in tqdm(seq_len, disable=not verbose):
+    for slen in tqdm.tqdm(seq_len, disable=True):
+        
         seq = []
 
         # First base
         hp = 1
         seq.append(random.choice(bases))
-
+        
         # Extend seed to length kmer_len
         for i in range(kmer_len - 1):
             # Reduce choice if max homopolymer reached
@@ -1940,15 +1312,18 @@ def make_kmer_guided_sequence(
             seq.append(random.choice(choices))
             # Check if homopolymers extends
             hp = hp + 1 if seq[-2] == seq[-1] else 1
-        kmer_c["".join(seq)] += 1
-
+        kmer_seq = "".join(seq)
+        kmer_c[kmer_seq] += 1
+        if include_rc:
+            kmer_c[reverse_complement(kmer_seq)] += 1
+            
         # Extend sequence
         for _ in range(slen - kmer_len):
 
             # Reduce choice if max homopolymer reached
             choices = [i for i in bases if i != seq[-1]] if hp >= hp_max else bases
             prev = seq[-kmer_len + 1 :]
-
+            
             if how == "min":
                 count_d = defaultdict(list)
                 # Collect count for each possible kmers
@@ -1969,11 +1344,17 @@ def make_kmer_guided_sequence(
                     if not kmer in kmer_c:
                         p.append(0)
                     else:
-                        p.append(kmer_c[kmer])
-                # transform counts in inverted frequency weights
+                        p.append(kmer_c[kmer])                   
+
                 p = np.array(p)
-                p = 1 / (p - p.min() + 1)
-                p = p / p.sum()
+                if p.min() == p.max():
+                    p=None
+                else:
+                    # Invert log transform and normalise to 1
+                    p = np.log1p(p)
+                    p = -p+p.max()
+                    p = p/p.sum()
+
                 # Choose randomly using weight matrix
                 b = np.random.choice(choices, p=p)
             else:
@@ -1982,13 +1363,25 @@ def make_kmer_guided_sequence(
             # extend current sequence
             seq.append(b)
             # Update kmer counter
-            kmer_c["".join(prev + [b])] += 1
+            kmer_seq = "".join(prev + [b])
+            kmer_c[kmer_seq] += 1
+            if include_rc:
+                kmer_c[reverse_complement(kmer_seq)] += 1
+            
             # Check if homopolymers extends
             hp = hp + 1 if seq[-2] == seq[-1] else 1
 
         # Append to list
         seq_l.append("".join(seq))
 
+
+    if verbose:
+        cc = Counter()
+        for i in kmer_c.values():
+            cc[i] += 1
+        for i, j in cc.most_common():
+            print("kmer counts {} / Occurences: {:,}".format(i, j))
+    
     if verbose:
         cc = Counter()
         for i in kmer_c.values():
@@ -1997,7 +1390,8 @@ def make_kmer_guided_sequence(
             print("kmer counts {} / Occurences: {:,}".format(i, j))
 
     if n_seq == 1:
-        return seq_l[0]
+        seq_l = seq_l[0]
+    
     return seq_l
 
 
@@ -2017,7 +1411,7 @@ def kmer_content(seq_list, min_kmer=3, max_kmer=9, figsize=(10, 2), yscale="log"
 
     # Collect kmer info in several passses
     for kmer_len in range(min_kmer, max_kmer + 1):
-        jprint("Kmer of length {}".format(kmer_len), bold=True)
+        cprint("Kmer of length {}".format(kmer_len))
         c = Counter()
 
         # Count each kmer occurence
@@ -2053,122 +1447,7 @@ def kmer_content(seq_list, min_kmer=3, max_kmer=9, figsize=(10, 2), yscale="log"
             ax.set_xlabel("Occurences count")
             pl.show()
 
-
-##~~~~~~~ FASTQ SEQUENCE TOOLS ~~~~~~~#
-
-
-def fastqc_summary(
-    fastqc_res_dir,
-    max_table_row=10,
-    plot_width=500,
-    table_module_list=["Basic Statistics", "Overrepresented sequences", "Kmer Content"],
-    plot_module_list=[
-        "Per base sequence quality",
-        "Per tile sequence quality",
-        "Per sequence quality scores",
-        "Per base sequence content",
-        "Per sequence GC content",
-        "Per base N content",
-        "Sequence Length Distribution",
-        "Sequence Duplication Levels",
-        "Kmer Content",
-        "Adapter Content",
-    ],
-):
-
-    """
-    Summarize and display fastqc results in IPYTHON/JUPYTER. Don't try to use in another interface or in terminal
-    Works directly from the zipped results obtained by FastQC v0.11.5+
-    * fastqc_res_dir
-        Directory containing the zipped folders obtained with fastQC
-    * max_table_row
-        Maximal number of row for the tables [DEFAULT 10]
-    * table_module_list
-        List of the table modules to include. Default = All
-    * plot_module_list
-        List of the plot modules to include. Default = All
-    """
-
-    # Convert pictures names to module names
-    all_plot_modules = {
-        "Per base sequence quality": "per_base_quality.png",
-        "Per tile sequence quality": "per_tile_quality.png",
-        "Per sequence quality scores": "per_sequence_quality.png",
-        "Per base sequence content": "per_base_sequence_content.png",
-        "Per sequence GC content": "per_sequence_gc_content.png",
-        "Per base N content": "per_base_n_content.png",
-        "Sequence Length Distribution": "sequence_length_distribution.png",
-        "Sequence Duplication Levels": "duplication_levels.png",
-        "Kmer Content": "kmer_profiles.png",
-        "Adapter Content": "adapter_content.png",
-    }
-
-    for fp in glob.glob(fastqc_res_dir + "/*_fastqc.zip"):
-        display(HTML("<hr></hr>"))
-        display(HTML('<font size="4"><b>{}</b></font>'.format(fp.rpartition("/")[2])))
-
-        # Extract the zip file in a temporary folder
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            zfile = zipfile.ZipFile(fp)
-            zfile.extractall(tmpdirname)
-            base_dir = glob.glob(tmpdirname + "/*/")[0]
-
-            # Iterate over the fastqdata file
-            with open(base_dir + "fastqc_data.txt", "r") as fastqc_data:
-                # Set bool flag to false
-                found_module = found_header = False
-
-                # Parse the file
-                for line in fastqc_data:
-                    line = line.strip()
-
-                    # If End of section a table section can be rendered
-                    if line.startswith(">>END_MODULE"):
-                        if found_module and found_header:
-                            df_html = df.head(max_table_row).to_html()
-                            display(HTML("<font size=2>" + df_html + "</font>"))
-                            found_module = found_header = False
-
-                    # Detect the start of a module section
-                    elif line.startswith(">>"):
-                        ls = line[2:].split("\t")
-                        module_name = ls[0]
-                        module_status = ls[1]
-
-                        # Detect the start of a table section
-                        if module_name in table_module_list:
-                            display(
-                                HTML(
-                                    '<font size="3"><b>{} : {}</b></font>'.format(
-                                        module_name, module_status
-                                    )
-                                )
-                            )
-                            found_module = True
-
-                        # Detect the header of a plot section
-                        if module_name in plot_module_list:
-                            display(
-                                HTML(
-                                    '<font size="3"><b>{} : {}</b></font>'.format(
-                                        module_name, module_status
-                                    )
-                                )
-                            )
-                            image = "{}Images/{}".format(
-                                base_dir, all_plot_modules[module_name]
-                            )
-                            display(Image(image, width=plot_width))
-
-                    # Fill a dataframe if a table section was found
-                    elif found_module:
-                        if not found_header:
-                            df = pd.DataFrame(columns=line.split("\t")[1:])
-                            found_header = True
-                        else:
-                            ls = line.split("\t")
-                            df.loc[ls[0]] = ls[1:]
-
+##~~~~~~~ MISC TOOLS ~~~~~~~#
 
 def bam_align_summary(fp, min_mapq=30):
     """
@@ -2199,86 +1478,3 @@ def bam_align_summary(fp, min_mapq=30):
                         counter_dict[label]["primary high mapq"] += 1
 
     return pd.DataFrame(counter_dict)
-
-
-def _convert_sec_to_h(s):
-    """
-    Convert seconds to hour, minutes, secondes
-    """
-    s = s % (24 * 3600)
-    h = s // 3600
-    s %= 3600
-    m = s // 60
-    s %= 60
-    return (int(h), int(m), int(s))
-
-
-def line_profiler_parse(fn, percent_cufoff=0.1, sort_by_time=True):
-    """
-    Parse the output of python line_profiler and display for jupyter
-    """
-
-    # Define data header and type
-    header = ["Line #", "Hits", "Time", "Time Per Hit", "% Time", "Line Contents"]
-    dtypes = [int, int, float, float, float, str]
-    dtypes_header = {i: j for i, j in zip(header, dtypes)}
-
-    all_results = []
-
-    with open(fn) as fp:
-        try:
-            while True:
-                line = next(fp).strip()
-                if line.startswith("Total time: "):
-                    time = float(line.split(":")[-1].strip().split(" ")[0])
-                    file = next(fp).split("/")[-1].strip()
-                    function = next(fp).split(":")[-1].strip()
-
-                    # Flush out useles lines
-                    for i in range(3):
-                        _ = next(fp)
-
-                    # Parse data lines
-                    data_lines = []
-                    while True:
-                        line = next(fp).strip()
-                        if line == "":
-                            break
-                        # parse messy lprun lines
-                        try:
-                            ls = line.split()
-                            parsed_line = []
-                            if len(ls) >= 6:
-                                for e, t in zip(
-                                    ls[0:5], (int, int, float, float, float)
-                                ):
-                                    parsed_line.append(t(e))
-                            parsed_line.append(" ".join(ls[5:]))
-                            data_lines.append(parsed_line)
-                        except:
-                            pass
-
-                    if data_lines:
-                        df = pd.DataFrame(data=data_lines, columns=header)
-                        if sort_by_time:
-                            df.sort_values("% Time", inplace=True, ascending=False)
-                        df = df[df["% Time"] >= percent_cufoff]
-                    all_results.append(
-                        {"time": time, "file": file, "function": function, "df": df}
-                    )
-
-        except StopIteration:
-            if data_lines:
-                df = pd.DataFrame(data=data_lines, columns=header)
-                df.sort_values("% Time", inplace=True, ascending=False)
-                df = df[df["% Time"] > 0]
-            all_results.append(
-                {"time": time, "file": file, "function": function, "df": df}
-            )
-
-        all_results.sort(key=lambda item: item.get("time"), reverse=True)
-        for i in all_results:
-            cprint(f"Function {i['function']} from {i['file']}", color="blue")
-            h, m, s = _convert_sec_to_h(i["time"])
-            cprint(f"Execution time: {h}h:{m}m:{s}s", color="red")
-            display(i["df"])
