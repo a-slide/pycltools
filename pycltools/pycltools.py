@@ -1257,6 +1257,7 @@ def make_kmer_guided_sequence(
     n_seq=10,
     seed=None,
     include_rc=False,
+    verbose=False,
 ):
     """
     Generate a list of sequences with an optimized kmer content.
@@ -1461,7 +1462,7 @@ def bam_align_summary(fp, min_mapq=30):
     for bam in glob.glob(fp):
 
         label = bam.split("/")[-1].split(".")[0]
-        jprint("Parse bam {}".format(label), bold=True)
+        cprint("Parse bam {}".format(label))
 
         with ps.AlignmentFile(bam, "rb") as f:
             for read in f:
