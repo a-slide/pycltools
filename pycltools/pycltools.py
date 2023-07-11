@@ -23,6 +23,8 @@ from matplotlib import pyplot as pl
 
 ##~~~~~~~ DEFINE CONSTANTS ~~~~~~~#
 
+MAX_SEED_VALUE = 2**32
+
 COLOR_CODES = {
     "white": 29,
     "grey": 30,
@@ -1280,7 +1282,7 @@ def make_kmer_guided_sequence(
     # Set seed if needed
     if seed is None:
         random.seed(None)
-        seed = random.randint(0, sys.maxsize)
+        seed = random.randint(0, MAX_SEED_VALUE)
         
     random.seed(seed)
     np.random.seed(seed)  
@@ -1498,7 +1500,7 @@ class random_seed_gen ():
         random.seed(self.seed)
 
     def __call__ (self):
-        seed = random.randint(0, sys.maxsize)
+        seed = random.randint(0, MAX_SEED_VALUE)
         if self.skip_previous_seed:
             if seed in self.previous_seeds:
                 if self.verbose:
