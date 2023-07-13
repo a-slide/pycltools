@@ -1526,3 +1526,4 @@ class random_seed_gen ():
 
         random.seed(seed)
         self.seed = seed
+        return self.seed
