@@ -344,6 +344,43 @@ def remove_file(fp, exception_if_exist=False):
         if exception_if_exist:
             raise E
 
+def super_iglob (pathname, recursive=False, regex_list=[]):
+    """ Same as iglob but pass multiple path regex instead of one. does not store anything in memory"""
+    if type(pathname) == str:
+        pathname = [pathname]
+
+    if type(pathname) in [list, tuple, set]:
+        for paths in pathname:
+            for path in iglob(pathname=paths, recursive=recursive):
+                if os.path.isdir(path) and regex_list:
+                    for regex in regex_list:
+                        regex_paths = os.path.join(path, regex)
+                        for regex_path in iglob(pathname=regex_paths, recursive=recursive):
+                            yield regex_path
+                elif os.path.isfile(path):
+                    yield path
+    else:
+        raise ValueError ("Invalid file type")
+
+def fastq_merge (src_dir, dest_fn, progress=True):
+    """
+    Concatenate a list of scr files in a single output file. Handle gziped files (mixed input and output)
+    """ 
+    if is_gziped(dest_fn):
+        open_fun_dest, open_mode_dest = gzip.open, "wt"
+    else:
+        open_fun_dest, open_mode_dest = open, "w"
+    
+    with open_fun_dest(dest_fn, open_mode_dest) as dest_fp, tqdm(desc="Files processed ", unit=" files", disable= not progress) as pb:
+        for src in super_iglob (src_dir, regex_list=["*.fastq","*.fq","*.fastq.gz","*.fq.gz"]):
+            if is_gziped(src):
+                open_fun_src, open_mode_src = gzip.open, "rt"
+            else:
+                open_fun_src, open_mode_src = open, "r"
+            with open_fun_src(src, open_mode_src) as src_fp:
+                shutil.copyfileobj(src_fp, dest_fp)
+                pb.update(1)
+
 # ~~~~~~~ FILE INFORMATION/PARSING ~~~~~~~#
 
 def linerange(fp, range_list=[], line_numbering=True, max_char_line=150, **kwargs):
@@ -609,6 +646,24 @@ def fastcount(fp, **kwargs):
     return lines
 
 # ~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
+
+def super_iglob (pathname, recursive=False, regex_list=[]):
+    """ Same as iglob but pass multiple path regex instead of one. does not store anything in memory"""
+    if type(pathname) == str:
+        pathname = [pathname]
+
+    if type(pathname) in [list, tuple, set]:
+        for paths in pathname:
+            for path in iglob(pathname=paths, recursive=recursive):
+                if os.path.isdir(path) and regex_list:
+                    for regex in regex_list:
+                        regex_paths = os.path.join(path, regex)
+                        for regex_path in iglob(pathname=regex_paths, recursive=recursive):
+                            yield regex_path
+                elif os.path.isfile(path):
+                    yield path
+    else:
+        raise ValueError ("Invalid file type")
 
 def mkdir(
     fp,
