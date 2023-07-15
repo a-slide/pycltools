@@ -351,11 +351,11 @@ def super_iglob (pathname, recursive=False, regex_list=[]):
 
     if type(pathname) in [list, tuple, set]:
         for paths in pathname:
-            for path in iglob(pathname=paths, recursive=recursive):
+            for path in glob.iglob(pathname=paths, recursive=recursive):
                 if os.path.isdir(path) and regex_list:
                     for regex in regex_list:
                         regex_paths = os.path.join(path, regex)
-                        for regex_path in iglob(pathname=regex_paths, recursive=recursive):
+                        for regex_path in glob.iglob(pathname=regex_paths, recursive=recursive):
                             yield regex_path
                 elif os.path.isfile(path):
                     yield path
@@ -646,24 +646,6 @@ def fastcount(fp, **kwargs):
     return lines
 
 # ~~~~~~~ DIRECTORY MANIPULATION ~~~~~~~#
-
-def super_iglob (pathname, recursive=False, regex_list=[]):
-    """ Same as iglob but pass multiple path regex instead of one. does not store anything in memory"""
-    if type(pathname) == str:
-        pathname = [pathname]
-
-    if type(pathname) in [list, tuple, set]:
-        for paths in pathname:
-            for path in iglob(pathname=paths, recursive=recursive):
-                if os.path.isdir(path) and regex_list:
-                    for regex in regex_list:
-                        regex_paths = os.path.join(path, regex)
-                        for regex_path in iglob(pathname=regex_paths, recursive=recursive):
-                            yield regex_path
-                elif os.path.isfile(path):
-                    yield path
-    else:
-        raise ValueError ("Invalid file type")
 
 def mkdir(
     fp,
